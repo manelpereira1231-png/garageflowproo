@@ -6,11 +6,9 @@ import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 const REPORTS = [
-  { id: "revenue", label: "Receita (todos os pagamentos)" },
-  { id: "shops", label: "Oficinas registadas" },
-  { id: "conversions", label: "Conversões (subscrições ativas)" },
-  { id: "retention", label: "Retenção (last_seen)" },
-  { id: "growth", label: "Crescimento (registos por mês)" },
+  { id: "leads", label: "Leads (prospecção completa)" },
+  { id: "pipeline", label: "Pipeline por etapa" },
+  { id: "growth", label: "Crescimento (leads por mês)" },
   { id: "activity", label: "Atividade comercial (leads + reuniões)" },
 ];
 
@@ -34,31 +32,30 @@ function download(filename: string, content: string, mime: string) {
 
 async function buildReport(id: string): Promise<any[]> {
   switch (id) {
-    case "revenue": {
-      const { data } = await supabase.from("payments").select("paid_at, amount, method, shop_id").order("paid_at", { ascending: false });
-      return data || [];
+    case "leads": {
+      const { data } = await supabase.from("crm_leads" as any).select("*").order("created_at", { ascending: false });
+      return (data as any[]) || [];
     }
-    case "shops": {
-      const { data } = await supabase.from("shops").select("id, name, email, phone, country, status, created_at, last_seen_at").order("created_at", { ascending: false });
-      return data || [];
-    }
-    case "conversions": {
-      const { data } = await supabase.from("subscriptions").select("shop_id, plan, status, created_at, current_period_end");
-      return data || [];
-    }
-    case "retention": {
-      const { data } = await supabase.from("shops").select("id, name, email, last_seen_at, status");
-      return data || [];
+    case "pipeline": {
+      const { data } = await supabase.from("crm_leads" as any).select("pipeline_stage, estimated_value");
+      const map: Record<string, { leads: number; value: number }> = {};
+      ((data as any[]) || []).forEach((l) => {
+        const k = l.pipeline_stage || "lead";
+        map[k] = map[k] || { leads: 0, value: 0 };
+        map[k].leads += 1;
+        map[k].value += Number(l.estimated_value || 0);
+      });
+      return Object.entries(map).map(([stage, v]) => ({ stage, leads: v.leads, estimated_value: v.value }));
     }
     case "growth": {
-      const { data } = await supabase.from("shops").select("created_at");
+      const { data } = await supabase.from("crm_leads" as any).select("created_at");
       const map: Record<string, number> = {};
-      (data || []).forEach((s: any) => {
-        const d = new Date(s.created_at);
+      ((data as any[]) || []).forEach((l) => {
+        const d = new Date(l.created_at);
         const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
         map[k] = (map[k] || 0) + 1;
       });
-      return Object.entries(map).sort().map(([month, count]) => ({ month, new_shops: count }));
+      return Object.entries(map).sort().map(([month, count]) => ({ month, new_leads: count }));
     }
     case "activity": {
       const [leads, meetings] = await Promise.all([
@@ -111,7 +108,7 @@ export default function CommercialReports() {
     <div className="space-y-4">
       <div>
         <h2 className="text-2xl font-bold">Relatórios</h2>
-        <p className="text-sm text-muted-foreground">Exporte dados reais em CSV, Excel ou PDF.</p>
+        <p className="text-sm text-muted-foreground">Exporte a prospecção comercial em CSV, Excel ou PDF.</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {REPORTS.map((r) => (

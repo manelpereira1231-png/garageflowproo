@@ -15,11 +15,6 @@ import {
 import CommercialImportDialog from "@/components/commercial/CommercialImportDialog";
 import CommercialLeadDetail, { PIPELINE_STAGES } from "@/components/commercial/CommercialLeadDetail";
 
-type Shop = {
-  id: string; name: string; email: string; phone?: string; address?: string;
-  country?: string; status?: string; created_at: string; last_seen_at?: string;
-};
-type Sub = { shop_id: string; plan: string; status: string };
 type Lead = {
   id: string; name: string; owner_name?: string; email?: string; phone?: string;
   city?: string; district?: string; country?: string;
@@ -36,12 +31,9 @@ const STAGE_TONE: Record<string, string> = Object.fromEntries(
 );
 
 export default function CommercialCRM() {
-  const [shops, setShops] = useState<Shop[]>([]);
-  const [subs, setSubs] = useState<Sub[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [q, setQ] = useState("");
   const [stageFilter, setStageFilter] = useState<string>("all");
-  const [tab, setTab] = useState<"leads" | "shops">("leads");
   const [openNew, setOpenNew] = useState(false);
   const [openImport, setOpenImport] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
@@ -53,13 +45,10 @@ export default function CommercialCRM() {
 
   const load = async () => {
     setLoading(true);
-    const [shopsRes, subsRes, leadsRes] = await Promise.all([
-      supabase.from("shops").select("id, name, email, phone, address, country, status, created_at, last_seen_at").order("created_at", { ascending: false }),
-      supabase.from("subscriptions").select("shop_id, plan, status"),
-      supabase.from("crm_leads" as any).select("*").order("created_at", { ascending: false }),
-    ]);
-    setShops(((shopsRes.data as unknown) || []) as Shop[]);
-    setSubs(((subsRes.data as unknown) || []) as Sub[]);
+    const leadsRes = await supabase
+      .from("crm_leads" as any)
+      .select("*")
+      .order("created_at", { ascending: false });
     setLeads(((leadsRes.data as unknown) || []) as Lead[]);
     setLoading(false);
   };
@@ -68,8 +57,6 @@ export default function CommercialCRM() {
     load();
     const ch = supabase
       .channel("commercial-crm-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "shops" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "crm_leads" }, () => load())
       .subscribe();
     const onFocus = () => load();
@@ -77,12 +64,6 @@ export default function CommercialCRM() {
     const iv = setInterval(load, 30000);
     return () => { supabase.removeChannel(ch); window.removeEventListener("focus", onFocus); clearInterval(iv); };
   }, []);
-
-  const subByShop = useMemo(() => {
-    const m = new Map<string, Sub>();
-    subs.forEach((s) => m.set(s.shop_id, s));
-    return m;
-  }, [subs]);
 
   const kpis = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -108,27 +89,15 @@ export default function CommercialCRM() {
     return leads.filter((l) => {
       if (stageFilter !== "all" && l.pipeline_stage !== stageFilter) return false;
       if (!t) return true;
-      const sub = subs.find((s) => s.shop_id === l.shop_link_id);
       return [
         l.name, l.owner_name, l.email, l.phone,
         l.city, l.district, l.country,
-        STAGE_LABEL[l.pipeline_stage], sub?.plan,
+        STAGE_LABEL[l.pipeline_stage],
       ]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(t));
     });
-  }, [leads, subs, q, stageFilter]);
-
-  const filteredShops = useMemo(() => {
-    const t = q.trim().toLowerCase();
-    if (!t) return shops;
-    return shops.filter((s) => {
-      const sub = subByShop.get(s.id);
-      return [s.name, s.email, s.phone, s.country, sub?.plan, sub?.status]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(t));
-    });
-  }, [shops, subByShop, q]);
+  }, [leads, q, stageFilter]);
 
   const createLead = async () => {
     if (!form.name.trim()) { toast.error("Nome obrigatório"); return; }
@@ -239,34 +208,29 @@ export default function CommercialCRM() {
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex gap-1 p-1 bg-muted rounded-md">
-          <button onClick={() => setTab("leads")} className={`px-3 py-1.5 text-sm rounded ${tab === "leads" ? "bg-background shadow-sm" : ""}`}>
+          <span className="px-3 py-1.5 text-sm rounded bg-background shadow-sm">
             Leads ({leads.length})
-          </button>
-          <button onClick={() => setTab("shops")} className={`px-3 py-1.5 text-sm rounded ${tab === "shops" ? "bg-background shadow-sm" : ""}`}>
-            Oficinas ({shops.length})
-          </button>
+          </span>
         </div>
         <div className="relative flex-1 min-w-[220px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Nome, responsável, email, telefone, cidade, país…"
             className="pl-9" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        {tab === "leads" && (
-          <Select value={stageFilter} onValueChange={setStageFilter}>
-            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todos os estados" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os estados</SelectItem>
-              {PIPELINE_STAGES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <Select value={stageFilter} onValueChange={setStageFilter}>
+          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todos os estados" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os estados</SelectItem>
+            {PIPELINE_STAGES.map((s) => (
+              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {loading && <div className="text-sm text-muted-foreground">A carregar…</div>}
 
-      {!loading && tab === "leads" && (
+      {!loading && (
         <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -334,56 +298,6 @@ export default function CommercialCRM() {
         </Card>
       )}
 
-      {!loading && tab === "shops" && (
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
-                  <tr>
-                    <th className="text-left p-3">Oficina</th>
-                    <th className="text-left p-3">Contacto</th>
-                    <th className="text-left p-3">País</th>
-                    <th className="text-left p-3">Plano</th>
-                    <th className="text-left p-3">Estado</th>
-                    <th className="text-left p-3">Registo</th>
-                    <th className="text-left p-3">Último acesso</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredShops.map((s) => {
-                    const sub = subByShop.get(s.id);
-                    return (
-                      <tr key={s.id} className="border-t hover:bg-muted/30">
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <Building2 className="w-4 h-4 text-muted-foreground" />
-                            <span className="font-medium">{s.name}</span>
-                          </div>
-                        </td>
-                        <td className="p-3 text-xs">
-                          {s.email}<br />{s.phone || "—"}
-                        </td>
-                        <td className="p-3 text-xs">{s.country || "—"}</td>
-                        <td className="p-3"><Badge variant="outline">{sub?.plan || "start"}</Badge></td>
-                        <td className="p-3">
-                          <Badge variant={sub?.status === "active" ? "default" : "secondary"}>
-                            {sub?.status || s.status || "—"}
-                          </Badge>
-                        </td>
-                        <td className="p-3 text-xs">{new Date(s.created_at).toLocaleDateString("pt-PT")}</td>
-                        <td className="p-3 text-xs">
-                          {s.last_seen_at ? new Date(s.last_seen_at).toLocaleDateString("pt-PT") : "Nunca"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <CommercialImportDialog
         open={openImport}

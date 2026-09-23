@@ -10,11 +10,9 @@ import { Upload, FileSpreadsheet, Loader2, CheckCircle2, AlertTriangle } from "l
 import { toast } from "sonner";
 import { parseFile, type ParsedLead } from "@/lib/commercial/fileParsers";
 
-type Shop = { id: string; name: string; email?: string | null; phone?: string | null };
 type ExistingLead = { id: string; name: string; email?: string | null; phone?: string | null };
 type MatchDecision = "update" | "skip" | "create_new";
 type Row = ParsedLead & {
-  _matchShop?: Shop | null;
   _matchLead?: ExistingLead | null;
   _decision: MatchDecision;
 };
@@ -41,13 +39,12 @@ export default function CommercialImportDialog({
   const [step, setStep] = useState<"upload" | "review">("upload");
 
   const stats = useMemo(() => {
-    let matchesShop = 0, matchesLead = 0, fresh = 0;
+    let matchesLead = 0, fresh = 0;
     rows.forEach((r) => {
-      if (r._matchShop) matchesShop++;
-      else if (r._matchLead) matchesLead++;
+      if (r._matchLead) matchesLead++;
       else fresh++;
     });
-    return { matchesShop, matchesLead, fresh, total: rows.length };
+    return { matchesLead, fresh, total: rows.length };
   }, [rows]);
 
   const reset = () => {
@@ -67,20 +64,9 @@ export default function CommercialImportDialog({
         setBusy(false);
         return;
       }
-      // Fetch existing shops + leads to match against
-      const [shopsRes, leadsRes] = await Promise.all([
-        supabase.from("shops").select("id, name, email, phone"),
-        supabase.from("crm_leads" as any).select("id, name, email, phone"),
-      ]);
-      const shops = ((shopsRes.data as unknown) || []) as Shop[];
+      // Fetch existing leads to match against
+      const leadsRes = await supabase.from("crm_leads" as any).select("id, name, email, phone");
       const leads = ((leadsRes.data as unknown) || []) as ExistingLead[];
-
-      const shopByEmail = new Map<string, Shop>();
-      const shopByPhone = new Map<string, Shop>();
-      shops.forEach((s) => {
-        if (s.email) shopByEmail.set(normEmail(s.email), s);
-        if (s.phone) shopByPhone.set(normPhone(s.phone), s);
-      });
       const leadByEmail = new Map<string, ExistingLead>();
       const leadByPhone = new Map<string, ExistingLead>();
       leads.forEach((l) => {
@@ -91,16 +77,12 @@ export default function CommercialImportDialog({
       const enriched: Row[] = parsed.map((p) => {
         const em = normEmail(p.email);
         const ph = normPhone(p.phone);
-        const matchShop =
-          (em && shopByEmail.get(em)) || (ph && shopByPhone.get(ph)) || null;
         const matchLead =
-          !matchShop &&
-          ((em && leadByEmail.get(em)) || (ph && leadByPhone.get(ph)) || null);
+          (em && leadByEmail.get(em)) || (ph && leadByPhone.get(ph)) || null;
         return {
           ...p,
-          _matchShop: matchShop || null,
           _matchLead: matchLead || null,
-          _decision: matchShop || matchLead ? "update" : "create_new",
+          _decision: matchLead ? "update" : "create_new",
         };
       });
       setRows(enriched);
@@ -150,16 +132,6 @@ export default function CommercialImportDialog({
           kind: "imported",
           summary: `Atualizado via importação de ${fileName}`,
           meta: { batchId, action: "update_lead" },
-          created_by: uid,
-        });
-      } else if (r._decision === "update" && r._matchShop) {
-        // Link a lead record to the existing shop (create lead if missing)
-        inserts.push({
-          ...payload,
-          pipeline_stage: "customer",
-          status: "won",
-          shop_link_id: r._matchShop.id,
-          shop_id: r._matchShop.id,
           created_by: uid,
         });
       } else {
@@ -275,9 +247,6 @@ export default function CommercialImportDialog({
               <Badge variant="secondary" className="gap-1 bg-amber-500/10 text-amber-700 dark:text-amber-400">
                 <AlertTriangle className="w-3 h-3" /> {stats.matchesLead} coincidem com leads
               </Badge>
-              <Badge variant="secondary" className="gap-1 bg-green-500/10 text-green-700 dark:text-green-400">
-                <CheckCircle2 className="w-3 h-3" /> {stats.matchesShop} já são oficinas
-              </Badge>
             </div>
 
             <div className="max-h-[45vh] overflow-y-auto border rounded-lg">
@@ -292,7 +261,7 @@ export default function CommercialImportDialog({
                 </thead>
                 <tbody>
                   {rows.map((r, i) => {
-                    const matched = r._matchShop || r._matchLead;
+                    const matched = r._matchLead;
                     return (
                       <tr key={i} className="border-t">
                         <td className="p-2">
@@ -306,11 +275,7 @@ export default function CommercialImportDialog({
                           {r.phone && <div className="text-muted-foreground">{r.phone}</div>}
                         </td>
                         <td className="p-2">
-                          {r._matchShop ? (
-                            <Badge className="bg-green-500/15 text-green-700 dark:text-green-400 hover:bg-green-500/15">
-                              Já é oficina
-                            </Badge>
-                          ) : r._matchLead ? (
+                          {r._matchLead ? (
                             <Badge variant="outline">Lead existente</Badge>
                           ) : (
                             <Badge variant="secondary">Novo</Badge>

@@ -78,6 +78,13 @@
       "when": 1790282675266,
       "tag": "0010_insurance_clients_claims_flow",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790283473858,
+      "tag": "0011_vehicle_lookup_admin_controls",
+      "breakpoints": true
     }
   ]
 }

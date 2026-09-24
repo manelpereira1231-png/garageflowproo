@@ -380,7 +380,7 @@ export default function ClaimDetail() {
             </CardContent></Card>
             <Card><CardContent className="p-4 text-sm space-y-1">
               <p className="text-xs text-muted-foreground">Viatura</p>
-              <button className="font-semibold font-mono hover:underline" onClick={() => navigate(`/vehicles/${claim.vehicle_id}/passport`)}>{claim.vehicles?.plate || "—"}</button>
+              <button className="font-semibold font-mono hover:underline" onClick={() => navigate(`/vehicles?search=${encodeURIComponent(claim.vehicles?.plate || "")}`)}>{claim.vehicles?.plate || "—"}</button>
               <p className="text-muted-foreground">{[claim.vehicles?.make, claim.vehicles?.model, claim.vehicles?.year].filter(Boolean).join(" ")}</p>
             </CardContent></Card>
             <Card><CardContent className="p-4 text-sm space-y-1">

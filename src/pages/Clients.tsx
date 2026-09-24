@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ClaimsHistory from "@/components/ClaimsHistory";
 import { ShieldAlert } from "lucide-react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";

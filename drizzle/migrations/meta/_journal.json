@@ -99,6 +99,13 @@
       "when": 1790285965781,
       "tag": "0013_commercial_condition_lifecycle",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790287875943,
+      "tag": "0014_shop_commercial_offer_rpc",
+      "breakpoints": true
     }
   ]
 }

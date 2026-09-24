@@ -204,7 +204,6 @@ const CommercialDashboard = lazyRetry(() => import("@/pages/commercial/Commercia
 const CommercialCRM = lazyRetry(() => import("@/pages/commercial/CommercialCRM"));
 const CommercialPipeline = lazyRetry(() => import("@/pages/commercial/CommercialPipeline"));
 const CommercialMeetings = lazyRetry(() => import("@/pages/commercial/CommercialMeetings"));
-const CommercialRetention = lazyRetry(() => import("@/pages/commercial/CommercialRetention"));
 const CommercialIntelligence = lazyRetry(() => import("@/pages/commercial/CommercialIntelligence"));
 const CommercialReports = lazyRetry(() => import("@/pages/commercial/CommercialReports"));
 const CommercialObjectives = lazyRetry(() => import("@/pages/commercial/CommercialObjectives"));
@@ -953,7 +952,6 @@ function AuthenticatedRoutes() {
               <Route path="/commercial/crm" element={<CommercialCRM />} />
               <Route path="/commercial/pipeline" element={<CommercialPipeline />} />
               <Route path="/commercial/meetings" element={<CommercialMeetings />} />
-              <Route path="/commercial/retention" element={<CommercialRetention />} />
               <Route path="/commercial/intelligence" element={<CommercialIntelligence />} />
               <Route path="/commercial/reports" element={<CommercialReports />} />
               <Route path="/commercial/objectives" element={<CommercialObjectives />} />

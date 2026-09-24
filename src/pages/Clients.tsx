@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ClaimsHistory from "@/components/ClaimsHistory";
 import { ShieldAlert } from "lucide-react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
@@ -110,9 +111,16 @@ export default function Clients() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<{ client: ClientRow; reasons: string[] }[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
+  const EMPTY_FORM = { name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "", is_insurance: false, insurer_id: "" };
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [insurers, setInsurers] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    if (!activeShopId) return;
+    supabase.from("insurers").select("id, name").eq("shop_id", activeShopId).eq("active", true).order("name")
+      .then(({ data }) => setInsurers(data || []));
+  }, [activeShopId]);
 
-  const resetForm = () => setForm({ name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "" });
+  const resetForm = () => setForm(EMPTY_FORM);
 
 
   const getActiveShopId = (): string | null => activeShopId;
@@ -204,6 +212,7 @@ export default function Clients() {
 
       is_fleet: !!form.is_fleet, fleet_name: form.is_fleet ? (form.fleet_name || null) : null,
       fleet_manager: form.is_fleet ? (form.fleet_manager || null) : null,
+      is_insurance: !!form.is_insurance, insurer_id: form.is_insurance ? (form.insurer_id || null) : null,
     };
 
     const result = editingId
@@ -262,7 +271,7 @@ export default function Clients() {
 
   const openEdit = (c: ClientRow) => {
     setEditingId(c.id);
-    setForm({ name: c.name, phone: c.phone, email: c.email, company: c.company || "", nif: c.nif || "", notes: c.notes || "", is_fleet: !!c.is_fleet, fleet_name: c.fleet_name || "", fleet_manager: c.fleet_manager || "" });
+    setForm({ name: c.name, phone: c.phone, email: c.email, company: c.company || "", nif: c.nif || "", notes: c.notes || "", is_fleet: !!c.is_fleet, fleet_name: c.fleet_name || "", fleet_manager: c.fleet_manager || "", is_insurance: !!(c as any).is_insurance, insurer_id: (c as any).insurer_id || "" });
     setOpen(true);
   };
 
@@ -344,6 +353,30 @@ export default function Clients() {
                       <Label>Responsável da frota</Label>
                       <Input value={form.fleet_manager} onChange={e => setForm({ ...form, fleet_manager: e.target.value })} />
                     </div>
+                  </div>
+                )}
+              </div>
+              <div className="rounded-lg border border-border p-3 space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer min-h-[44px] sm:min-h-0">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-primary"
+                    checked={form.is_insurance}
+                    onChange={e => setForm({ ...form, is_insurance: e.target.checked })}
+                  />
+                  Cliente de seguradora (processo de sinistro)
+                </label>
+                {form.is_insurance && (
+                  <div className="space-y-1.5">
+                    <Label>Seguradora</Label>
+                    <Select value={form.insurer_id || "none"} onValueChange={v => setForm({ ...form, insurer_id: v === "none" ? "" : v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">— Sem seguradora definida —</SelectItem>
+                        {insurers.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    {insurers.length === 0 && <p className="text-[11px] text-muted-foreground">Crie seguradoras em Sinistros → Seguradoras.</p>}
                   </div>
                 )}
               </div>

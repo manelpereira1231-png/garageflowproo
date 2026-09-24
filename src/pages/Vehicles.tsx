@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Car, Pencil, Trash2, FileDown, ScrollText, X } from "lucide-react";
+import { Plus, Search, Car, Pencil, Trash2, FileDown, ScrollText, X, Loader2, CheckCircle2 } from "lucide-react";
+import { lookupPlate, matchCatalogModel, mapFuel, type LookupResult } from "@/lib/vehicleLookup";
 import { toast } from "sonner";
 import { toastError } from "@/lib/errorMessages";
 import VehiclePassport from "@/components/VehiclePassport";
@@ -65,10 +66,13 @@ export default function Vehicles() {
     plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
   });
 
-  const resetForm = () => setForm({
-    client_id: "", make: "", model: "", variant: "", year: new Date().getFullYear().toString(),
-    plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
-  });
+  const resetForm = () => {
+    setForm({
+      client_id: "", make: "", model: "", variant: "", year: new Date().getFullYear().toString(),
+      plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
+    });
+    setLookup(null); setExisting(null);
+  };
 
   const activeShopId = useActiveShopId();
   const plateRegion = detectRegionFromCurrency(shopMeta?.currency, shopMeta?.country);
@@ -134,6 +138,49 @@ export default function Vehicles() {
   useRealtimeTable("vehicles", { shopId: activeShopId, onChange: fetchData });
   useRealtimeTable("clients", { shopId: activeShopId, onChange: () => void fetchRefData() });
 
+  const [lookupBusy, setLookupBusy] = useState(false);
+  const [lookup, setLookup] = useState<LookupResult | null>(null);
+  const [lookupPlateRef, setLookupPlateRef] = useState("");
+  const [existing, setExisting] = useState<any | null>(null);
+
+  // Consultar matrícula: 1) valida, 2) procura no GarageFlow, 3) só depois consulta o provider.
+  const handleLookup = async () => {
+    const shopId = activeShopId;
+    if (!shopId) return;
+    const canon = canonicalPlate(form.plate);
+    setLookup(null); setExisting(null);
+    if (!isValidPlate(form.plate, plateRegion)) {
+      setLookup({ status: "invalid", message: "Matrícula inválida. Confirme a matrícula introduzida." });
+      return;
+    }
+    setLookupBusy(true);
+    try {
+      const { data: same } = await supabase.from("vehicles")
+        .select("id, plate, make, model, version")
+        .eq("shop_id", shopId).is("deleted_at", null)
+        .ilike("plate", `%${canon.slice(0, 2)}%`).limit(500);
+      const dup = (same || []).find((v: any) => canonicalPlate(v.plate) === canon && v.id !== editingId);
+      if (dup) { setExisting(dup); return; }
+      const res = await lookupPlate({ shopId, plate: canon, vehicleId: editingId });
+      setLookup(res);
+      setLookupPlateRef(form.plate);
+      if (res.status === "ok" && res.data) {
+        const d = res.data;
+        setForm((cur) => ({
+          ...cur,
+          make: d.make || cur.make,
+          model: matchCatalogModel(d.make, d.model) || cur.model,
+          variant: d.version || cur.variant,
+          year: d.year ? String(d.year) : cur.year,
+          fuel: mapFuel(d.fuel) || cur.fuel,
+          vin: cur.vin || d.vin || "",
+        }));
+      }
+    } finally {
+      setLookupBusy(false);
+    }
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,18 +210,25 @@ export default function Vehicles() {
     // a funcionar (ver openEdit).
     const versionToSave = form.variant.trim() || null;
 
-    const payload = {
+    const payload: any = {
       shop_id: shopId, client_id: form.client_id, make: form.make, model: form.model,
       version: versionToSave,
       year: parseInt(form.year), plate: normalizedPlate, vin: form.vin || null,
       mileage: mileageValue, fuel: form.fuel, notes: form.notes || null,
     };
+    if (lookup?.status === "ok" && lookup.data && canonicalPlate(lookupPlateRef) === canonicalPlate(normalizedPlate)) {
+      payload.tech_data = lookup.data;
+      payload.tech_source = "matricula_pt";
+      payload.tech_updated_at = lookup.fetched_at || new Date().toISOString();
+    }
 
     const { error } = editingId
       ? await supabase.from("vehicles").update(payload).eq("id", editingId).eq("shop_id", activeShopId)
       : await supabase.from("vehicles").insert(payload);
 
-    if (error) toastError(error, editingId ? "Não foi possível atualizar o veículo" : "Não foi possível criar o veículo");
+    if (error && (error as any).code === "23505" && String(error.message || "").includes("plate")) {
+      toast.error("Esta viatura já existe no GarageFlow (mesma matrícula).");
+    } else if (error) toastError(error, editingId ? "Não foi possível atualizar o veículo" : "Não foi possível criar o veículo");
     else {
       toast.success(editingId ? t('vehicles.updated') : t('vehicles.created'));
       setOpen(false);
@@ -266,6 +320,51 @@ export default function Vehicles() {
             <DialogHeader><DialogTitle>{editingId ? t('common.edit') : t('vehicles.new')}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
+                <Label>{t('vehicles.plate')} *</Label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input
+                    value={form.plate}
+                    onChange={e => { setForm({...form, plate: autoFormatPlate(e.target.value, plateRegion)}); setLookup(null); setExisting(null); }}
+                    required
+                    placeholder={plateExample}
+                    autoCapitalize="characters"
+                    aria-invalid={form.plate.length > 0 && !isValidPlate(form.plate, plateRegion)}
+                    className={`h-12 text-lg mono tracking-wider ${form.plate.length > 0 && !isValidPlate(form.plate, plateRegion) ? "border-destructive" : ""}`}
+                  />
+                  {plateRegion === "PT" && (
+                    <Button type="button" variant="secondary" className="h-12 sm:w-auto w-full" onClick={handleLookup} disabled={lookupBusy}>
+                      {lookupBusy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
+                      Consultar matrícula
+                    </Button>
+                  )}
+                </div>
+                <p className="text-[11px] text-muted-foreground">Formato: {plateExample}</p>
+                {existing && (
+                  <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 space-y-2">
+                    <p className="text-sm font-medium">Esta viatura já existe no GarageFlow.</p>
+                    <p className="text-sm mono">{existing.plate} — {[existing.make, existing.model, existing.version].filter(Boolean).join(" ")}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="button" size="sm" onClick={() => { setOpen(false); resetForm(); setPassportId(existing.id); }}>Abrir viatura</Button>
+                      <Button type="button" size="sm" variant="outline" onClick={() => { const v = existing; setOpen(false); resetForm(); setPassportId(v.id); }}>Atualizar dados técnicos</Button>
+                    </div>
+                  </div>
+                )}
+                {lookup && (
+                  <div className={`rounded-lg border p-3 text-sm ${lookup.status === "ok" ? "border-success/40 bg-success/5" : "border-border bg-muted/40"}`}>
+                    {lookup.status === "ok" && lookup.data ? (
+                      <>
+                        <p className="font-medium flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-success" />Viatura encontrada</p>
+                        <p className="mt-1">{[lookup.data.make, lookup.data.model, lookup.data.version].filter(Boolean).join(" ")}</p>
+                        <p className="text-muted-foreground text-xs">{[lookup.data.year, lookup.data.fuel, lookup.data.engine_cc ? `${lookup.data.engine_cc} cm³` : null].filter(Boolean).join(" · ")}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Dados preenchidos automaticamente. Confirme antes de guardar.</p>
+                      </>
+                    ) : (
+                      <p>{lookup.message} {lookup.status !== "invalid" && <span className="text-muted-foreground">Continuar manualmente.</span>}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1.5">
                 <Label>{t('vehicles.client')} *</Label>
                 <ClientCombobox
                   clients={clients}
@@ -285,18 +384,6 @@ export default function Vehicles() {
                 />
 
                 <div className="space-y-1.5"><Label>{t('vehicles.year')}</Label><Input type="number" value={form.year} onChange={e => setForm({...form, year: e.target.value})} /></div>
-                <div className="space-y-1.5">
-                  <Label>{t('vehicles.plate')} *</Label>
-                  <Input
-                    value={form.plate}
-                    onChange={e => setForm({...form, plate: autoFormatPlate(e.target.value, plateRegion)})}
-                    required
-                    placeholder={plateExample}
-                    aria-invalid={form.plate.length > 0 && !isValidPlate(form.plate, plateRegion)}
-                    className={form.plate.length > 0 && !isValidPlate(form.plate, plateRegion) ? "border-destructive" : ""}
-                  />
-                  <p className="text-[11px] text-muted-foreground">Formato: {plateExample}</p>
-                </div>
                 <div className="space-y-1.5"><Label>{t('vehicles.vin')}</Label><Input value={form.vin} onChange={e => setForm({...form, vin: e.target.value})} /></div>
                 <div className="space-y-1.5"><Label>{t('vehicles.mileage')}</Label><Input type="text" inputMode="numeric" value={form.mileage ? Number(form.mileage.replace(/\D/g, "")).toLocaleString() : ""} onChange={e => setForm({...form, mileage: e.target.value.replace(/\D/g, "").slice(0, 8)})} placeholder="0" aria-invalid={(parseInt(form.mileage || "0", 10) || 0) > MAX_MILEAGE} className={(parseInt(form.mileage || "0", 10) || 0) > MAX_MILEAGE ? "border-destructive" : ""} />{(parseInt(form.mileage || "0", 10) || 0) > MAX_MILEAGE && <p className="text-[11px] text-destructive">Máximo {MAX_MILEAGE.toLocaleString()} km.</p>}</div>
                 <div className="space-y-1.5">

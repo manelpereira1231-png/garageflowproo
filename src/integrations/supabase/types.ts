@@ -2404,7 +2404,9 @@ export type Database = {
           fleet_manager: string | null
           fleet_name: string | null
           id: string
+          insurer_id: string | null
           is_fleet: boolean
+          is_insurance: boolean
           legacy_dup_ok: boolean
           name: string
           nif: string | null
@@ -2422,7 +2424,9 @@ export type Database = {
           fleet_manager?: string | null
           fleet_name?: string | null
           id?: string
+          insurer_id?: string | null
           is_fleet?: boolean
+          is_insurance?: boolean
           legacy_dup_ok?: boolean
           name: string
           nif?: string | null
@@ -2440,7 +2444,9 @@ export type Database = {
           fleet_manager?: string | null
           fleet_name?: string | null
           id?: string
+          insurer_id?: string | null
           is_fleet?: boolean
+          is_insurance?: boolean
           legacy_dup_ok?: boolean
           name?: string
           nif?: string | null
@@ -2451,6 +2457,13 @@ export type Database = {
           shop_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "clients_insurer_id_fkey"
+            columns: ["insurer_id"]
+            isOneToOne: false
+            referencedRelation: "insurers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clients_shop_id_fkey"
             columns: ["shop_id"]
@@ -10760,6 +10773,101 @@ export type Database = {
           },
         ]
       }
+      vehicle_lookup_limits: {
+        Row: {
+          blocked: boolean
+          monthly_limit: number | null
+          shop_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          blocked?: boolean
+          monthly_limit?: number | null
+          shop_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          blocked?: boolean
+          monthly_limit?: number | null
+          shop_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_lookup_limits_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_lookups: {
+        Row: {
+          cost: number | null
+          created_at: string
+          data: Json | null
+          duration_ms: number | null
+          error_code: string | null
+          id: string
+          plate_norm: string
+          provider: string
+          shop_id: string
+          source: string
+          status: string
+          user_id: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          data?: Json | null
+          duration_ms?: number | null
+          error_code?: string | null
+          id?: string
+          plate_norm: string
+          provider?: string
+          shop_id: string
+          source?: string
+          status: string
+          user_id?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          data?: Json | null
+          duration_ms?: number | null
+          error_code?: string | null
+          id?: string
+          plate_norm?: string
+          provider?: string
+          shop_id?: string
+          source?: string
+          status?: string
+          user_id?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_lookups_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_lookups_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicle_trust_events: {
         Row: {
           created_at: string
@@ -10829,6 +10937,9 @@ export type Database = {
           notes: string | null
           plate: string
           shop_id: string
+          tech_data: Json | null
+          tech_source: string | null
+          tech_updated_at: string | null
           version: string | null
           vin: string | null
           year: number
@@ -10845,6 +10956,9 @@ export type Database = {
           notes?: string | null
           plate: string
           shop_id: string
+          tech_data?: Json | null
+          tech_source?: string | null
+          tech_updated_at?: string | null
           version?: string | null
           vin?: string | null
           year?: number
@@ -10861,6 +10975,9 @@ export type Database = {
           notes?: string | null
           plate?: string
           shop_id?: string
+          tech_data?: Json | null
+          tech_source?: string | null
+          tech_updated_at?: string | null
           version?: string | null
           vin?: string | null
           year?: number

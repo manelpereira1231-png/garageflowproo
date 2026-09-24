@@ -2188,6 +2188,12 @@ export type Database = {
       claims: {
         Row: {
           amount_approved: number | null
+          amount_client: number | null
+          amount_expert: number | null
+          amount_initial_quote: number | null
+          amount_invoiced: number | null
+          amount_paid_insurer: number | null
+          amount_pending: number | null
           amount_rejected: number | null
           amount_requested: number | null
           approval_date: string | null
@@ -2199,6 +2205,7 @@ export type Database = {
           claim_number: string | null
           claim_type: string | null
           client_id: string | null
+          closed_at: string | null
           coverage: string | null
           created_at: string
           created_by: string | null
@@ -2219,6 +2226,7 @@ export type Database = {
           id: string
           insurer_id: string | null
           insurer_quote_notes: string | null
+          invoice_id: string | null
           liability: string | null
           location: string | null
           next_action: string | null
@@ -2228,6 +2236,7 @@ export type Database = {
           policy_number: string | null
           process_number: string | null
           quote_id: string | null
+          ref: string | null
           report_date: string | null
           report_number: string | null
           shop_id: string
@@ -2238,6 +2247,12 @@ export type Database = {
         }
         Insert: {
           amount_approved?: number | null
+          amount_client?: number | null
+          amount_expert?: number | null
+          amount_initial_quote?: number | null
+          amount_invoiced?: number | null
+          amount_paid_insurer?: number | null
+          amount_pending?: number | null
           amount_rejected?: number | null
           amount_requested?: number | null
           approval_date?: string | null
@@ -2249,6 +2264,7 @@ export type Database = {
           claim_number?: string | null
           claim_type?: string | null
           client_id?: string | null
+          closed_at?: string | null
           coverage?: string | null
           created_at?: string
           created_by?: string | null
@@ -2269,6 +2285,7 @@ export type Database = {
           id?: string
           insurer_id?: string | null
           insurer_quote_notes?: string | null
+          invoice_id?: string | null
           liability?: string | null
           location?: string | null
           next_action?: string | null
@@ -2278,6 +2295,7 @@ export type Database = {
           policy_number?: string | null
           process_number?: string | null
           quote_id?: string | null
+          ref?: string | null
           report_date?: string | null
           report_number?: string | null
           shop_id: string
@@ -2288,6 +2306,12 @@ export type Database = {
         }
         Update: {
           amount_approved?: number | null
+          amount_client?: number | null
+          amount_expert?: number | null
+          amount_initial_quote?: number | null
+          amount_invoiced?: number | null
+          amount_paid_insurer?: number | null
+          amount_pending?: number | null
           amount_rejected?: number | null
           amount_requested?: number | null
           approval_date?: string | null
@@ -2299,6 +2323,7 @@ export type Database = {
           claim_number?: string | null
           claim_type?: string | null
           client_id?: string | null
+          closed_at?: string | null
           coverage?: string | null
           created_at?: string
           created_by?: string | null
@@ -2319,6 +2344,7 @@ export type Database = {
           id?: string
           insurer_id?: string | null
           insurer_quote_notes?: string | null
+          invoice_id?: string | null
           liability?: string | null
           location?: string | null
           next_action?: string | null
@@ -2328,6 +2354,7 @@ export type Database = {
           policy_number?: string | null
           process_number?: string | null
           quote_id?: string | null
+          ref?: string | null
           report_date?: string | null
           report_number?: string | null
           shop_id?: string
@@ -2349,6 +2376,13 @@ export type Database = {
             columns: ["insurer_id"]
             isOneToOne: false
             referencedRelation: "insurers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
           {
@@ -2404,6 +2438,7 @@ export type Database = {
           fleet_manager: string | null
           fleet_name: string | null
           id: string
+          insurance_meta: Json
           insurer_id: string | null
           is_fleet: boolean
           is_insurance: boolean
@@ -2424,6 +2459,7 @@ export type Database = {
           fleet_manager?: string | null
           fleet_name?: string | null
           id?: string
+          insurance_meta?: Json
           insurer_id?: string | null
           is_fleet?: boolean
           is_insurance?: boolean
@@ -2444,6 +2480,7 @@ export type Database = {
           fleet_manager?: string | null
           fleet_name?: string | null
           id?: string
+          insurance_meta?: Json
           insurer_id?: string | null
           is_fleet?: boolean
           is_insurance?: boolean
@@ -5473,9 +5510,46 @@ export type Database = {
           },
         ]
       }
+      insurer_catalog: {
+        Row: {
+          active: boolean
+          code: string | null
+          created_at: string
+          id: string
+          legal_name: string | null
+          name: string
+          notes: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code?: string | null
+          created_at?: string
+          id?: string
+          legal_name?: string | null
+          name: string
+          notes?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string | null
+          created_at?: string
+          id?: string
+          legal_name?: string | null
+          name?: string
+          notes?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       insurers: {
         Row: {
           active: boolean
+          catalog_id: string | null
           claims_contact: string | null
           claims_email: string | null
           claims_phone: string | null
@@ -5491,6 +5565,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          catalog_id?: string | null
           claims_contact?: string | null
           claims_email?: string | null
           claims_phone?: string | null
@@ -5506,6 +5581,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          catalog_id?: string | null
           claims_contact?: string | null
           claims_email?: string | null
           claims_phone?: string | null
@@ -5520,6 +5596,13 @@ export type Database = {
           website?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "insurers_catalog_id_fkey"
+            columns: ["catalog_id"]
+            isOneToOne: false
+            referencedRelation: "insurer_catalog"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "insurers_shop_id_fkey"
             columns: ["shop_id"]
@@ -12439,6 +12522,10 @@ export type Database = {
         Returns: number
       }
       enroll_shop_in_market: { Args: { _shop_id: string }; Returns: Json }
+      ensure_shop_insurer: {
+        Args: { _catalog_id: string; _name: string; _shop_id: string }
+        Returns: string
+      }
       expire_trials_job: { Args: never; Returns: number }
       flag_suspicious_transactions: { Args: never; Returns: Json }
       generate_recommended_actions: {

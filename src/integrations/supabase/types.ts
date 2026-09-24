@@ -9505,6 +9505,146 @@ export type Database = {
           },
         ]
       }
+      shop_commercial_conditions: {
+        Row: {
+          after_amount_minor: number
+          application_timing: string
+          base_amount_minor: number
+          billing_cycle: string
+          cancelled_at: string | null
+          cancelled_by: string | null
+          condition_type: string
+          created_at: string
+          created_by: string
+          currency: string
+          duration_months: number | null
+          effective_amount_minor: number
+          ends_at: string | null
+          id: string
+          internal_note: string | null
+          percent_off: number | null
+          plan_slug: string
+          reason: string
+          request_key: string
+          returns_to_standard: boolean
+          shop_id: string
+          starts_at: string | null
+          status: string
+          stripe_coupon_id: string | null
+          stripe_customer_id: string | null
+          stripe_discount_id: string | null
+          stripe_price_id: string | null
+          stripe_schedule_id: string | null
+          stripe_snapshot: Json
+          stripe_subscription_id: string | null
+          subscription_id: string
+          sync_error: string | null
+          updated_at: string
+          value_minor: number | null
+        }
+        Insert: {
+          after_amount_minor: number
+          application_timing?: string
+          base_amount_minor: number
+          billing_cycle: string
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          condition_type: string
+          created_at?: string
+          created_by: string
+          currency: string
+          duration_months?: number | null
+          effective_amount_minor: number
+          ends_at?: string | null
+          id?: string
+          internal_note?: string | null
+          percent_off?: number | null
+          plan_slug: string
+          reason: string
+          request_key: string
+          returns_to_standard?: boolean
+          shop_id: string
+          starts_at?: string | null
+          status?: string
+          stripe_coupon_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_discount_id?: string | null
+          stripe_price_id?: string | null
+          stripe_schedule_id?: string | null
+          stripe_snapshot?: Json
+          stripe_subscription_id?: string | null
+          subscription_id: string
+          sync_error?: string | null
+          updated_at?: string
+          value_minor?: number | null
+        }
+        Update: {
+          after_amount_minor?: number
+          application_timing?: string
+          base_amount_minor?: number
+          billing_cycle?: string
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          condition_type?: string
+          created_at?: string
+          created_by?: string
+          currency?: string
+          duration_months?: number | null
+          effective_amount_minor?: number
+          ends_at?: string | null
+          id?: string
+          internal_note?: string | null
+          percent_off?: number | null
+          plan_slug?: string
+          reason?: string
+          request_key?: string
+          returns_to_standard?: boolean
+          shop_id?: string
+          starts_at?: string | null
+          status?: string
+          stripe_coupon_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_discount_id?: string | null
+          stripe_price_id?: string | null
+          stripe_schedule_id?: string | null
+          stripe_snapshot?: Json
+          stripe_subscription_id?: string | null
+          subscription_id?: string
+          sync_error?: string | null
+          updated_at?: string
+          value_minor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_commercial_conditions_plan_slug_fkey"
+            columns: ["plan_slug"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "shop_commercial_conditions_plan_slug_fkey"
+            columns: ["plan_slug"]
+            isOneToOne: false
+            referencedRelation: "plans_public"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "shop_commercial_conditions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_commercial_conditions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_overrides: {
         Row: {
           created_at: string
@@ -10140,6 +10280,7 @@ export type Database = {
         Row: {
           billing_cycle: string
           cancel_at_period_end: boolean
+          commercial_condition_id: string | null
           created_at: string
           current_period_end: string | null
           discount_applied_at: string | null
@@ -10147,6 +10288,8 @@ export type Database = {
           discount_expires_at: string | null
           discount_percent: number
           discount_reason: string | null
+          effective_amount_minor: number | null
+          effective_currency: string | null
           id: string
           plan: string
           revenue_type: string
@@ -10160,6 +10303,7 @@ export type Database = {
         Insert: {
           billing_cycle?: string
           cancel_at_period_end?: boolean
+          commercial_condition_id?: string | null
           created_at?: string
           current_period_end?: string | null
           discount_applied_at?: string | null
@@ -10167,6 +10311,8 @@ export type Database = {
           discount_expires_at?: string | null
           discount_percent?: number
           discount_reason?: string | null
+          effective_amount_minor?: number | null
+          effective_currency?: string | null
           id?: string
           plan?: string
           revenue_type?: string
@@ -10180,6 +10326,7 @@ export type Database = {
         Update: {
           billing_cycle?: string
           cancel_at_period_end?: boolean
+          commercial_condition_id?: string | null
           created_at?: string
           current_period_end?: string | null
           discount_applied_at?: string | null
@@ -10187,6 +10334,8 @@ export type Database = {
           discount_expires_at?: string | null
           discount_percent?: number
           discount_reason?: string | null
+          effective_amount_minor?: number | null
+          effective_currency?: string | null
           id?: string
           plan?: string
           revenue_type?: string
@@ -10198,6 +10347,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "subscriptions_commercial_condition_id_fkey"
+            columns: ["commercial_condition_id"]
+            isOneToOne: false
+            referencedRelation: "shop_commercial_conditions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "subscriptions_shop_id_fkey"
             columns: ["shop_id"]

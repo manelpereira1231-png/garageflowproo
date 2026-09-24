@@ -64,6 +64,13 @@
       "when": 1790281230447,
       "tag": "0008_alerts_allow_claim_follow_up",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790281838927,
+      "tag": "0009_vehicle_plate_lookup_and_insurance_clients",
+      "breakpoints": true
     }
   ]
 }

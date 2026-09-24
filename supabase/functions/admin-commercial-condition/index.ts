@@ -22,6 +22,8 @@ const BodySchema = z.object({
   internal_note: z.string().max(1000).optional(),
   request_key: z.string().min(12).max(120).optional(),
   proration_behavior: z.enum(["none", "create_prorations"]).default("none"),
+  target_plan: z.string().min(1).max(60).optional(),
+  target_cycle: z.enum(["monthly", "yearly"]).optional(),
 });
 
 type Body = z.infer<typeof BodySchema>;
@@ -81,23 +83,28 @@ serve(async (req) => {
     if (!shop) return json({ error: "Oficina não encontrada." }, 404);
 
     const country = String(shop.country_code || "PT").toUpperCase();
-    const cycle = subscription.billing_cycle === "yearly" ? "yearly" : "monthly";
-    const { data: priceRow } = await admin.from("plan_country_prices")
-      .select("amount,currency,stripe_price_id")
-      .eq("plan_slug", subscription.plan)
+    const currentCycle = subscription.billing_cycle === "yearly" ? "yearly" : "monthly";
+    const targetPlan = String(body.target_plan || subscription.plan).toLowerCase();
+    const cycle = body.target_cycle || currentCycle;
+    if (["free", "gratis", "gratuito"].includes(targetPlan)) return json({ error: "O plano grátis já não existe. Use o plano START." }, 400);
+    const planChanged = targetPlan !== String(subscription.plan).toLowerCase() || cycle !== currentCycle;
+    const { data: allPrices } = await admin.from("plan_country_prices")
+      .select("plan_slug,cycle,amount,currency,stripe_price_id")
       .eq("country_code", country)
-      .eq("cycle", cycle)
-      .eq("active", true)
-      .maybeSingle();
-    if (!priceRow?.stripe_price_id) return json({ error: "O plano atual não tem preço Stripe configurado para este país e ciclo." }, 409);
+      .eq("active", true);
+    const availablePlans = (allPrices || [])
+      .filter((r: any) => r.stripe_price_id && !["free", "gratis", "gratuito"].includes(String(r.plan_slug).toLowerCase()))
+      .map((r: any) => ({ plan_slug: r.plan_slug, cycle: r.cycle, amount_minor: Math.round(Number(r.amount) * 100), currency: String(r.currency || "EUR").toUpperCase() }));
+    const priceRow = (allPrices || []).find((r: any) => String(r.plan_slug).toLowerCase() === targetPlan && r.cycle === cycle);
+    if (!priceRow?.stripe_price_id) return json({ error: `O plano ${targetPlan.toUpperCase()} (${cycle === "yearly" ? "anual" : "mensal"}) não tem preço Stripe configurado para ${country}.` }, 409);
 
     const stripeSubscription = subscription.stripe_subscription_id
       ? await stripe.subscriptions.retrieve(subscription.stripe_subscription_id, { expand: ["schedule", "discounts"] })
       : null;
     const activeItem = stripeSubscription?.items.data[0];
     const stripeAmount = activeItem?.price.unit_amount;
-    const baseMinor = stripeAmount ?? Math.round(Number(priceRow.amount) * 100);
-    const currency = String(activeItem?.price.currency || priceRow.currency || shop.currency || "EUR").toUpperCase();
+    const baseMinor = (!planChanged && stripeAmount != null) ? stripeAmount : Math.round(Number(priceRow.amount) * 100);
+    const currency = String((!planChanged && activeItem?.price.currency) || priceRow.currency || shop.currency || "EUR").toUpperCase();
 
     const { data: history } = await admin.from("shop_commercial_conditions")
       .select("*").eq("shop_id", body.shop_id).order("created_at", { ascending: false }).limit(50);
@@ -120,7 +127,7 @@ serve(async (req) => {
     };
 
     if (body.action === "status") {
-      return json({ shop, subscription, base_amount_minor: baseMinor, currency, stripe_connected: !!stripeSubscription, current, history: history || [], upcoming: await upcoming() });
+      return json({ shop, subscription, available_plans: availablePlans, base_amount_minor: baseMinor, currency, stripe_connected: !!stripeSubscription, current, history: history || [], upcoming: await upcoming() });
     }
 
     if (body.action === "reconcile") {
@@ -136,7 +143,7 @@ serve(async (req) => {
 
     if (body.action === "preview") {
       const computed = computeCondition(body, baseMinor, stripeSubscription);
-      return json({ ...computed, base_amount_minor: baseMinor, currency, subscription, upcoming: await upcoming(), stripe_connected: !!stripeSubscription });
+      return json({ ...computed, target_plan: targetPlan, target_cycle: cycle, plan_changed: planChanged, base_amount_minor: baseMinor, currency, subscription, upcoming: await upcoming(), stripe_connected: !!stripeSubscription });
     }
 
     if (body.action === "remove") {
@@ -168,7 +175,7 @@ serve(async (req) => {
     const insertPayload = {
       shop_id: body.shop_id,
       subscription_id: subscription.id,
-      plan_slug: subscription.plan,
+      plan_slug: targetPlan,
       billing_cycle: cycle,
       condition_type: body.condition_type,
       status: "review_required",
@@ -203,7 +210,7 @@ serve(async (req) => {
       ...(computed.percent_off != null ? { percent_off: computed.percent_off } : { amount_off: baseMinor - computed.effective_amount_minor, currency: currency.toLowerCase() }),
       duration: "forever",
       name: `GarageFlow · ${shop.name} · ${body.reason}`.slice(0, 40),
-      metadata: { shop_id: body.shop_id, condition_id: conditionId, plan_slug: subscription.plan },
+      metadata: { shop_id: body.shop_id, condition_id: conditionId, plan_slug: targetPlan },
     }, { idempotencyKey: `${body.request_key}:coupon` });
 
     if (!stripeSubscription) {
@@ -222,8 +229,9 @@ serve(async (req) => {
     if (isPermanent && startSeconds <= Math.floor(Date.now() / 1000) + 60) {
       await stripe.subscriptions.update(stripeSubscription.id, {
         discounts: [{ coupon: coupon.id }],
+        ...(planChanged && activeItem ? { items: [{ id: activeItem.id, price: priceRow.stripe_price_id }] } : {}),
         proration_behavior: body.proration_behavior,
-        metadata: { ...stripeSubscription.metadata, commercial_condition_id: conditionId },
+        metadata: { ...stripeSubscription.metadata, commercial_condition_id: conditionId, ...(planChanged ? { plan: targetPlan, billing_cycle: cycle } : {}) },
       }, { idempotencyKey: `${body.request_key}:subscription` });
     } else {
       const existingScheduleId = typeof stripeSubscription.schedule === "string" ? stripeSubscription.schedule : stripeSubscription.schedule?.id;
@@ -265,7 +273,7 @@ serve(async (req) => {
       sync_error: null,
     }).eq("id", conditionId);
     await admin.from("subscriptions").update({ commercial_condition_id: conditionId, effective_amount_minor: computed.effective_amount_minor, effective_currency: currency }).eq("id", subscription.id);
-    await admin.from("audit_logs").insert({ action: "commercial_condition_applied", entity_type: "subscription", entity_id: subscription.id, user_id: auth.user.id, details: { shop_id: body.shop_id, condition_id: conditionId, type: body.condition_type, base_amount_minor: baseMinor, effective_amount_minor: computed.effective_amount_minor, currency, stripe_subscription_id: stripeSubscription.id, stripe_schedule_id: scheduleId, stripe_coupon_id: coupon.id } });
+    await admin.from("audit_logs").insert({ action: "commercial_condition_applied", entity_type: "subscription", entity_id: subscription.id, user_id: auth.user.id, details: { shop_id: body.shop_id, condition_id: conditionId, type: body.condition_type, target_plan: targetPlan, target_cycle: cycle, plan_changed: planChanged, base_amount_minor: baseMinor, effective_amount_minor: computed.effective_amount_minor, currency, stripe_subscription_id: stripeSubscription.id, stripe_schedule_id: scheduleId, stripe_coupon_id: coupon.id } });
 
     return json({ success: true, condition_id: conditionId, status: finalStatus, upcoming: await upcoming() });
   } catch (error) {

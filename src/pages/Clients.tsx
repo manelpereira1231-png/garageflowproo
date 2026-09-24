@@ -1,3 +1,5 @@
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { InsurerPicker, resolveInsurerId, type InsurerSelection } from "@/components/InsurerPicker";
 import { useState, useEffect, useCallback } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ClaimsHistory from "@/components/ClaimsHistory";
@@ -111,14 +113,23 @@ export default function Clients() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<{ client: ClientRow; reasons: string[] }[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
-  const EMPTY_FORM = { name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "", is_insurance: false, insurer_id: "" };
+  const EMPTY_FORM = { name: "", phone: "", email: "", company: "", nif: "", notes: "", is_fleet: false, fleet_name: "", fleet_manager: "", is_insurance: false, insurer_id: "", ins_policy: "", ins_claim: "", ins_date: "", ins_notes: "" };
   const [form, setForm] = useState(EMPTY_FORM);
-  const [insurers, setInsurers] = useState<{ id: string; name: string }[]>([]);
+  const [insSel, setInsSel] = useState<InsurerSelection>(null);
+  const [claimPrompt, setClaimPrompt] = useState<string | null>(null);
+  const [urlParams] = useSearchParams();
+  const navigate = useNavigate();
+  const returnToClaims = urlParams.get("return") === "claims";
+  // Aberto a partir de "Novo sinistro → Criar novo cliente"
   useEffect(() => {
-    if (!activeShopId) return;
-    supabase.from("insurers").select("id, name").eq("shop_id", activeShopId).eq("active", true).order("name")
-      .then(({ data }) => setInsurers(data || []));
-  }, [activeShopId]);
+    if (urlParams.get("new") === "1") {
+      setEditingId(null);
+      setForm({ ...EMPTY_FORM, is_insurance: urlParams.get("insurance") === "1" });
+      setInsSel(null);
+      setOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const resetForm = () => setForm(EMPTY_FORM);
 
@@ -206,14 +217,22 @@ export default function Clients() {
     const shopId = getActiveShopId();
     if (!shopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
 
-    const payload = {
+    const payload: any = {
       shop_id: shopId, name: form.name, phone: form.phone, email: form.email,
       company: form.company || null, nif: form.nif || null, notes: form.notes || null,
 
       is_fleet: !!form.is_fleet, fleet_name: form.is_fleet ? (form.fleet_name || null) : null,
       fleet_manager: form.is_fleet ? (form.fleet_manager || null) : null,
-      is_insurance: !!form.is_insurance, insurer_id: form.is_insurance ? (form.insurer_id || null) : null,
+      is_insurance: !!form.is_insurance, insurer_id: null as string | null,
+      insurance_meta: form.is_insurance ? {
+        policy_number: form.ins_policy || null, claim_number: form.ins_claim || null,
+        claim_date: form.ins_date || null, notes: form.ins_notes || null,
+      } : {},
     };
+    if (form.is_insurance) {
+      try { payload.insurer_id = await resolveInsurerId(shopId, insSel); }
+      catch { toast.error("Não foi possível guardar a seguradora"); setLoading(false); return; }
+    }
 
     const result = editingId
       ? await supabase.from("clients").update(payload).eq("id", editingId).eq("shop_id", activeShopId).select("id").single()
@@ -240,6 +259,11 @@ export default function Clients() {
         });
       }
       toast.success(editingId ? t('clients.updated') : t('clients.created'));
+      const newId = result.data?.id;
+      if (!editingId && form.is_insurance && newId) {
+        if (returnToClaims) { navigate(`/claims?new=1&client=${newId}`); }
+        else setClaimPrompt(newId);
+      }
       setOpen(false);
       setEditingId(null);
       resetForm();
@@ -271,7 +295,8 @@ export default function Clients() {
 
   const openEdit = (c: ClientRow) => {
     setEditingId(c.id);
-    setForm({ name: c.name, phone: c.phone, email: c.email, company: c.company || "", nif: c.nif || "", notes: c.notes || "", is_fleet: !!c.is_fleet, fleet_name: c.fleet_name || "", fleet_manager: c.fleet_manager || "", is_insurance: !!(c as any).is_insurance, insurer_id: (c as any).insurer_id || "" });
+    setForm({ name: c.name, phone: c.phone, email: c.email, company: c.company || "", nif: c.nif || "", notes: c.notes || "", is_fleet: !!c.is_fleet, fleet_name: c.fleet_name || "", fleet_manager: c.fleet_manager || "", is_insurance: !!(c as any).is_insurance, insurer_id: (c as any).insurer_id || "", ins_policy: (c as any).insurance_meta?.policy_number || "", ins_claim: (c as any).insurance_meta?.claim_number || "", ins_date: (c as any).insurance_meta?.claim_date || "", ins_notes: (c as any).insurance_meta?.notes || "" });
+    setInsSel((c as any).insurer_id ? { insurerId: (c as any).insurer_id } : null);
     setOpen(true);
   };
 
@@ -367,16 +392,15 @@ export default function Clients() {
                   Cliente de seguradora (processo de sinistro)
                 </label>
                 {form.is_insurance && (
-                  <div className="space-y-1.5">
-                    <Label>Seguradora</Label>
-                    <Select value={form.insurer_id || "none"} onValueChange={v => setForm({ ...form, insurer_id: v === "none" ? "" : v })}>
-                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">— Sem seguradora definida —</SelectItem>
-                        {insurers.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    {insurers.length === 0 && <p className="text-[11px] text-muted-foreground">Crie seguradoras em Sinistros → Seguradoras.</p>}
+                  <div className="space-y-2">
+                    <InsurerPicker shopId={activeShopId} value={insSel} onChange={setInsSel} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="space-y-1"><Label>Nº da apólice</Label><Input value={form.ins_policy} onChange={e => setForm({ ...form, ins_policy: e.target.value })} placeholder="Opcional" /></div>
+                      <div className="space-y-1"><Label>Nº do sinistro/processo</Label><Input value={form.ins_claim} onChange={e => setForm({ ...form, ins_claim: e.target.value })} placeholder="Opcional" /></div>
+                      <div className="space-y-1"><Label>Data do sinistro</Label><Input type="date" value={form.ins_date} onChange={e => setForm({ ...form, ins_date: e.target.value })} /></div>
+                      <div className="space-y-1"><Label>Observações</Label><Input value={form.ins_notes} onChange={e => setForm({ ...form, ins_notes: e.target.value })} placeholder="Opcional" /></div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">Tudo opcional. A seguradora de cada processo fica guardada no próprio sinistro.</p>
                   </div>
                 )}
               </div>
@@ -581,6 +605,16 @@ export default function Clients() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!claimPrompt} onOpenChange={(o) => { if (!o) setClaimPrompt(null); }}>
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
+          <DialogHeader><DialogTitle>Cliente criado com sucesso</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Cliente de seguradora. Para gerir a reparação associada, pode criar o processo de sinistro.</p>
+          <div className="flex flex-col sm:flex-row gap-2 pt-2">
+            <Button className="flex-1 min-h-[44px]" onClick={() => { const id = claimPrompt; setClaimPrompt(null); navigate(`/claims?new=1&client=${id}`); }}>Criar sinistro agora</Button>
+            <Button variant="outline" className="flex-1 min-h-[44px]" onClick={() => setClaimPrompt(null)}>Fazer mais tarde</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

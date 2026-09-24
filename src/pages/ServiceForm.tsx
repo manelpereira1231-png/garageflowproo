@@ -1,5 +1,5 @@
 import { MAX_LABOR_HOURS, MAX_LINE_QUANTITY, MAX_UNIT_PRICE, MAX_MILEAGE } from "@/lib/sanityLimits";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { insertWithNumber, nextDocNumber, friendlyDocError } from "@/lib/insertWithNumber";
 import TechnicianSelect from "@/components/TechnicianSelect";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, ArrowLeft, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import ProgressiveSetup from "@/components/ProgressiveSetup";
 import { sendLifecycleEmail } from "@/lib/lifecycleEmail";
@@ -28,6 +28,10 @@ interface LineItem {
 export default function ServiceForm() {
   const navigate = useNavigate();
   const { id: editId } = useParams<{ id: string }>();
+  // Pré-preenchimento a partir de um sinistro (?client=&vehicle=&claim=)
+  const [qp] = useSearchParams();
+  const claimParam = qp.get("claim");
+  const pendingVehicleRef = useRef<string | null>(qp.get("vehicle"));
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(!!editId);
@@ -36,7 +40,7 @@ export default function ServiceForm() {
   const [filteredVehicles, setFilteredVehicles] = useState<any[]>([]);
   const [catalog, setCatalog] = useState<any[]>([]);
   const [partsList, setPartsList] = useState<any[]>([]);
-  const [clientId, setClientId] = useState("");
+  const [clientId, setClientId] = useState(() => new URLSearchParams(window.location.search).get("client") || "");
   const [vehicleId, setVehicleId] = useState("");
   const [entryMileage, setEntryMileage] = useState("0");
   const [clientDescription, setClientDescription] = useState("");
@@ -45,7 +49,7 @@ export default function ServiceForm() {
   const [technician, setTechnician] = useState("");
 
   const [notes, setNotes] = useState("");
-  const [processType, setProcessType] = useState("particular");
+  const [processType, setProcessType] = useState(() => new URLSearchParams(window.location.search).get("claim") ? "seguradora" : "particular");
   const [lines, setLines] = useState<LineItem[]>([]);
   const [shopDefaults, setShopDefaults] = useState<{ labor_rate: number; vat_rate: number }>({
     labor_rate: 35,
@@ -117,7 +121,9 @@ export default function ServiceForm() {
   useEffect(() => {
     if (!editId) {
       setFilteredVehicles(vehicles.filter(v => v.client_id === clientId));
-      setVehicleId("");
+      const pv = pendingVehicleRef.current;
+      if (pv && vehicles.some(v => v.id === pv && v.client_id === clientId)) { setVehicleId(pv); pendingVehicleRef.current = null; }
+      else setVehicleId("");
     } else {
       setFilteredVehicles(vehicles.filter(v => v.client_id === clientId));
     }
@@ -204,7 +210,10 @@ export default function ServiceForm() {
             });
           }
         } catch {}
-        navigate("/services");
+        if (claimParam && inserted?.id) {
+          await supabase.from("claims").update({ work_order_id: inserted.id }).eq("id", claimParam);
+          navigate(`/claims/${claimParam}`);
+        } else navigate("/services");
       }
     }
     setLoading(false);

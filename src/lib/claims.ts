@@ -7,50 +7,76 @@
 
 export const CLAIM_STATUSES = [
   "new",
+  "waiting_data",
   "reported",
   "waiting_expert",
   "expert_scheduled",
   "expert_done",
-  "quote_preparing",
-  "quote_sent",
-  "waiting_approval",
+  "waiting_authorization",
   "approved",
   "partially_approved",
-  "changes_requested",
   "rejected",
   "repairing",
+  "waiting_parts",
   "repair_done",
-  "waiting_docs",
+  "waiting_invoice",
+  "invoiced",
+  "waiting_payment",
+  "paid",
   "done",
   "cancelled",
 ] as const;
 export type ClaimStatus = (typeof CLAIM_STATUSES)[number];
 
-export const CLAIM_STATUS_LABELS: Record<ClaimStatus, string> = {
+/** Etiquetas (inclui estados antigos para processos já existentes). */
+export const CLAIM_STATUS_LABELS: Record<string, string> = {
   new: "Novo",
-  reported: "Participação",
+  waiting_data: "A aguardar dados",
+  reported: "Participado",
   waiting_expert: "A aguardar peritagem",
   expert_scheduled: "Peritagem agendada",
   expert_done: "Peritagem realizada",
+  waiting_authorization: "A aguardar decisão/autorização",
+  approved: "Reparação autorizada",
+  partially_approved: "Reparação parcialmente autorizada",
+  rejected: "Reparação não autorizada",
+  repairing: "Em reparação",
+  waiting_parts: "A aguardar peças",
+  repair_done: "Reparação concluída",
+  waiting_invoice: "A aguardar faturação",
+  invoiced: "Faturado",
+  waiting_payment: "A aguardar pagamento",
+  paid: "Pago",
+  done: "Encerrado",
+  cancelled: "Cancelado",
+  // antigos
   quote_preparing: "Orçamento em preparação",
   quote_sent: "Orçamento enviado",
-  waiting_approval: "A aguardar aprovação",
-  approved: "Aprovado",
-  partially_approved: "Aprovado parcialmente",
+  waiting_approval: "A aguardar decisão/autorização",
   changes_requested: "Alterações solicitadas",
-  rejected: "Recusado",
-  repairing: "Em reparação",
-  repair_done: "Reparação concluída",
   waiting_docs: "A aguardar documentação",
-  done: "Concluído",
-  cancelled: "Cancelado",
 };
+
+export const CLAIM_CLOSED = ["done", "cancelled"];
+
+/** Grupos usados nos cartões de resumo. */
+export const CLAIM_GROUPS: { key: string; label: string; statuses: string[] }[] = [
+  { key: "new", label: "Novos", statuses: ["new", "waiting_data", "reported"] },
+  { key: "expert", label: "A aguardar peritagem", statuses: ["waiting_expert", "expert_scheduled", "expert_done"] },
+  { key: "auth", label: "A aguardar autorização", statuses: ["waiting_authorization", "waiting_approval", "quote_sent", "quote_preparing", "changes_requested"] },
+  { key: "approved", label: "Autorizados", statuses: ["approved", "partially_approved"] },
+  { key: "repair", label: "Em reparação", statuses: ["repairing", "waiting_parts"] },
+  { key: "finished", label: "Concluídos", statuses: ["repair_done", "waiting_invoice", "invoiced"] },
+  { key: "payment", label: "A aguardar pagamento", statuses: ["waiting_payment"] },
+  { key: "closed", label: "Encerrados", statuses: ["paid", "done"] },
+];
 
 /** Cor semântica (tokens do design system) por estado. */
 export function claimStatusTone(status: string): string {
   switch (status) {
     case "approved":
     case "repair_done":
+    case "paid":
     case "done":
       return "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
     case "rejected":
@@ -58,11 +84,17 @@ export function claimStatusTone(status: string): string {
       return "bg-destructive/15 text-destructive border-destructive/30";
     case "changes_requested":
     case "waiting_approval":
+    case "waiting_authorization":
     case "waiting_expert":
     case "waiting_docs":
+    case "waiting_data":
+    case "waiting_parts":
+    case "waiting_payment":
+    case "waiting_invoice":
       return "bg-amber-500/15 text-amber-400 border-amber-500/30";
     case "repairing":
     case "partially_approved":
+    case "invoiced":
       return "bg-primary/15 text-primary border-primary/30";
     default:
       return "bg-muted text-muted-foreground border-border";
@@ -94,10 +126,10 @@ export const APPROVAL_STATUSES = [
   "changes_requested",
 ] as const;
 export const APPROVAL_STATUS_LABELS: Record<string, string> = {
-  waiting: "A aguardar",
-  approved: "Aprovado",
-  partial: "Aprovado parcialmente",
-  rejected: "Recusado",
+  waiting: "Ainda não recebida",
+  approved: "Autorizada",
+  partial: "Parcialmente autorizada",
+  rejected: "Recusada",
   changes_requested: "Alterações solicitadas",
 };
 
@@ -120,10 +152,13 @@ export const CONTACT_KIND_LABELS: Record<string, string> = {
   other: "Outro",
 };
 
-export const COMM_KINDS = ["email", "phone", "portal", "expert", "meeting", "note", "other"] as const;
+export const COMM_KINDS = ["email", "email_in", "phone", "whatsapp", "portal", "in_person", "expert", "meeting", "note", "other"] as const;
 export const COMM_KIND_LABELS: Record<string, string> = {
-  email: "Email",
-  phone: "Telefone",
+  email: "Email enviado",
+  email_in: "Email recebido",
+  phone: "Chamada",
+  whatsapp: "WhatsApp",
+  in_person: "Presencial",
   portal: "Portal da seguradora",
   expert: "Perito",
   meeting: "Reunião",

@@ -27,7 +27,7 @@ export default function ClaimsHistory({
     (async () => {
       let q = supabase
         .from("claims")
-        .select("id, claim_number, status, claim_date, insurers(name), vehicles(plate)")
+        .select("id, ref, claim_number, status, claim_date, insurers(name), vehicles(plate)")
         .order("created_at", { ascending: false })
         .limit(50);
       if (vehicleId) q = q.eq("vehicle_id", vehicleId);
@@ -39,6 +39,7 @@ export default function ClaimsHistory({
   }, [clientId, vehicleId]);
 
   if (!rows) return null;
+  if (rows.length === 0 && clientId && !vehicleId) return null;
 
   return (
     <div className="space-y-2">
@@ -55,13 +56,13 @@ export default function ClaimsHistory({
             className="w-full text-left rounded-lg border border-border p-3 hover:border-primary/50 transition-colors"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="font-medium text-sm">{c.claim_number || "Sem nº"}</span>
+              <span className="font-medium text-sm">{c.ref || "Sinistro"}{c.claim_number ? ` · Processo ${c.claim_number}` : ""}</span>
               <Badge variant="outline" className={claimStatusTone(c.status)}>
                 {CLAIM_STATUS_LABELS[c.status as keyof typeof CLAIM_STATUS_LABELS] || c.status}
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground">
-              {[c.insurers?.name, c.vehicles?.plate, c.claim_date].filter(Boolean).join(" · ")}
+              {[c.vehicles?.plate, c.insurers?.name, c.claim_date && new Date(c.claim_date).toLocaleDateString("pt-PT")].filter(Boolean).join(" · ")}
             </p>
           </button>
         ))

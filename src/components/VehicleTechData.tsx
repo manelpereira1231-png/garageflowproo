@@ -14,7 +14,7 @@ export default function VehicleTechData({ vehicle, onUpdated }: { vehicle: any; 
   const [busy, setBusy] = useState(false);
   const [diffs, setDiffs] = useState<Diff[] | null>(null);
   const [pick, setPick] = useState<Record<string, boolean>>({});
-  const [pending, setPending] = useState<{ data: TD; fetched_at: string } | null>(null);
+  const [pending, setPending] = useState<{ data: TD; fetched_at: string; fill: Record<string, any> } | null>(null);
   const tech: TD | null = vehicle?.tech_data || null;
 
   const save = async (data: TD, fetchedAt: string, apply: Diff[], fill: Record<string, any>) => {
@@ -51,11 +51,9 @@ export default function VehicleTechData({ vehicle, onUpdated }: { vehicle: any; 
       });
       const fetchedAt = res.fetched_at || new Date().toISOString();
       if (conflicts.length === 0) { await save(d, fetchedAt, [], fill); return; }
-      setPending({ data: d, fetched_at: fetchedAt });
-      (pending as any);
+      setPending({ data: d, fetched_at: fetchedAt, fill });
       setPick({});
       setDiffs(conflicts);
-      (window as any).__vtdFill = fill;
     } finally { setBusy(false); }
   };
 
@@ -86,7 +84,7 @@ export default function VehicleTechData({ vehicle, onUpdated }: { vehicle: any; 
             </label>
           ))}
           <div className="flex gap-2 pt-1">
-            <Button size="sm" onClick={() => save(pending.data, pending.fetched_at, diffs.filter((d) => pick[d.field]), (window as any).__vtdFill || {})}>Guardar</Button>
+            <Button size="sm" onClick={() => save(pending.data, pending.fetched_at, diffs.filter((d) => pick[d.field]), pending.fill)}>Guardar</Button>
             <Button size="sm" variant="ghost" onClick={() => { setDiffs(null); setPending(null); }}>Cancelar</Button>
           </div>
         </div>

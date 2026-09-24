@@ -30,6 +30,14 @@ import {
   CLAIM_EMAIL_TEMPLATES, renderClaimTemplate,
 } from "@/lib/claims";
 
+function eventText(e: any): string {
+  const to = e.meta?.to;
+  if (e.kind === "status" && to) return `Estado: ${CLAIM_STATUS_LABELS[to] || to}`;
+  if (e.kind === "expert" && to) return `Peritagem: ${EXPERT_STATUS_LABELS[to] || to}`;
+  if (e.kind === "approval" && to) return `Autorização: ${APPROVAL_STATUS_LABELS[to] || to}`;
+  return e.description;
+}
+
 const dt = (v: string | null) => (v ? new Date(v).toLocaleString("pt-PT") : "—");
 
 export default function ClaimDetail() {
@@ -44,6 +52,9 @@ export default function ClaimDetail() {
   const [comms, setComms] = useState<any[]>([]);
   const [docs, setDocs] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
+  const [wos, setWos] = useState<any[]>([]);
+  const [invs, setInvs] = useState<any[]>([]);
+  const [members, setMembers] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -55,7 +66,7 @@ export default function ClaimDetail() {
     if (!id || !activeShopId) return;
     const [c, ins, ct, cm, dc, ev] = await Promise.all([
       supabase.from("claims")
-        .select("*, insurers(*), clients(id, name, email, phone), vehicles(id, make, model, plate, year), work_orders(id, number, status)")
+        .select("*, insurers(*), clients(id, name, email, phone), vehicles(id, make, model, plate, year), work_orders(id, number, status, total)")
         .eq("id", id).maybeSingle(),
       supabase.from("insurers").select("*").eq("shop_id", activeShopId).order("name"),
       supabase.from("claim_contacts").select("*").eq("claim_id", id).order("is_primary", { ascending: false }),
@@ -76,6 +87,20 @@ export default function ClaimDetail() {
         .eq("shop_id", activeShopId).eq("client_id", c.data.client_id)
         .order("created_at", { ascending: false }).limit(50);
       setQuotes(q.data || []);
+      const [w, iv] = await Promise.all([
+        supabase.from("work_orders").select("id, number, status, total, vehicle_id")
+          .eq("shop_id", activeShopId).eq("client_id", c.data.client_id).order("created_at", { ascending: false }).limit(50),
+        supabase.from("invoices").select("id, number, total, status, date, client_name")
+          .eq("shop_id", activeShopId).eq("client_id", c.data.client_id).order("created_at", { ascending: false }).limit(50),
+      ]);
+      setWos(w.data || []);
+      setInvs(iv.data || []);
+    }
+    const { data: mem } = await supabase.rpc("get_shop_member_emails" as any, { _shop_id: activeShopId });
+    if (Array.isArray(mem)) {
+      const m: Record<string, string> = {};
+      for (const r of mem as any[]) if (r.user_id) m[r.user_id] = r.full_name || r.name || r.email || "";
+      setMembers(m);
     }
     setLoading(false);
   }, [id, activeShopId, navigate]);
@@ -83,6 +108,32 @@ export default function ClaimDetail() {
   useEffect(() => { load(); }, [load]);
 
   const set = (patch: Record<string, any>) => setClaim((c: any) => ({ ...c, ...patch }));
+
+  const num = (v: any) => (v === "" || v == null ? null : Number(v));
+
+  /** Associa rapidamente uma OS/orçamento/fatura e guarda. */
+  const link = async (patch: Record<string, any>) => {
+    set(patch);
+    const { error } = await supabase.from("claims").update(patch).eq("id", claim.id);
+    if (error) { toast.error("Não foi possível guardar."); return; }
+    if (patch.work_order_id) await supabase.from("work_orders").update({ process_type: "seguradora" }).eq("id", patch.work_order_id);
+    toast.success("Associado ao sinistro");
+    load();
+  };
+
+  const createWorkOrder = async () => {
+    if (!claim.vehicle_id || !activeShopId) return;
+    const { data: auth } = await supabase.auth.getSession();
+    const { data, error } = await supabase.from("work_orders").insert({
+      shop_id: activeShopId, client_id: claim.client_id, vehicle_id: claim.vehicle_id,
+      status: "open", process_type: "seguradora",
+      description: `Reparação sinistro ${claim.ref}${claim.claim_number ? " / " + claim.claim_number : ""}`,
+      created_by: auth.session?.user.id ?? null,
+    } as any).select("id").single();
+    if (error || !data) { toast.error("Não foi possível criar a OS. Crie-a em Serviços e associe aqui."); return; }
+    await link({ work_order_id: data.id });
+    navigate(`/services?edit=${data.id}`);
+  };
 
   const persist = async (patch?: Record<string, any>) => {
     if (!claim) return;
@@ -110,6 +161,10 @@ export default function ClaimDetail() {
       approval_notes: claim.approval_notes,
       next_action: claim.next_action, next_action_date: claim.next_action_date || null,
       next_action_owner: claim.next_action_owner,
+      work_order_id: claim.work_order_id || null, invoice_id: claim.invoice_id || null,
+      amount_initial_quote: num(claim.amount_initial_quote), amount_expert: num(claim.amount_expert),
+      amount_invoiced: num(claim.amount_invoiced), amount_paid_insurer: num(claim.amount_paid_insurer),
+      amount_client: num(claim.amount_client), amount_pending: num(claim.amount_pending),
     };
     const { error } = await supabase.from("claims").update(payload).eq("id", claim.id);
     setSaving(false);
@@ -183,8 +238,8 @@ export default function ClaimDetail() {
   const saveComm = async (markSent = false) => {
     const payload: any = {
       shop_id: activeShopId, claim_id: claim.id, kind: commKind,
-      direction: commForm.direction || "out",
-      status: commKind === "email" ? (markSent ? "sent" : "prepared") : "logged",
+      direction: commKind === "email_in" ? "in" : (commForm.direction || "out"),
+      status: commKind === "email" ? (markSent ? "sent" : "prepared") : commKind === "email_in" ? "received" : "logged",
       occurred_at: commForm.occurred_at ? new Date(commForm.occurred_at).toISOString() : new Date().toISOString(),
       contact_id: commForm.contact_id || null,
       contact_label: commForm.contact_label || null,
@@ -271,7 +326,7 @@ export default function ClaimDetail() {
         <div className="flex-1">
           <h1 className="page-title flex items-center gap-2">
             <ShieldAlert className="w-6 h-6 text-primary" />
-            Sinistro {claim.claim_number || "(sem nº)"}
+            {claim.ref || "Sinistro"}{claim.claim_number ? <span className="text-base text-muted-foreground font-normal">· Processo {claim.claim_number}</span> : null}
           </h1>
           <p className="text-sm text-muted-foreground">
             {claim.clients?.name} · {claim.vehicles ? `${claim.vehicles.make} ${claim.vehicles.model} — ${claim.vehicles.plate}` : "—"}
@@ -313,16 +368,122 @@ export default function ClaimDetail() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="data">
+      <Tabs defaultValue="summary">
         <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="summary">Resumo</TabsTrigger>
           <TabsTrigger value="data">Sinistro</TabsTrigger>
           <TabsTrigger value="contacts">Contactos</TabsTrigger>
           <TabsTrigger value="expert">Peritagem</TabsTrigger>
           <TabsTrigger value="quote">Orçamento</TabsTrigger>
+          <TabsTrigger value="repair">Reparação</TabsTrigger>
+          <TabsTrigger value="values">Valores</TabsTrigger>
           <TabsTrigger value="comms">Comunicações</TabsTrigger>
           <TabsTrigger value="docs">Documentos</TabsTrigger>
           <TabsTrigger value="timeline">Histórico</TabsTrigger>
         </TabsList>
+
+        {/* Resumo */}
+        <TabsContent value="summary" className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <Card><CardContent className="p-4 text-sm space-y-1">
+              <p className="text-xs text-muted-foreground">Cliente</p>
+              <button className="font-semibold hover:underline text-left" onClick={() => navigate(`/clients?search=${encodeURIComponent(claim.clients?.name || "")}`)}>{claim.clients?.name || "—"}</button>
+              <p className="text-muted-foreground">{[claim.clients?.phone, claim.clients?.email].filter(Boolean).join(" · ") || "Sem contacto"}</p>
+            </CardContent></Card>
+            <Card><CardContent className="p-4 text-sm space-y-1">
+              <p className="text-xs text-muted-foreground">Viatura</p>
+              <button className="font-semibold font-mono hover:underline" onClick={() => navigate(`/vehicles/${claim.vehicle_id}/passport`)}>{claim.vehicles?.plate || "—"}</button>
+              <p className="text-muted-foreground">{[claim.vehicles?.make, claim.vehicles?.model, claim.vehicles?.year].filter(Boolean).join(" ")}</p>
+            </CardContent></Card>
+            <Card><CardContent className="p-4 text-sm space-y-1">
+              <p className="text-xs text-muted-foreground">Seguradora</p>
+              <p className="font-semibold">{insurer?.name || "Ainda não definida"}</p>
+              <p className="text-muted-foreground">Processo: {claim.claim_number || "—"} · Apólice: {claim.policy_number || "—"}</p>
+            </CardContent></Card>
+            <Card><CardContent className="p-4 text-sm space-y-1">
+              <p className="text-xs text-muted-foreground">Autorização</p>
+              <p className="font-semibold">{APPROVAL_STATUS_LABELS[claim.approval_status || "waiting"]}</p>
+              <p className="text-muted-foreground">Autorizado: {claim.amount_approved != null ? formatMoney(Number(claim.amount_approved)) : "—"}</p>
+            </CardContent></Card>
+          </div>
+          <Card><CardContent className="p-4 grid gap-2 sm:grid-cols-3 text-sm">
+            <div><p className="text-xs text-muted-foreground">Orçamento</p><p className="font-medium">{quotes.find((q) => q.id === claim.quote_id)?.number || "Não associado"}</p></div>
+            <div><p className="text-xs text-muted-foreground">Ordem de serviço</p><p className="font-medium">{claim.work_orders?.number || "Não associada"}</p></div>
+            <div><p className="text-xs text-muted-foreground">Fatura</p><p className="font-medium">{invs.find((i) => i.id === claim.invoice_id)?.number || "Não associada"}</p></div>
+          </CardContent></Card>
+          <p className="text-xs text-muted-foreground">Sem ligação direta à seguradora: o GarageFlow regista o que a oficina recebe e envia por email, telefone ou portal.</p>
+        </TabsContent>
+
+        {/* Reparação */}
+        <TabsContent value="repair" className="space-y-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Ordem de serviço</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Select value={claim.work_order_id || ""} onValueChange={(v) => link({ work_order_id: v })}>
+                  <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Associar OS existente" /></SelectTrigger>
+                  <SelectContent>{wos.map((w) => <SelectItem key={w.id} value={w.id}>{w.number} — {w.status}</SelectItem>)}</SelectContent>
+                </Select>
+                {!claim.work_order_id && <Button className="min-h-[44px]" onClick={createWorkOrder}><Plus className="w-4 h-4 mr-2" />Criar OS</Button>}
+                {claim.work_order_id && <Button variant="outline" className="min-h-[44px]" onClick={() => navigate(`/services?edit=${claim.work_order_id}`)}>Abrir OS</Button>}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[["repairing", "Em reparação"], ["waiting_parts", "A aguardar peças"], ["repair_done", "Reparação concluída"]].map(([k, l]) => (
+                  <Button key={k} size="sm" variant={claim.status === k ? "default" : "outline"} onClick={() => { set({ status: k }); persist({ status: k }); }}>{l}</Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Valores + faturação */}
+        <TabsContent value="values" className="space-y-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Valores</CardTitle></CardHeader>
+            <CardContent className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+              {([
+                ["amount_initial_quote", "Orçamento inicial"], ["amount_expert", "Valor peritado"],
+                ["amount_approved", "Valor autorizado"], ["deductible", "Franquia"],
+                ["amount_invoiced", "Valor faturado"], ["amount_paid_insurer", "Pago pela seguradora"],
+                ["amount_client", "A cargo do cliente"], ["amount_pending", "Pendente"],
+              ] as const).map(([k, l]) => (
+                <div key={k}><Label>{l} (€)</Label><Input type="number" step="0.01" inputMode="decimal" value={claim[k] ?? ""} onChange={(e) => set({ [k]: e.target.value })} /></div>
+              ))}
+              <p className="sm:col-span-2 text-xs text-muted-foreground">Os valores são registados pela oficina; o GarageFlow não decide quem paga cada parte.</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle className="text-base">Faturação e pagamento</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Select value={claim.invoice_id || ""} onValueChange={(v) => {
+                  const inv = invs.find((i) => i.id === v);
+                  link({ invoice_id: v, ...(inv && claim.amount_invoiced == null ? { amount_invoiced: inv.total } : {}) });
+                }}>
+                  <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Associar fatura existente" /></SelectTrigger>
+                  <SelectContent>{invs.map((i) => <SelectItem key={i.id} value={i.id}>{i.number} — {formatMoney(Number(i.total))}</SelectItem>)}</SelectContent>
+                </Select>
+                <Button variant="outline" className="min-h-[44px]" onClick={() => navigate("/invoices")}>Ir para Faturação</Button>
+              </div>
+              {(() => { const inv = invs.find((i) => i.id === claim.invoice_id); return inv ? (
+                <div className="rounded-lg border border-border p-3 text-sm grid grid-cols-2 gap-1">
+                  <span className="text-muted-foreground">Número</span><span>{inv.number}</span>
+                  <span className="text-muted-foreground">Valor</span><span>{formatMoney(Number(inv.total))}</span>
+                  <span className="text-muted-foreground">Entidade faturada</span><span>{inv.client_name || claim.clients?.name}</span>
+                  <span className="text-muted-foreground">Data</span><span>{inv.date ? new Date(inv.date).toLocaleDateString("pt-PT") : "—"}</span>
+                  <span className="text-muted-foreground">Estado</span><span>{inv.status}</span>
+                </div>) : null; })()}
+              <div className="flex flex-wrap gap-2">
+                {[["waiting_invoice", "A aguardar faturação"], ["invoiced", "Faturado"], ["waiting_payment", "A aguardar pagamento"], ["paid", "Pago"], ["done", "Encerrar"]].map(([k, l]) => (
+                  <Button key={k} size="sm" variant={claim.status === k ? "default" : "outline"} onClick={() => { set({ status: k }); persist({ status: k }); }}>{l}</Button>
+                ))}
+                {["done", "cancelled"].includes(claim.status) && (
+                  <Button size="sm" variant="outline" onClick={() => { set({ status: "repairing" }); persist({ status: "repairing" }); }}>Reabrir</Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Dados */}
         <TabsContent value="data" className="space-y-4">
@@ -454,14 +615,14 @@ export default function ClaimDetail() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" onClick={() => navigate("/quotes/new")}>Criar orçamento</Button>
+                  <Button variant="outline" onClick={() => navigate(`/quotes/new?client=${claim.client_id}&vehicle=${claim.vehicle_id}`)}>Criar orçamento</Button>
                   {claim.quote_id && (
                     <Button variant="outline" onClick={() => navigate(`/quotes/edit/${claim.quote_id}`)}>Abrir</Button>
                   )}
                 </div>
               </div>
               <div><Label>Valor solicitado</Label><Input type="number" step="0.01" value={claim.amount_requested ?? ""} onChange={(e) => set({ amount_requested: e.target.value })} /></div>
-              <div><Label>Valor aprovado</Label><Input type="number" step="0.01" value={claim.amount_approved ?? ""} onChange={(e) => set({ amount_approved: e.target.value })} /></div>
+              <div><Label>Valor autorizado</Label><Input type="number" step="0.01" value={claim.amount_approved ?? ""} onChange={(e) => set({ amount_approved: e.target.value })} /></div>
               <div><Label>Valor não aprovado</Label><Input type="number" step="0.01" value={claim.amount_rejected ?? ""} onChange={(e) => set({ amount_rejected: e.target.value })} /></div>
               <div><Label>Franquia</Label><Input type="number" step="0.01" value={claim.deductible ?? ""} onChange={(e) => set({ deductible: e.target.value })} /></div>
               <div className="md:col-span-2"><Label>Observações da seguradora</Label><Textarea rows={2} value={claim.insurer_quote_notes || ""} onChange={(e) => set({ insurer_quote_notes: e.target.value })} /></div>
@@ -469,16 +630,16 @@ export default function ClaimDetail() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-base">Aprovação da seguradora</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Autorização da reparação</CardTitle></CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2">
               <div>
-                <Label>Estado da aprovação</Label>
+                <Label>Estado</Label>
                 <Select value={claim.approval_status || "waiting"} onValueChange={(v) => set({ approval_status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{APPROVAL_STATUSES.map((s) => <SelectItem key={s} value={s}>{APPROVAL_STATUS_LABELS[s]}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>Data de aprovação</Label><Input type="date" value={claim.approval_date || ""} onChange={(e) => set({ approval_date: e.target.value })} /></div>
+              <div><Label>Data</Label><Input type="date" value={claim.approval_date || ""} onChange={(e) => set({ approval_date: e.target.value })} /></div>
               <div><Label>Quem autorizou</Label><Input value={claim.approved_by || ""} onChange={(e) => set({ approved_by: e.target.value })} /></div>
               <div><Label>Referência / autorização</Label><Input value={claim.approval_reference || ""} onChange={(e) => set({ approval_reference: e.target.value })} /></div>
               <div className="md:col-span-2"><Label>Observações</Label><Textarea rows={2} value={claim.approval_notes || ""} onChange={(e) => set({ approval_notes: e.target.value })} /></div>
@@ -495,6 +656,9 @@ export default function ClaimDetail() {
             <Button variant="outline" className="min-h-[44px]" onClick={() => openComm("email")}><Mail className="w-4 h-4 mr-2" />Enviar email</Button>
             <Button variant="outline" className="min-h-[44px]" onClick={() => openComm("phone")}><Phone className="w-4 h-4 mr-2" />Registar chamada</Button>
             <Button variant="outline" className="min-h-[44px]" onClick={() => openComm("portal")}><Globe className="w-4 h-4 mr-2" />Portal externo</Button>
+            <Button variant="outline" className="min-h-[44px]" onClick={() => openComm("email_in")}><Mail className="w-4 h-4 mr-2" />Email recebido</Button>
+            <Button variant="outline" className="min-h-[44px]" onClick={() => openComm("whatsapp")}><Phone className="w-4 h-4 mr-2" />WhatsApp</Button>
+            <Button variant="outline" className="min-h-[44px]" onClick={() => openComm("in_person")}><FileText className="w-4 h-4 mr-2" />Presencial</Button>
             <Button variant="outline" className="min-h-[44px]" onClick={() => openComm("note")}><FileText className="w-4 h-4 mr-2" />Nota interna</Button>
           </div>
           {comms.length === 0 ? (
@@ -573,8 +737,8 @@ export default function ClaimDetail() {
             <div key={e.id} className="flex gap-3 items-start border-l-2 border-border pl-4 py-2">
               <Clock className="w-4 h-4 text-muted-foreground mt-0.5" />
               <div className="text-sm">
-                <p>{e.description}</p>
-                <p className="text-xs text-muted-foreground">{dt(e.created_at)}</p>
+                <p>{eventText(e)}</p>
+                <p className="text-xs text-muted-foreground">{dt(e.created_at)}{e.created_by && members[e.created_by] ? ` · ${members[e.created_by]}` : ""}</p>
               </div>
             </div>
           ))}

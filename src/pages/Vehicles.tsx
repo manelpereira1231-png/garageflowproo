@@ -66,10 +66,13 @@ export default function Vehicles() {
     plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
   });
 
-  const resetForm = () => setForm({
-    client_id: "", make: "", model: "", variant: "", year: new Date().getFullYear().toString(),
-    plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
-  });
+  const resetForm = () => {
+    setForm({
+      client_id: "", make: "", model: "", variant: "", year: new Date().getFullYear().toString(),
+      plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
+    });
+    setLookup(null); setExisting(null);
+  };
 
   const activeShopId = useActiveShopId();
   const plateRegion = detectRegionFromCurrency(shopMeta?.currency, shopMeta?.country);

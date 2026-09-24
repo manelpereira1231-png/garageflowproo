@@ -7,3 +7,4 @@
 - [ ] Finish reactive removal of Demo-only visuals after real signup
 - [ ] Correct Demo client cards on mobile/iPad and remove the call action
 - [ ] Validate Demo-to-real transition, refresh, mobile, and iPad layouts
+- [ ] Implementar condições comerciais por oficina sincronizadas realmente com Stripe

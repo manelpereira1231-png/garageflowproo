@@ -1,3 +1,4 @@
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { InsurerPicker, resolveInsurerId, type InsurerSelection } from "@/components/InsurerPicker";
 import { useState, useEffect, useCallback } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -116,7 +117,8 @@ export default function Clients() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [insSel, setInsSel] = useState<InsurerSelection>(null);
   const [claimPrompt, setClaimPrompt] = useState<string | null>(null);
-  const [urlParams, setUrlParams] = useSearchParams();
+  const [urlParams] = useSearchParams();
+  const navigate = useNavigate();
   const returnToClaims = urlParams.get("return") === "claims";
   // Aberto a partir de "Novo sinistro → Criar novo cliente"
   useEffect(() => {
@@ -215,7 +217,7 @@ export default function Clients() {
     const shopId = getActiveShopId();
     if (!shopId) { toast.error(t('common.configureShop')); setLoading(false); return; }
 
-    const payload = {
+    const payload: any = {
       shop_id: shopId, name: form.name, phone: form.phone, email: form.email,
       company: form.company || null, nif: form.nif || null, notes: form.notes || null,
 

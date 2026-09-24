@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { logAudit } from "@/lib/auditLog";
 import { Sparkles } from "lucide-react";
 import { ShopOverridesPanel } from "@/components/admin/ShopOverridesPanel";
+import { CommercialConditionsPanel } from "@/components/admin/CommercialConditionsPanel";
 
 interface ShopDetail {
   id: string; name: string; email: string; phone: string; country: string;
@@ -575,11 +576,18 @@ export default function AdminShopDetail() {
           <TabsTrigger value="overrides" className="gap-1">
             <Sparkles className="w-3 h-3" /> Exceções
           </TabsTrigger>
+          <TabsTrigger value="commercial" className="gap-1">
+            <CreditCard className="w-3 h-3" /> Condições comerciais
+          </TabsTrigger>
           <TabsTrigger value="logs">Auditoria</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overrides">
           <ShopOverridesPanel shopId={id!} shopName={shop?.name} />
+        </TabsContent>
+
+        <TabsContent value="commercial">
+          <CommercialConditionsPanel shopId={id!} />
         </TabsContent>
 
         <TabsContent value="overview">

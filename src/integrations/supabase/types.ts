@@ -12772,6 +12772,23 @@ export type Database = {
         Args: { _report_id: string }
         Returns: string
       }
+      get_my_commercial_offer: {
+        Args: { _shop_id: string }
+        Returns: {
+          after_amount_minor: number
+          base_amount_minor: number
+          billing_cycle: string
+          condition_type: string
+          currency: string
+          duration_months: number
+          effective_amount_minor: number
+          ends_at: string
+          percent_off: number
+          plan_slug: string
+          status: string
+          value_minor: number
+        }[]
+      }
       get_my_supplier_id: { Args: never; Returns: string }
       get_public_inspection: { Args: { _token: string }; Returns: Json }
       get_public_invoice: { Args: { _token: string }; Returns: Json }

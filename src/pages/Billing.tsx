@@ -116,6 +116,11 @@ export default function Billing() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [searchParams] = useSearchParams();
+  const [offer, setOffer] = useState<any>(null);
+  useEffect(() => {
+    if (!shopId) return;
+    (supabase.rpc as any)("get_my_commercial_offer", { _shop_id: shopId }).then(({ data }: any) => { const o = Array.isArray(data) ? data[0] ?? null : null; setOffer(o); if (o?.billing_cycle === "yearly" || o?.billing_cycle === "monthly") setBillingCycle(o.billing_cycle); });
+  }, [shopId]);
   const navigate = useNavigate();
 
   // Handle return from Stripe
@@ -664,6 +669,19 @@ export default function Billing() {
                 {/* Preço */}
                 {row.show_price !== false && (
                   <div className="mt-4 pb-4 border-b border-border/70 text-center">
+                    {(() => {
+                      const norm = (v: string) => { const x = String(v || "").toLowerCase(); return x === "free" ? "start" : x; };
+                      if (!offer || norm(offer.plan_slug) !== norm(key) || offer.billing_cycle !== billingCycle || offer.effective_amount_minor == null) return null;
+                      const cur = String(offer.currency || "EUR").toUpperCase();
+                      const fmt = (m: number) => new Intl.NumberFormat("pt-PT", { style: "currency", currency: cur }).format(m / 100);
+                      const per = billingCycle === "monthly" ? "mês" : "ano";
+                      return <div className="mb-3 rounded-lg border border-primary/40 bg-primary/10 p-3 text-sm">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-primary">Condição especial para a sua oficina</p>
+                        <p className="mt-1"><span className="text-2xl font-bold text-primary">{fmt(offer.effective_amount_minor)}</span>/{per}{offer.base_amount_minor > offer.effective_amount_minor && <span className="ml-2 text-muted-foreground line-through">{fmt(offer.base_amount_minor)}</span>}</p>
+                        {offer.duration_months && !String(offer.condition_type).includes("permanent") && <p className="text-xs text-muted-foreground">Durante {offer.duration_months} {offer.duration_months === 1 ? "mês" : "meses"}, depois {fmt(offer.after_amount_minor ?? offer.base_amount_minor)}/{per}.</p>}
+                        {offer.status === "pending" && <p className="text-xs text-muted-foreground">Aplicada automaticamente ao subscrever este plano.</p>}
+                      </div>;
+                    })()}
                     <PriceWithPromo
                       basePrice={price}
                       country={getCountryCode()}

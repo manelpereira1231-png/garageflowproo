@@ -197,6 +197,16 @@ serve(async (req) => {
       request_key: body.request_key,
       created_by: auth.user.id,
     };
+    // Uma nova condição substitui a anterior. Com subscrição Stripe que tenha
+    // calendário ativo, é obrigatório remover primeiro (evita perder fases).
+    if (current) {
+      const hasSchedule = stripeSubscription && (typeof stripeSubscription.schedule === "string" ? stripeSubscription.schedule : stripeSubscription.schedule?.id);
+      if (hasSchedule) return json({ error: "Já existe uma condição agendada na Stripe. Remova-a primeiro." }, 409);
+      if (stripeSubscription && current.stripe_coupon_id) {
+        await stripe.subscriptions.update(stripeSubscription.id, { discounts: [] as any, proration_behavior: "none" });
+      }
+      await admin.from("shop_commercial_conditions").update({ status: "cancelled", cancelled_by: auth.user.id, cancelled_at: new Date().toISOString() }).eq("id", current.id);
+    }
     const { data: inserted, error: insertError } = await admin.from("shop_commercial_conditions").insert(insertPayload).select("id").single();
     if (insertError) {
       if (insertError.code === "23505") {

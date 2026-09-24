@@ -28,6 +28,9 @@ export interface SubscriptionRow {
   updated_at: string;
   created_at: string;
   discount_percent?: number | null;
+  effective_amount_minor?: number | null;
+  effective_currency?: string | null;
+  billing_cycle?: string | null;
   stripe_subscription_id?: string | null;
   revenue_type?: string | null;
 }
@@ -128,6 +131,10 @@ export function hasActivePlanAccess(s: SubscriptionRow): boolean {
 }
 
 export function subscriptionMrr(s: SubscriptionRow, priceMap: Record<string, number> = PLAN_PRICE_EUR): number {
+  if (s.effective_amount_minor != null && String(s.effective_currency || 'EUR').toUpperCase() === 'EUR') {
+    const effective = Number(s.effective_amount_minor) / 100;
+    return s.billing_cycle === 'yearly' ? effective / 12 : effective;
+  }
   const base = priceMap[String(s.plan || '').toLowerCase()] ?? 0;
   const disc = s.discount_percent || 0;
   return base * (1 - disc / 100);

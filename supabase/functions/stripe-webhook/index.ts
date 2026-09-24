@@ -138,6 +138,34 @@ async function findSubscription(customerId: string) {
   return sub;
 }
 
+async function syncCommercialCondition(subscription: Stripe.Subscription, sub: { id: string; shop_id: string }) {
+  const conditionId = String(subscription.metadata?.commercial_condition_id || "").trim();
+  const item = subscription.items?.data[0];
+  if (!conditionId) {
+    await supabaseAdmin.from("subscriptions").update({
+      commercial_condition_id: null,
+      effective_amount_minor: item?.price?.unit_amount ?? null,
+      effective_currency: item?.price?.currency?.toUpperCase() ?? null,
+    }).eq("id", sub.id);
+    return;
+  }
+
+  const { data: condition } = await supabaseAdmin.from("shop_commercial_conditions")
+    .select("id,status,effective_amount_minor,currency,ends_at,plan_slug,billing_cycle")
+    .eq("id", conditionId).eq("shop_id", sub.shop_id).maybeSingle();
+  if (!condition) return;
+  const plan = await resolvePlan(subscription);
+  const cycle = resolveBillingCycle(subscription);
+  if (condition.plan_slug !== plan || condition.billing_cycle !== cycle) {
+    await supabaseAdmin.from("shop_commercial_conditions").update({ status: "review_required", sync_error: "A subscrição mudou de plano ou ciclo; a condição requer revisão." }).eq("id", condition.id);
+    await supabaseAdmin.from("subscriptions").update({ commercial_condition_id: null, effective_amount_minor: item?.price?.unit_amount ?? null, effective_currency: item?.price?.currency?.toUpperCase() ?? null }).eq("id", sub.id);
+    return;
+  }
+  const expired = condition.ends_at && new Date(condition.ends_at).getTime() <= Date.now();
+  await supabaseAdmin.from("shop_commercial_conditions").update({ status: expired ? "expired" : "active", sync_error: null }).eq("id", condition.id);
+  await supabaseAdmin.from("subscriptions").update({ commercial_condition_id: expired ? null : condition.id, effective_amount_minor: expired ? item?.price?.unit_amount ?? null : condition.effective_amount_minor, effective_currency: condition.currency }).eq("id", sub.id);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -255,6 +283,7 @@ serve(async (req) => {
             .from("subscriptions")
             .update(update)
             .eq("id", sub.id);
+
           log("Invoice paid — subscription activated", { customerId, subId: sub.id, plan: update.plan });
         } else {
           log("No subscription found for invoice.paid", { customerId });
@@ -350,6 +379,8 @@ serve(async (req) => {
             })
             .eq("id", sub.id);
 
+          await syncCommercialCondition(subscription, sub);
+
           log("Subscription updated", { customerId, plan, status, billingCycle });
         }
         break;
@@ -382,9 +413,18 @@ serve(async (req) => {
               revenue_type: "free",
               current_period_end: null,
               trial_end: null,
+              commercial_condition_id: null,
+              effective_amount_minor: null,
+              effective_currency: null,
               updated_at: new Date().toISOString(),
             })
             .eq("id", sub.id);
+
+          await supabaseAdmin.from("shop_commercial_conditions").update({
+            status: "cancelled",
+            cancelled_at: new Date().toISOString(),
+            sync_error: null,
+          }).eq("shop_id", sub.shop_id).in("status", ["pending", "active", "scheduled"]);
 
           log("Subscription deleted — status set to canceled (no auto plan)", { customerId });
         }
@@ -647,6 +687,8 @@ serve(async (req) => {
               updated_at: new Date().toISOString(),
             })
             .eq("id", sub.id);
+
+          await syncCommercialCondition(stripeSub, sub);
 
           // Checkout creates a new subscription. Once its first payment is
           // confirmed, end the old Start trial immediately to avoid two live

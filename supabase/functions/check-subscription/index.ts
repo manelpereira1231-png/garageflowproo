@@ -111,7 +111,7 @@ serve(async (req) => {
     // If no stripe_subscription_id exists, the plan was set manually by admin — DO NOT overwrite.
     const { data: existingSub } = await supabaseClient
       .from("subscriptions")
-      .select("stripe_subscription_id, plan, status, revenue_type, current_period_end")
+      .select("stripe_subscription_id, plan, status, revenue_type, current_period_end, commercial_condition_id, effective_amount_minor, effective_currency")
       .eq("shop_id", shop.id)
       .maybeSingle();
 
@@ -253,6 +253,18 @@ serve(async (req) => {
       : null;
     const trialEnd = activeSub.trial_end ? new Date(activeSub.trial_end * 1000).toISOString() : null;
     const status = activeSub.status === "trialing" ? "trialing" : "active";
+    const commercialConditionId = String(activeSub.metadata?.commercial_condition_id || "").trim() || null;
+    let effectiveAmountMinor: number | null = activeItem?.price?.unit_amount ?? null;
+    if (commercialConditionId) {
+      const { data: condition } = await supabaseClient.from("shop_commercial_conditions")
+        .select("id,effective_amount_minor,currency,status")
+        .eq("id", commercialConditionId)
+        .eq("shop_id", shop.id)
+        .maybeSingle();
+      if (condition && ["active", "scheduled"].includes(condition.status)) {
+        effectiveAmountMinor = condition.effective_amount_minor;
+      }
+    }
 
     await supabaseClient.from("subscriptions").update({
       plan,
@@ -264,6 +276,9 @@ serve(async (req) => {
       cancel_at_period_end: activeSub.cancel_at_period_end === true,
       trial_end: trialEnd,
       current_period_end: subscriptionEnd,
+      commercial_condition_id: commercialConditionId ?? existingSub?.commercial_condition_id ?? null,
+      effective_amount_minor: effectiveAmountMinor,
+      effective_currency: String(activeItem?.price?.currency || "").toUpperCase() || existingSub?.effective_currency || null,
       updated_at: new Date().toISOString(),
     }).eq("shop_id", shop.id);
 

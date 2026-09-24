@@ -207,15 +207,15 @@ serve(async (req) => {
     }, { idempotencyKey: `${body.request_key}:coupon` });
 
     if (!stripeSubscription) {
+      if (!["fixed_permanent", "percent_permanent"].includes(body.condition_type)) {
+        await stripe.coupons.del(coupon.id).catch(() => undefined);
+        throw new Error("Condições temporárias ou futuras só podem ser configuradas depois de existir uma subscrição Stripe ativa.");
+      }
       await admin.from("shop_commercial_conditions").update({ status: "scheduled", stripe_coupon_id: coupon.id, sync_error: null }).eq("id", conditionId);
       await admin.from("subscriptions").update({ commercial_condition_id: conditionId, effective_amount_minor: computed.effective_amount_minor, effective_currency: currency }).eq("id", subscription.id);
       return json({ success: true, prepared: true, condition_id: conditionId });
     }
     if (stripeSubscription.cancel_at_period_end || ["canceled", "unpaid", "incomplete_expired"].includes(stripeSubscription.status)) throw new Error("A subscrição está cancelada ou indisponível para alterações.");
-
-    if (current && current.id !== conditionId) {
-      await admin.from("shop_commercial_conditions").update({ status: "cancelled", cancelled_by: auth.user.id, cancelled_at: new Date().toISOString() }).eq("id", current.id);
-    }
 
     let scheduleId: string | null = null;
     const isPermanent = ["fixed_permanent", "percent_permanent"].includes(body.condition_type);
@@ -254,6 +254,9 @@ serve(async (req) => {
     }
 
     const finalStatus = startSeconds > Math.floor(Date.now() / 1000) + 60 ? "scheduled" : "active";
+    if (current && current.id !== conditionId) {
+      await admin.from("shop_commercial_conditions").update({ status: "cancelled", cancelled_by: auth.user.id, cancelled_at: new Date().toISOString() }).eq("id", current.id);
+    }
     await admin.from("shop_commercial_conditions").update({
       status: finalStatus,
       stripe_coupon_id: coupon.id,
@@ -307,5 +310,9 @@ function computeCondition(body: Body, baseMinor: number, subscription: Stripe.Su
     end = addMonths(start, body.duration_months);
   }
   if (end != null && end <= start) throw new Error("A data final tem de ser posterior à data inicial.");
+  const annual = subscription?.items.data[0]?.price?.recurring?.interval === "year";
+  if (annual && temporary && !body.ends_at && (body.duration_months || 0) % 12 !== 0) {
+    throw new Error("Numa subscrição anual, a duração deve ser definida em períodos completos de 12 meses.");
+  }
   return { effective_amount_minor: effective, percent_off: percent, starts_at_seconds: start, ends_at_seconds: end };
 }

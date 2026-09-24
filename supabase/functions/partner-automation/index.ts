@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
       if (!existing && ref.subscription_id) {
         const { data: sub } = await supabase
           .from("subscriptions")
-          .select("plan, status, shop_id, revenue_type, stripe_subscription_id")
+            .select("plan, status, shop_id, revenue_type, stripe_subscription_id, effective_amount_minor, effective_currency, billing_cycle")
           .eq("id", ref.subscription_id)
           .maybeSingle();
 
@@ -154,7 +154,12 @@ Deno.serve(async (req) => {
             .eq("active", true)
             .maybeSingle();
 
-          const planPrice = priceRow?.amount ?? 0;
+          const effectiveCurrency = String((sub as any).effective_currency || "EUR").toUpperCase();
+          const effectiveMinor = (sub as any).effective_amount_minor;
+          const effectiveMonthly = effectiveMinor != null && effectiveCurrency === "EUR"
+            ? Number(effectiveMinor) / 100 / ((sub as any).billing_cycle === "yearly" ? 12 : 1)
+            : null;
+          const planPrice = effectiveMonthly ?? priceRow?.amount ?? 0;
           if (planPrice > 0) {
             const rate = (ref as any).partners?.commission_percentage || ref.commission_rate || 10;
             const amount = (planPrice * rate) / 100;

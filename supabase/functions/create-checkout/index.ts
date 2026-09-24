@@ -318,6 +318,42 @@ serve(async (req) => {
       sessionParams.subscription_data.trial_period_days = trialDays;
     }
 
+    // A condição comercial preparada pelo Admin é vinculada à oficina e ao
+    // plano/ciclo atuais. O cupão foi criado no Stripe pela função administrativa;
+    // o checkout apenas o consome, sem recalcular ou confiar no frontend.
+    if (shopData?.id) {
+      const { data: prepared } = await supabaseClient
+        .from("shop_commercial_conditions")
+        .select("id,plan_slug,billing_cycle,status,starts_at,stripe_coupon_id")
+        .eq("shop_id", shopData.id)
+        .in("status", ["pending", "scheduled"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (prepared) {
+        if (prepared.plan_slug !== plan || prepared.billing_cycle !== cycle || !prepared.stripe_coupon_id) {
+          await supabaseClient.from("shop_commercial_conditions").update({
+            status: "review_required",
+            sync_error: "A condição requer revisão porque o plano ou ciclo do checkout é diferente.",
+          }).eq("id", prepared.id);
+        } else {
+          const startsAt = prepared.starts_at ? new Date(prepared.starts_at).getTime() : 0;
+          if (startsAt > Date.now() + 60_000) {
+            await supabaseClient.from("shop_commercial_conditions").update({
+              status: "review_required",
+              sync_error: "Uma condição com início futuro requer subscrição Stripe ativa.",
+            }).eq("id", prepared.id);
+          } else {
+            sessionParams.discounts = [{ coupon: prepared.stripe_coupon_id }];
+            sessionParams.allow_promotion_codes = false;
+            sessionParams.metadata.commercial_condition_id = prepared.id;
+            sessionParams.subscription_data.metadata.commercial_condition_id = prepared.id;
+          }
+        }
+      }
+    }
+
     const session = await stripe.checkout.sessions.create(sessionParams);
 
     if (canTrial && shopData) {

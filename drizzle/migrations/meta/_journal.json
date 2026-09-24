@@ -57,6 +57,13 @@
       "when": 1790281110491,
       "tag": "0007_commercial_no_shop_access",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790281230447,
+      "tag": "0008_alerts_allow_claim_follow_up",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,2 @@
+ALTER TABLE public.alerts DROP CONSTRAINT alerts_type_check;
+ALTER TABLE public.alerts ADD CONSTRAINT alerts_type_check CHECK (type = ANY (ARRAY['revision','oil_change','inspection','warranty','quote_expired','inactive_client','maintenance','appointment','payment_failed','stock_low','marketing','loyalty','claim_follow_up']));

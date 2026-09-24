@@ -28,6 +28,8 @@ interface SubRow {
   trial_end: string | null;
   current_period_end: string | null;
   stripe_subscription_id: string | null;
+  effective_amount_minor: number | null;
+  effective_currency: string | null;
   created_at: string;
 }
 
@@ -158,7 +160,13 @@ export default function AdminBilling() {
   // 🔴 REGRA: MRR/ARR/ARPU/Pagantes contam APENAS subscrições Stripe confirmadas.
   // Manual_admin, trials internos e seed data NUNCA entram em receita real.
   const realPaidSubs = subs.filter(s => s.status === 'active' && s.plan !== 'free' && !!s.stripe_subscription_id);
-  const mrr = realPaidSubs.reduce((sum, s) => sum + (PLAN_PRICES[s.plan] || 0), 0);
+  const mrr = realPaidSubs.reduce((sum, s) => {
+    if (s.effective_amount_minor != null && String(s.effective_currency || "EUR").toUpperCase() === "EUR") {
+      const effective = s.effective_amount_minor / 100;
+      return sum + (s.billing_cycle === "yearly" ? effective / 12 : effective);
+    }
+    return sum + (PLAN_PRICES[s.plan] || 0);
+  }, 0);
   const arr = mrr * 12;
   const paidCount = realPaidSubs.length;
   const arpu = paidCount > 0 ? mrr / paidCount : 0;

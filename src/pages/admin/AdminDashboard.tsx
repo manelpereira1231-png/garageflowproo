@@ -75,7 +75,7 @@ export default function AdminDashboard() {
         supabase.from("vehicles").select("id"),
         supabase.from("work_orders").select("id, total, status, created_at"),
         supabase.from("alerts").select("id, status"),
-        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, discount_percent, discount_expires_at, revenue_type, stripe_subscription_id"),
+        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, discount_percent, discount_expires_at, revenue_type, stripe_subscription_id, effective_amount_minor, effective_currency, billing_cycle"),
         supabase.from("quotes").select("id, status"),
       ]);
 
@@ -149,9 +149,17 @@ export default function AdminDashboard() {
       });
 
       // MRR REAL: apenas Stripe paid
-      const mrr = stripePaidSubs.reduce((sum, s) => sum + (PLAN_PRICES[s.plan] || 0), 0);
+      const mrr = stripePaidSubs.reduce((sum, s) => {
+        if (s.effective_amount_minor != null && String(s.effective_currency || "EUR").toUpperCase() === "EUR") {
+          const effective = Number(s.effective_amount_minor) / 100;
+          return sum + (s.billing_cycle === "yearly" ? effective / 12 : effective);
+        }
+        return sum + (PLAN_PRICES[s.plan] || 0);
+      }, 0);
       const mrrWithDiscounts = stripePaidSubs.reduce((sum, s) => {
-        const basePrice = PLAN_PRICES[s.plan] || 0;
+        const basePrice = s.effective_amount_minor != null && String(s.effective_currency || "EUR").toUpperCase() === "EUR"
+          ? (s.billing_cycle === "yearly" ? Number(s.effective_amount_minor) / 1200 : Number(s.effective_amount_minor) / 100)
+          : PLAN_PRICES[s.plan] || 0;
         const discount = Number(s.discount_percent || 0);
         const discountExpired = s.discount_expires_at && new Date(s.discount_expires_at) < now;
         const effectiveDiscount = discountExpired ? 0 : discount;

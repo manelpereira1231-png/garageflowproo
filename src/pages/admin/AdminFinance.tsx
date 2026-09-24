@@ -34,7 +34,7 @@ interface FinanceState {
   expansionMrr: number;
 }
 
-import { isRealPaidSubscription } from "@/lib/platformFinance";
+import { isRealPaidSubscription, subscriptionMrr } from "@/lib/platformFinance";
 const PLAN_PRICE_EUR: Record<string, number> = { free: 0, pro: 49, garage: 99 };
 
 
@@ -47,7 +47,7 @@ export default function AdminFinance() {
     try {
       const [shopsRes, subsRes, ordersRes] = await Promise.all([
         supabase.from("shops").select("id, name, country, created_at").eq("is_demo", false),
-        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, created_at, discount_percent, stripe_subscription_id, revenue_type"),
+        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, created_at, discount_percent, stripe_subscription_id, revenue_type, effective_amount_minor, effective_currency, billing_cycle"),
         supabase.from("work_orders").select("total, status, created_at, shop_id"),
       ]);
 
@@ -62,11 +62,7 @@ export default function AdminFinance() {
         nonDemoShopIds.has(s.shop_id) && isRealPaidSubscription(s);
 
       const paying = subs.filter(isRealPaid);
-      const mrr = paying.reduce((sum, s) => {
-        const base = PLAN_PRICE_EUR[s.plan] || 0;
-        const disc = s.discount_percent || 0;
-        return sum + base * (1 - disc / 100);
-      }, 0);
+      const mrr = paying.reduce((sum, s) => sum + subscriptionMrr(s, PLAN_PRICE_EUR), 0);
       const arr = mrr * 12;
       const payingCustomers = paying.length;
       // Trials Stripe-confirmed (não inflam receita; só contam como "em trial real")
@@ -89,7 +85,7 @@ export default function AdminFinance() {
         const sub = paying.find(x => x.shop_id === s.id);
         if (!sub) return;
         const country = s.country || "Outro";
-        const rev = (PLAN_PRICE_EUR[sub.plan] || 0) * (1 - (sub.discount_percent || 0) / 100);
+        const rev = subscriptionMrr(sub, PLAN_PRICE_EUR);
         const cur = byCountry.get(country) || { revenue: 0, customers: 0 };
         byCountry.set(country, { revenue: cur.revenue + rev, customers: cur.customers + 1 });
       });
@@ -104,7 +100,7 @@ export default function AdminFinance() {
           id: s.shop_id,
           name: shopsMap.get(s.shop_id)?.name || "—",
           plan: s.plan,
-          mrr: (PLAN_PRICE_EUR[s.plan] || 0) * (1 - (s.discount_percent || 0) / 100),
+          mrr: subscriptionMrr(s, PLAN_PRICE_EUR),
           since: s.created_at,
         }))
         .sort((a, b) => b.mrr - a.mrr)
@@ -128,7 +124,7 @@ export default function AdminFinance() {
         const monthMrr = subs.filter(s => {
           const c = new Date(s.created_at).getTime();
           return c <= mEnd.getTime() && isRealPaid(s);
-        }).reduce((sum, s) => sum + (PLAN_PRICE_EUR[s.plan] || 0) * (1 - (s.discount_percent || 0) / 100), 0);
+        }).reduce((sum, s) => sum + subscriptionMrr(s, PLAN_PRICE_EUR), 0);
         months.push({ month: monthLabel, mrr: Math.round(monthMrr), new: newSubs, churn: churned });
       }
 

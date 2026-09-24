@@ -67,7 +67,7 @@ export function usePlatformFinance(range: DateRange) {
       const [shopsRes, demoRes, subsRes, expRes, setRes] = await Promise.all([
         supabase.from("shops").select("id, name, country, created_at, is_demo").eq("is_demo", false),
         supabase.from("shops").select("id").eq("is_demo", true),
-        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, created_at, discount_percent, stripe_subscription_id, revenue_type"),
+        supabase.from("subscriptions").select("shop_id, plan, status, trial_end, updated_at, created_at, discount_percent, stripe_subscription_id, revenue_type, effective_amount_minor, effective_currency, billing_cycle"),
         supabase.from("platform_expenses").select("*").order("expense_date", { ascending: false }),
         supabase.from("platform_finance_settings").select("*").limit(1).maybeSingle(),
       ]);

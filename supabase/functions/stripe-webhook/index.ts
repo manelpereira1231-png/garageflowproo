@@ -154,6 +154,12 @@ async function syncCommercialCondition(subscription: Stripe.Subscription, sub: {
     .select("id,status,effective_amount_minor,currency,ends_at,plan_slug,billing_cycle,duration_months,stripe_subscription_id")
     .eq("id", conditionId).eq("shop_id", sub.shop_id).maybeSingle();
   if (!condition) return;
+  // Período especial terminado: o plano "depois" é legítimo, fechar a condição.
+  if (condition.stripe_subscription_id && condition.ends_at && new Date(condition.ends_at).getTime() <= Date.now() + 3600_000) {
+    await supabaseAdmin.from("shop_commercial_conditions").update({ status: "expired", sync_error: null }).eq("id", condition.id);
+    await supabaseAdmin.from("subscriptions").update({ commercial_condition_id: null, effective_amount_minor: item?.price?.unit_amount ?? null, effective_currency: item?.price?.currency?.toUpperCase() ?? null }).eq("id", sub.id);
+    return;
+  }
   const plan = await resolvePlan(subscription);
   const cycle = resolveBillingCycle(subscription);
   if (condition.plan_slug !== plan || condition.billing_cycle !== cycle) {

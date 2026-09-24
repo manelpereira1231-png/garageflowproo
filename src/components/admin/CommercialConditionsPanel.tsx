@@ -57,7 +57,7 @@ export function CommercialConditionsPanel({ shopId }: { shopId: string }) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [preview, setPreview] = useState<any>(null);
-  const [form, setForm] = useState({ type: "fixed_temporary" as ConditionType, timing: "next_renewal" as Timing, value: "", percent: "", months: "6", startsAt: "", endsAt: "", reason: "Negociação comercial", note: "", proration: "none", plan: "", cycle: "" as "" | "monthly" | "yearly" });
+  const [form, setForm] = useState({ type: "fixed_temporary" as ConditionType, timing: "next_renewal" as Timing, value: "", percent: "", months: "6", startsAt: "", endsAt: "", reason: "Negociação comercial", note: "", proration: "none", plan: "", cycle: "" as "" | "monthly" | "yearly", afterPlan: "", afterCycle: "" as "" | "monthly" | "yearly" });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,6 +86,8 @@ export function CommercialConditionsPanel({ shopId }: { shopId: string }) {
     proration_behavior: form.proration,
     target_plan: form.plan || undefined,
     target_cycle: form.cycle || undefined,
+    after_plan: (form.afterPlan || form.plan) || undefined,
+    after_cycle: (form.afterCycle || form.cycle) || undefined,
   }), [form, shopId]);
 
   const showPreview = async () => {
@@ -133,6 +135,9 @@ export function CommercialConditionsPanel({ shopId }: { shopId: string }) {
   const planSlugs = Array.from(new Set(plans.map(p => p.plan_slug)));
   const selectedPrice = plans.find(p => p.plan_slug === form.plan && p.cycle === form.cycle);
   const nameOf = (slug: string) => (plans.find(p => p.plan_slug === slug)?.plan_name || (slug === "free" ? "Start" : slug)).toUpperCase();
+  const afterPlanSel = form.afterPlan || form.plan;
+  const afterCycleSel = (form.afterCycle || form.cycle) as string;
+  const afterPrice = plans.find(p => p.plan_slug === afterPlanSel && p.cycle === afterCycleSel);
   const cycleLabel = (c: string) => c === "yearly" ? "ano" : "mês";
   const typedMinor = form.value ? Math.round(Number(form.value.replace(",", ".")) * 100) : null;
   const percentNum = form.percent ? Number(form.percent.replace(",", ".")) : null;
@@ -156,7 +161,7 @@ export function CommercialConditionsPanel({ shopId }: { shopId: string }) {
         <div className="rounded-md border p-3"><p className="text-xs text-muted-foreground">Stripe</p><div className="mt-1 flex items-center gap-2">{!current ? <Badge variant="outline">{data.stripe_connected ? "Preço normal" : "Ainda sem subscrição"}</Badge> : ["sync_error", "review_required"].includes(current.status) ? <Badge variant="destructive">Erro de sincronização</Badge> : !data.stripe_connected ? <Badge variant="outline" className="text-warning">Preparada — aplicada no 1.º pagamento</Badge> : current.status === "scheduled" ? <Badge variant="outline" className="text-warning">Agendada na Stripe</Badge> : <Badge className="bg-success text-success-foreground"><CheckCircle2 className="h-3 w-3 mr-1" />Ativa e sincronizada</Badge>}</div></div>
         <Metric label="Condição comercial" value={current ? `${typeLabels[current.condition_type] || current.condition_type} · ${nameOf(String(current.plan_slug))} ${money(current.effective_amount_minor, data.currency)}${current.duration_months ? ` durante ${current.duration_months} meses` : ""}` : "Preço normal"} />
         <Metric label="Início" value={date(current?.starts_at)} />
-        <Metric label="Depois" value={current?.ends_at ? `${money(current.after_amount_minor, data.currency)} em ${date(current.ends_at)}` : "Sem data final"} />
+        <Metric label="Depois" value={current?.ends_at ? `${current.stripe_snapshot?.after_plan ? nameOf(current.stripe_snapshot.after_plan) + " · " : ""}${money(current.after_amount_minor, data.currency)} a partir de ${date(current.ends_at)}` : "Sem data final"} />
         <Metric label="Próxima cobrança" value={data.upcoming ? `${money(data.upcoming.amount_due_minor, data.upcoming.currency)} · ${date(data.upcoming.next_payment_attempt || data.upcoming.period_end)}` : "Não disponível"} />
         {current?.sync_error && <div className="sm:col-span-2 lg:col-span-4 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive flex gap-2"><AlertTriangle className="h-4 w-4 shrink-0" />{current.sync_error}</div>}
         {current && <div className="sm:col-span-2 lg:col-span-4 flex justify-end"><Button variant="outline" size="sm" className="text-destructive" onClick={remove} disabled={busy}><Trash2 className="h-4 w-4 mr-1" />Remover condição especial</Button></div>}
@@ -185,6 +190,15 @@ export function CommercialConditionsPanel({ shopId }: { shopId: string }) {
         <Field label="Tipo de condição" wide><Select value={form.type} onValueChange={(value: ConditionType) => setForm({ ...form, type: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{Object.entries(typeLabels).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></Field>
         {!isFree && <Field label={isPercent ? "Desconto (%)" : `Novo preço (€/${cycleLabel(form.cycle)})`}><Input type="number" min="0" step="0.01" value={isPercent ? form.percent : form.value} onChange={e => setForm({ ...form, [isPercent ? "percent" : "value"]: e.target.value })} /></Field>}
         {!isPermanent && !isDated && <Field label={isYearly ? "Duração (meses, múltiplos de 12)" : "Duração (meses)"}><Input type="number" min={isYearly ? "12" : "1"} step={isYearly ? "12" : "1"} max="120" value={form.months} onChange={e => setForm({ ...form, months: e.target.value })} /></Field>}
+        {!isPermanent && <div className="sm:col-span-2 rounded-md border p-3 space-y-3">
+          <p className="text-sm font-medium">Depois do período especial</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Plano depois"><Select value={afterPlanSel} onValueChange={value => setForm({ ...form, afterPlan: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{planSlugs.map(slug => <SelectItem key={slug} value={slug}>{nameOf(slug)}</SelectItem>)}</SelectContent></Select></Field>
+            <Field label="Ciclo depois"><Select value={afterCycleSel} onValueChange={(value: "monthly" | "yearly") => setForm({ ...form, afterCycle: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(["monthly", "yearly"] as const).filter(c => plans.some(p => p.plan_slug === afterPlanSel && p.cycle === c)).map(c => <SelectItem key={c} value={c}>{c === "yearly" ? "Anual" : "Mensal"}</SelectItem>)}</SelectContent></Select></Field>
+          </div>
+          <p className="text-sm">{afterPrice ? <>Quando terminar, passa a pagar <b>{nameOf(afterPlanSel)} · {money(afterPrice.amount_minor, afterPrice.currency)}/{cycleLabel(afterCycleSel)}</b> (preço normal).</> : <span className="text-destructive">Esse plano não tem preço configurado.</span>}</p>
+          {!data.stripe_connected && (afterPlanSel !== form.plan || afterCycleSel !== form.cycle) && <p className="text-xs text-warning">Esta oficina ainda não paga pela Stripe: o plano depois tem de ser o mesmo até ao primeiro pagamento.</p>}
+        </div>}
         <Field label="Começa"><Select value={form.timing} onValueChange={(value: Timing) => setForm({ ...form, timing: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="next_renewal">Na próxima renovação</SelectItem><SelectItem value="immediate">Imediatamente</SelectItem><SelectItem value="specific_date">Data específica</SelectItem></SelectContent></Select></Field>
         {form.timing === "specific_date" && <Field label="Data de início"><Input type="datetime-local" value={form.startsAt} onChange={e => setForm({ ...form, startsAt: e.target.value })} /></Field>}
         {isDated && <Field label="Data final"><Input type="datetime-local" value={form.endsAt} onChange={e => setForm({ ...form, endsAt: e.target.value })} /></Field>}
@@ -196,7 +210,7 @@ export function CommercialConditionsPanel({ shopId }: { shopId: string }) {
       <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button onClick={showPreview} disabled={busy}>{busy && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}Rever condição</Button></DialogFooter>
     </DialogContent></Dialog>
 
-    <Dialog open={confirming} onOpenChange={setConfirming}><DialogContent><DialogHeader><DialogTitle>Confirmar condição comercial</DialogTitle><DialogDescription>Confirme o impacto antes de alterar a subscrição no Stripe.</DialogDescription></DialogHeader>{preview && <div className="grid grid-cols-2 gap-3 text-sm"><Metric label="Oficina" value={data.shop.name} /><Metric label="Plano" value={`${String(preview.target_plan_name || nameOf(preview.target_plan || data.subscription.plan)).toUpperCase()} · ${preview.target_cycle === "yearly" ? "anual" : "mensal"}${preview.plan_changed ? " (alteração)" : ""}`} /><Metric label="Preço normal" value={money(preview.base_amount_minor, data.currency)} /><Metric label="Novo preço" value={money(preview.effective_amount_minor, data.currency)} /><Metric label="Início" value={new Date(preview.starts_at_seconds * 1000).toLocaleDateString("pt-PT")} /><Metric label="Fim previsto" value={preview.ends_at_seconds ? new Date(preview.ends_at_seconds * 1000).toLocaleDateString("pt-PT") : "Sem data final"} /><Metric label="Depois" value={money(preview.base_amount_minor, data.currency)} /><Metric label="Stripe" value={data.stripe_connected ? "Será aplicado agora" : "Preparada para o checkout"} /></div>}<DialogFooter><Button variant="outline" onClick={() => setConfirming(false)}>Voltar</Button><Button onClick={apply} disabled={busy}>{busy && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}Aplicar condição</Button></DialogFooter></DialogContent></Dialog>
+    <Dialog open={confirming} onOpenChange={setConfirming}><DialogContent><DialogHeader><DialogTitle>Confirmar condição comercial</DialogTitle><DialogDescription>Confirme o impacto antes de alterar a subscrição no Stripe.</DialogDescription></DialogHeader>{preview && <div className="grid grid-cols-2 gap-3 text-sm"><Metric label="Oficina" value={data.shop.name} /><Metric label="Plano" value={`${String(preview.target_plan_name || nameOf(preview.target_plan || data.subscription.plan)).toUpperCase()} · ${preview.target_cycle === "yearly" ? "anual" : "mensal"}${preview.plan_changed ? " (alteração)" : ""}`} /><Metric label="Preço normal" value={money(preview.base_amount_minor, data.currency)} /><Metric label="Novo preço" value={money(preview.effective_amount_minor, data.currency)} /><Metric label="Início" value={new Date(preview.starts_at_seconds * 1000).toLocaleDateString("pt-PT")} /><Metric label="Fim previsto" value={preview.ends_at_seconds ? new Date(preview.ends_at_seconds * 1000).toLocaleDateString("pt-PT") : "Sem data final"} /><Metric label="Depois" value={`${String(preview.after_plan_name || "").toUpperCase()} · ${money(preview.after_amount_minor ?? preview.base_amount_minor, data.currency)}/${preview.after_cycle === "yearly" ? "ano" : "mês"}`} /><Metric label="Stripe" value={data.stripe_connected ? "Será aplicado agora" : "Preparada para o checkout"} /></div>}<DialogFooter><Button variant="outline" onClick={() => setConfirming(false)}>Voltar</Button><Button onClick={apply} disabled={busy}>{busy && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}Aplicar condição</Button></DialogFooter></DialogContent></Dialog>
   </div>;
 }
 

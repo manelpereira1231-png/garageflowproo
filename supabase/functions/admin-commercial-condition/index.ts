@@ -24,6 +24,8 @@ const BodySchema = z.object({
   proration_behavior: z.enum(["none", "create_prorations"]).default("none"),
   target_plan: z.string().min(1).max(60).optional(),
   target_cycle: z.enum(["monthly", "yearly"]).optional(),
+  after_plan: z.string().min(1).max(60).optional(),
+  after_cycle: z.enum(["monthly", "yearly"]).optional(),
 });
 
 type Body = z.infer<typeof BodySchema>;
@@ -99,6 +101,14 @@ serve(async (req) => {
     const priceRow = (allPrices || []).find((r: any) => String(r.plan_slug).toLowerCase() === targetPlan && r.cycle === cycle);
     if (!priceRow?.stripe_price_id) return json({ error: `O plano ${targetPlan === "free" ? "START" : targetPlan.toUpperCase()} (${cycle === "yearly" ? "anual" : "mensal"}) não tem preço Stripe configurado para ${country}.` }, 409);
 
+    // Plano/preço que passa a valer quando o período especial termina.
+    const afterPlan = String(body.after_plan || targetPlan).toLowerCase();
+    const afterCycle = body.after_cycle || cycle;
+    const afterRow = (allPrices || []).find((r: any) => String(r.plan_slug).toLowerCase() === afterPlan && r.cycle === afterCycle);
+    if (!afterRow?.stripe_price_id) return json({ error: `O plano ${planName(afterPlan).toUpperCase()} (${afterCycle === "yearly" ? "anual" : "mensal"}) escolhido para depois não tem preço Stripe configurado.` }, 409);
+    const afterMinor = Math.round(Number(afterRow.amount) * 100);
+    const afterChanged = afterPlan !== targetPlan || afterCycle !== cycle;
+
     const stripeSubscription = subscription.stripe_subscription_id
       ? await stripe.subscriptions.retrieve(subscription.stripe_subscription_id, { expand: ["schedule", "discounts"] })
       : null;
@@ -144,7 +154,7 @@ serve(async (req) => {
 
     if (body.action === "preview") {
       const computed = computeCondition(body, baseMinor, stripeSubscription);
-      return json({ ...computed, target_plan: targetPlan, target_plan_name: planName(targetPlan), target_cycle: cycle, plan_changed: planChanged, base_amount_minor: baseMinor, currency, subscription, upcoming: await upcoming(), stripe_connected: !!stripeSubscription });
+      return json({ ...computed, target_plan: targetPlan, target_plan_name: planName(targetPlan), after_plan: afterPlan, after_plan_name: planName(afterPlan), after_cycle: afterCycle, after_amount_minor: afterMinor, target_cycle: cycle, plan_changed: planChanged, base_amount_minor: baseMinor, currency, subscription, upcoming: await upcoming(), stripe_connected: !!stripeSubscription });
     }
 
     if (body.action === "remove") {
@@ -191,12 +201,16 @@ serve(async (req) => {
       internal_note: body.internal_note || null,
       base_amount_minor: baseMinor,
       effective_amount_minor: computed.effective_amount_minor,
-      after_amount_minor: baseMinor,
+      after_amount_minor: afterMinor,
       stripe_customer_id: subscription.stripe_customer_id,
       stripe_subscription_id: subscription.stripe_subscription_id,
       request_key: body.request_key,
       created_by: auth.user.id,
     };
+    const isPermanentType = ["fixed_permanent", "percent_permanent"].includes(body.condition_type);
+    if (afterChanged && isPermanentType) return json({ error: "Uma condição permanente não tem período seguinte. Escolha o mesmo plano em 'Depois'." }, 400);
+    if (afterChanged && !stripeSubscription) return json({ error: "Numa oficina sem subscrição Stripe, o plano depois do período tem de ser o mesmo. Poderá alterá-lo após o primeiro pagamento." }, 400);
+
     // Uma nova condição substitui a anterior. Com subscrição Stripe que tenha
     // calendário ativo, é obrigatório remover primeiro (evita perder fases).
     if (current) {
@@ -266,7 +280,7 @@ serve(async (req) => {
         proration_behavior: body.proration_behavior,
         metadata: { commercial_condition_id: conditionId },
       });
-      if (endSeconds) phases.push({ start_date: endSeconds, items: [{ price: priceRow.stripe_price_id, quantity: activeItem?.quantity || 1 }], proration_behavior: "none" });
+      if (endSeconds) phases.push({ start_date: endSeconds, items: [{ price: afterRow.stripe_price_id, quantity: activeItem?.quantity || 1 }], proration_behavior: "none" });
       try {
         await stripe.subscriptionSchedules.update(schedule.id, { end_behavior: "release", phases });
       } catch (scheduleError) {
@@ -283,7 +297,7 @@ serve(async (req) => {
       status: finalStatus,
       stripe_coupon_id: coupon.id,
       stripe_schedule_id: scheduleId,
-      stripe_snapshot: { subscription_status: stripeSubscription.status, schedule_id: scheduleId, coupon_id: coupon.id },
+      stripe_snapshot: { subscription_status: stripeSubscription.status, schedule_id: scheduleId, coupon_id: coupon.id, after_plan: afterPlan, after_cycle: afterCycle, after_price_id: afterRow.stripe_price_id },
       sync_error: null,
     }).eq("id", conditionId);
     await admin.from("subscriptions").update({ commercial_condition_id: conditionId, effective_amount_minor: computed.effective_amount_minor, effective_currency: currency }).eq("id", subscription.id);

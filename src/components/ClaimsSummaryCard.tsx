@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { ShieldAlert, ChevronRight } from "lucide-react";
+import { CLAIM_GROUPS } from "@/lib/claims";
 
 /**
  * Resumo de processos de seguradoras no Dashboard.
@@ -32,12 +33,8 @@ export default function ClaimsSummaryCard() {
   const today = new Date().toISOString().slice(0, 10);
   const items = [
     { label: "Ativos", value: open.length, status: "all" },
-    { label: "A aguardar peritagem", value: open.filter((c) => ["waiting_expert", "expert_scheduled"].includes(c.status)).length, status: "waiting_expert" },
-    { label: "A aguardar aprovação", value: open.filter((c) => ["quote_sent", "waiting_approval"].includes(c.status)).length, status: "waiting_approval" },
-    { label: "Alterações solicitadas", value: open.filter((c) => c.status === "changes_requested").length, status: "changes_requested" },
-    { label: "Aprovados", value: open.filter((c) => ["approved", "partially_approved"].includes(c.status)).length, status: "approved" },
-    { label: "Em reparação", value: open.filter((c) => c.status === "repairing").length, status: "repairing" },
-    { label: "Atrasados", value: open.filter((c) => c.next_action_date && c.next_action_date < today).length, status: "all" },
+    ...CLAIM_GROUPS.slice(0, 6).map((g) => ({ label: g.label, value: rows.filter((c) => g.statuses.includes(c.status)).length, status: "g:" + g.key })),
+    { label: "Atrasados", value: open.filter((c) => c.next_action_date && c.next_action_date < today).length, status: "late" },
   ];
 
   return (

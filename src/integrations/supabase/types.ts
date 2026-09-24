@@ -13100,6 +13100,7 @@ export type Database = {
         Args: { _action_type: string; _shop_id: string }
         Returns: boolean
       }
+      vehicle_lookup_enabled: { Args: never; Returns: boolean }
       verify_inspection_certificate: { Args: { _token: string }; Returns: Json }
       work_order_status_stats: { Args: { _shop_id: string }; Returns: Json }
     }

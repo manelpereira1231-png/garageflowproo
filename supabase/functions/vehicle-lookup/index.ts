@@ -8,7 +8,7 @@ const CACHE_DAYS = 30;
 const TIMEOUT_MS = 12000;
 const PT_PATTERNS = [/^[A-Z]{2}\d{2}[A-Z]{2}$/, /^\d{2}[A-Z]{2}\d{2}$/, /^\d{4}[A-Z]{2}$/, /^[A-Z]{2}\d{4}$/];
 
-type Status = "ok" | "not_found" | "invalid" | "not_configured" | "limit" | "blocked" | "forbidden" | "unavailable" | "timeout" | "bad_credentials" | "unexpected" | "error";
+type Status = "ok" | "not_found" | "invalid" | "not_configured" | "limit" | "blocked" | "forbidden" | "unavailable" | "timeout" | "bad_credentials" | "unexpected" | "error" | "disabled" | "global_limit" | "cost_limit";
 
 export interface VehicleData {
   make?: string; model?: string; version?: string; description?: string; year?: number;
@@ -92,7 +92,11 @@ class MatriculaProvider implements VehicleDataProvider {
 
 const PROVIDER: VehicleDataProvider = new MatriculaProvider();
 
+const MANUAL = "Pode preencher os dados da viatura manualmente.";
 const MESSAGES: Record<Status, string> = {
+  disabled: MANUAL,
+  global_limit: MANUAL,
+  cost_limit: MANUAL,
   ok: "Viatura encontrada.",
   not_found: "Matrícula não encontrada. Pode preencher os dados manualmente.",
   invalid: "Matrícula inválida. Confirme a matrícula introduzida.",
@@ -159,6 +163,15 @@ Deno.serve(async (req) => {
       return json({ status: "invalid", message: MESSAGES.invalid });
     }
 
+    // 1) Serviço global (kill switch) — decide sempre antes de qualquer outra coisa.
+    const { data: cfgRow } = await admin.from("platform_settings").select("value").eq("key", "vehicle_lookup").maybeSingle();
+    const cfg: any = cfgRow?.value || {};
+    if (cfg.enabled === false) { await log("disabled", "blocked"); return json({ status: "disabled", message: MESSAGES.disabled }); }
+
+    // 2) Oficina bloqueada
+    const { data: lim } = await admin.from("vehicle_lookup_limits").select("monthly_limit, blocked").eq("shop_id", shopId).maybeSingle();
+    if (lim?.blocked) { await log("blocked", "blocked"); return json({ status: "blocked", message: MESSAGES.blocked }); }
+
     // Cache (dados públicos de registo, sem dados internos de oficinas).
     if (!force) {
       const since = new Date(Date.now() - CACHE_DAYS * 86400000).toISOString();
@@ -171,14 +184,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Limites por oficina (definidos no Admin; sem registo = ilimitado).
-    const { data: lim } = await admin.from("vehicle_lookup_limits").select("monthly_limit, blocked").eq("shop_id", shopId).maybeSingle();
-    if (lim?.blocked) { await log("blocked", "blocked"); return json({ status: "blocked", message: MESSAGES.blocked }); }
+    // 3) Limite mensal da oficina (sem registo = ilimitado).
+    const start = new Date(); start.setUTCDate(1); start.setUTCHours(0, 0, 0, 0);
     if (lim?.monthly_limit != null) {
-      const start = new Date(); start.setUTCDate(1); start.setUTCHours(0, 0, 0, 0);
       const { count } = await admin.from("vehicle_lookups").select("id", { count: "exact", head: true })
         .eq("shop_id", shopId).eq("source", "api").gte("created_at", start.toISOString());
       if ((count ?? 0) >= lim.monthly_limit) { await log("limit", "blocked"); return json({ status: "limit", message: MESSAGES.limit }); }
+    }
+
+    // 4) Limite global mensal e 5) proteção de custos — contam só chamadas reais ao provider.
+    const { count: globalCount } = await admin.from("vehicle_lookups").select("id", { count: "exact", head: true })
+      .eq("source", "api").gte("created_at", start.toISOString());
+    const used = globalCount ?? 0;
+    const unitCost = Number(cfg.cost_per_call) || 0;
+    if (cfg.global_monthly_limit != null && used >= Number(cfg.global_monthly_limit)) {
+      await log("global_limit", "blocked"); return json({ status: "global_limit", message: MESSAGES.global_limit });
+    }
+    if (cfg.auto_block_enabled && cfg.auto_block_cost != null && unitCost > 0 && (used + 1) * unitCost > Number(cfg.auto_block_cost) + 1e-9) {
+      await log("cost_limit", "blocked");
+      await auditOnce(admin, "vehicle_lookup_auto_block", start, { cost: used * unitCost, cap: cfg.auto_block_cost });
+      return json({ status: "cost_limit", message: MESSAGES.cost_limit });
     }
 
     if (!PROVIDER.configured()) { await log("not_configured", "blocked"); return json({ status: "not_configured", message: MESSAGES.not_configured }); }
@@ -186,6 +211,12 @@ Deno.serve(async (req) => {
     const res = await PROVIDER.lookup(plate);
     if (res.status !== "ok") console.error("[vehicle-lookup]", res.status, res.error);
     await log(res.status, "api", { data: res.data ?? null, error_code: res.status === "ok" ? null : (res.error || res.status).slice(0, 200) });
+    // Alerta de consumo (apenas registado para o Admin, uma vez por mês).
+    const nowUsed = used + 1;
+    if ((cfg.alert_count != null && nowUsed >= Number(cfg.alert_count)) ||
+        (cfg.alert_cost != null && unitCost > 0 && nowUsed * unitCost >= Number(cfg.alert_cost))) {
+      await auditOnce(admin, "vehicle_lookup_alert", start, { calls: nowUsed, cost: +(nowUsed * unitCost).toFixed(2) });
+    }
     if (res.status !== "ok") return json({ status: res.status, message: MESSAGES[res.status] });
     return json({ status: "ok", source: "api", fetched_at: new Date().toISOString(), data: res.data, message: MESSAGES.ok });
   } catch (e) {
@@ -193,3 +224,9 @@ Deno.serve(async (req) => {
     return json({ status: "error", message: MESSAGES.error }, 500);
   }
 });
+
+async function auditOnce(admin: any, action: string, since: Date, details: Record<string, unknown>) {
+  const { count } = await admin.from("audit_logs").select("id", { count: "exact", head: true })
+    .eq("action", action).gte("created_at", since.toISOString());
+  if (!count) await admin.from("audit_logs").insert({ action, entity_type: "vehicle_lookup", details });
+}

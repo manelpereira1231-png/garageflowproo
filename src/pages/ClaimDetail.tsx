@@ -99,7 +99,7 @@ export default function ClaimDetail() {
     const { data: mem } = await supabase.rpc("get_shop_member_emails" as any, { _shop_id: activeShopId });
     if (Array.isArray(mem)) {
       const m: Record<string, string> = {};
-      for (const r of mem as any[]) if (r.user_id) m[r.user_id] = r.full_name || r.name || r.email || "";
+      for (const r of mem as any[]) if (r.user_id) m[r.user_id] = r.email || "";
       setMembers(m);
     }
     setLoading(false);
@@ -121,19 +121,7 @@ export default function ClaimDetail() {
     load();
   };
 
-  const createWorkOrder = async () => {
-    if (!claim.vehicle_id || !activeShopId) return;
-    const { data: auth } = await supabase.auth.getSession();
-    const { data, error } = await supabase.from("work_orders").insert({
-      shop_id: activeShopId, client_id: claim.client_id, vehicle_id: claim.vehicle_id,
-      status: "open", process_type: "seguradora",
-      description: `Reparação sinistro ${claim.ref}${claim.claim_number ? " / " + claim.claim_number : ""}`,
-      created_by: auth.session?.user.id ?? null,
-    } as any).select("id").single();
-    if (error || !data) { toast.error("Não foi possível criar a OS. Crie-a em Serviços e associe aqui."); return; }
-    await link({ work_order_id: data.id });
-    navigate(`/services?edit=${data.id}`);
-  };
+  const createWorkOrder = () => navigate(`/services/new?client=${claim.client_id}&vehicle=${claim.vehicle_id}&claim=${claim.id}`);
 
   const persist = async (patch?: Record<string, any>) => {
     if (!claim) return;
@@ -425,7 +413,7 @@ export default function ClaimDetail() {
                   <SelectContent>{wos.map((w) => <SelectItem key={w.id} value={w.id}>{w.number} — {w.status}</SelectItem>)}</SelectContent>
                 </Select>
                 {!claim.work_order_id && <Button className="min-h-[44px]" onClick={createWorkOrder}><Plus className="w-4 h-4 mr-2" />Criar OS</Button>}
-                {claim.work_order_id && <Button variant="outline" className="min-h-[44px]" onClick={() => navigate(`/services?edit=${claim.work_order_id}`)}>Abrir OS</Button>}
+                {claim.work_order_id && <Button variant="outline" className="min-h-[44px]" onClick={() => navigate(`/services/edit/${claim.work_order_id}`)}>Abrir OS</Button>}
               </div>
               <div className="flex flex-wrap gap-2">
                 {[["repairing", "Em reparação"], ["waiting_parts", "A aguardar peças"], ["repair_done", "Reparação concluída"]].map(([k, l]) => (
@@ -615,7 +603,7 @@ export default function ClaimDetail() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" onClick={() => navigate(`/quotes/new?client=${claim.client_id}&vehicle=${claim.vehicle_id}`)}>Criar orçamento</Button>
+                  <Button variant="outline" onClick={() => navigate(`/quotes/new?client=${claim.client_id}&vehicle=${claim.vehicle_id}&claim=${claim.id}`)}>Criar orçamento</Button>
                   {claim.quote_id && (
                     <Button variant="outline" onClick={() => navigate(`/quotes/edit/${claim.quote_id}`)}>Abrir</Button>
                   )}

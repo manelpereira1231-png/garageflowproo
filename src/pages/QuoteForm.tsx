@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { insertWithNumber, nextDocNumber, friendlyDocError } from "@/lib/insertWithNumber";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { MAX_LABOR_HOURS, MAX_LINE_QUANTITY, MAX_UNIT_PRICE } from "@/lib/sanity
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, ArrowLeft, AlertTriangle, XCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { completeOnboarding } from "@/hooks/useOnboardingStatus";
@@ -34,6 +34,10 @@ interface LineItem {
 export default function QuoteForm() {
   const navigate = useNavigate();
   const { id: editId } = useParams<{ id: string }>();
+  // Pré-preenchimento a partir de um sinistro (?client=&vehicle=&claim=)
+  const [qp] = useSearchParams();
+  const claimParam = qp.get("claim");
+  const pendingVehicleRef = useRef<string | null>(qp.get("vehicle"));
   const { t } = useLanguage();
   const { plan, limits, checkQuoteLimit, isEntryPlan } = useSubscription();
   const [showLimitModal, setShowLimitModal] = useState(false);
@@ -44,7 +48,7 @@ export default function QuoteForm() {
   const [filteredVehicles, setFilteredVehicles] = useState<any[]>([]);
   const [catalog, setCatalog] = useState<any[]>([]);
   const [partsList, setPartsList] = useState<any[]>([]);
-  const [clientId, setClientId] = useState("");
+  const [clientId, setClientId] = useState(() => new URLSearchParams(window.location.search).get("client") || "");
   const [vehicleId, setVehicleId] = useState("");
   const [validityDays, setValidityDays] = useState("30");
   const [notes, setNotes] = useState("");
@@ -124,7 +128,9 @@ export default function QuoteForm() {
   useEffect(() => {
     if (!editId) {
       setFilteredVehicles(vehicles.filter(v => v.client_id === clientId));
-      setVehicleId("");
+      const pv = pendingVehicleRef.current;
+      if (pv && vehicles.some(v => v.id === pv && v.client_id === clientId)) { setVehicleId(pv); pendingVehicleRef.current = null; }
+      else setVehicleId("");
     } else {
       setFilteredVehicles(vehicles.filter(v => v.client_id === clientId));
     }
@@ -230,7 +236,10 @@ export default function QuoteForm() {
             });
           }
         } catch {}
-        navigate("/quotes");
+        if (claimParam && inserted?.id) {
+          await supabase.from("claims").update({ quote_id: inserted.id, amount_initial_quote: total }).eq("id", claimParam);
+          navigate(`/claims/${claimParam}`);
+        } else navigate("/quotes");
       }
     }
     setLoading(false);

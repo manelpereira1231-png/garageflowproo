@@ -108,7 +108,7 @@ type FinancialNavItem = {
 
 // Lite Mode: only daily essentials. RBAC is applied before this list, so a
 // role never sees an item here unless canOpenPath() also allows it.
-const ESSENTIAL_NAV_PATHS = ["/dashboard", "/clients", "/vehicles", "/quotes", "/services", "/workshop", "/agenda", "/notifications", "/chat"];
+const ESSENTIAL_NAV_PATHS = ["/dashboard", "/clients", "/vehicles", "/quotes", "/services", "/workshop", "/agenda", "/claims", "/notifications", "/chat"];
 
 const isFinancialRoute = (pathname: string) =>
   pathname.startsWith("/invoices") || pathname.startsWith("/financial");

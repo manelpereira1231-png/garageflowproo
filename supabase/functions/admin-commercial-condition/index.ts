@@ -1,8 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3.23.8";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
 
 const BodySchema = z.object({
   action: z.enum(["status", "preview", "apply", "remove", "reconcile"]),
@@ -97,7 +101,7 @@ serve(async (req) => {
 
     const { data: history } = await admin.from("shop_commercial_conditions")
       .select("*").eq("shop_id", body.shop_id).order("created_at", { ascending: false }).limit(50);
-    const current = (history || []).find((row: any) => ["pending", "active", "scheduled", "sync_error", "review_required"].includes(row.status)) || null;
+    const current = (history || []).find((row: any) => ["pending", "active", "scheduled"].includes(row.status)) || null;
 
     const upcoming = async () => {
       if (!stripeSubscription) return null;
@@ -167,7 +171,7 @@ serve(async (req) => {
       plan_slug: subscription.plan,
       billing_cycle: cycle,
       condition_type: body.condition_type,
-      status: "pending",
+      status: "review_required",
       application_timing: body.application_timing || "next_renewal",
       value_minor: body.value_major == null ? null : Math.round(body.value_major * 100),
       percent_off: body.percent_off ?? null,
@@ -195,8 +199,15 @@ serve(async (req) => {
     }
     conditionId = inserted.id;
 
+    const coupon = await stripe.coupons.create({
+      ...(computed.percent_off != null ? { percent_off: computed.percent_off } : { amount_off: baseMinor - computed.effective_amount_minor, currency: currency.toLowerCase() }),
+      duration: "forever",
+      name: `GarageFlow · ${shop.name} · ${body.reason}`.slice(0, 40),
+      metadata: { shop_id: body.shop_id, condition_id: conditionId, plan_slug: subscription.plan },
+    }, { idempotencyKey: `${body.request_key}:coupon` });
+
     if (!stripeSubscription) {
-      await admin.from("shop_commercial_conditions").update({ status: "scheduled", sync_error: "Preparada para o primeiro checkout" }).eq("id", conditionId);
+      await admin.from("shop_commercial_conditions").update({ status: "scheduled", stripe_coupon_id: coupon.id, sync_error: null }).eq("id", conditionId);
       await admin.from("subscriptions").update({ commercial_condition_id: conditionId, effective_amount_minor: computed.effective_amount_minor, effective_currency: currency }).eq("id", subscription.id);
       return json({ success: true, prepared: true, condition_id: conditionId });
     }
@@ -205,13 +216,6 @@ serve(async (req) => {
     if (current && current.id !== conditionId) {
       await admin.from("shop_commercial_conditions").update({ status: "cancelled", cancelled_by: auth.user.id, cancelled_at: new Date().toISOString() }).eq("id", current.id);
     }
-
-    const coupon = await stripe.coupons.create({
-      ...(computed.percent_off != null ? { percent_off: computed.percent_off } : { amount_off: baseMinor - computed.effective_amount_minor, currency: currency.toLowerCase() }),
-      duration: "forever",
-      name: `GarageFlow · ${shop.name} · ${body.reason}`.slice(0, 40),
-      metadata: { shop_id: body.shop_id, condition_id: conditionId, plan_slug: subscription.plan },
-    }, { idempotencyKey: `${body.request_key}:coupon` });
 
     let scheduleId: string | null = null;
     const isPermanent = ["fixed_permanent", "percent_permanent"].includes(body.condition_type);
@@ -223,17 +227,17 @@ serve(async (req) => {
       }, { idempotencyKey: `${body.request_key}:subscription` });
     } else {
       const existingScheduleId = typeof stripeSubscription.schedule === "string" ? stripeSubscription.schedule : stripeSubscription.schedule?.id;
-      const schedule = existingScheduleId
-        ? await stripe.subscriptionSchedules.retrieve(existingScheduleId)
-        : await stripe.subscriptionSchedules.create({ from_subscription: stripeSubscription.id }, { idempotencyKey: `${body.request_key}:schedule` });
+      if (existingScheduleId) throw new Error("A subscrição já tem um calendário Stripe. Remova primeiro a condição anterior ou conclua a alteração de plano agendada.");
+      const schedule = await stripe.subscriptionSchedules.create({ from_subscription: stripeSubscription.id }, { idempotencyKey: `${body.request_key}:schedule` });
       scheduleId = schedule.id;
       const nowSeconds = Math.floor(Date.now() / 1000);
+      const currentPhaseStart = schedule.current_phase?.start_date || nowSeconds;
       const phases: any[] = [];
       if (startSeconds > nowSeconds + 60) {
-        phases.push({ start_date: nowSeconds, end_date: startSeconds, items: [{ price: priceRow.stripe_price_id, quantity: activeItem?.quantity || 1 }], proration_behavior: "none" });
+        phases.push({ start_date: currentPhaseStart, end_date: startSeconds, items: [{ price: activeItem?.price.id || priceRow.stripe_price_id, quantity: activeItem?.quantity || 1 }], proration_behavior: "none", ...(stripeSubscription.trial_end && stripeSubscription.trial_end > currentPhaseStart ? { trial_end: stripeSubscription.trial_end } : {}) });
       }
       phases.push({
-        start_date: startSeconds > nowSeconds + 60 ? startSeconds : "now",
+        start_date: startSeconds > nowSeconds + 60 ? startSeconds : currentPhaseStart,
         ...(endSeconds ? { end_date: endSeconds } : {}),
         items: [{ price: priceRow.stripe_price_id, quantity: activeItem?.quantity || 1 }],
         discounts: [{ coupon: coupon.id }],
@@ -241,7 +245,12 @@ serve(async (req) => {
         metadata: { commercial_condition_id: conditionId },
       });
       if (endSeconds) phases.push({ start_date: endSeconds, items: [{ price: priceRow.stripe_price_id, quantity: activeItem?.quantity || 1 }], proration_behavior: "none" });
-      await stripe.subscriptionSchedules.update(schedule.id, { end_behavior: "release", phases });
+      try {
+        await stripe.subscriptionSchedules.update(schedule.id, { end_behavior: "release", phases });
+      } catch (scheduleError) {
+        await stripe.subscriptionSchedules.release(schedule.id, { preserve_cancel_date: true }).catch(() => undefined);
+        throw scheduleError;
+      }
     }
 
     const finalStatus = startSeconds > Math.floor(Date.now() / 1000) + 60 ? "scheduled" : "active";
@@ -261,7 +270,7 @@ serve(async (req) => {
     console.error("[COMMERCIAL-CONDITION]", message);
     if (conditionId) {
       const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", { auth: { persistSession: false } });
-      await admin.from("shop_commercial_conditions").update({ status: "sync_error", sync_error: message }).eq("id", conditionId);
+      await admin.from("shop_commercial_conditions").update({ status: "review_required", sync_error: message }).eq("id", conditionId);
     }
     return json({ error: message }, 500);
   }

@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft, Users, Car, FileText, Wrench, DollarSign, TrendingUp, AlertTriangle, Pencil,
-  LogIn, Power, PowerOff, RotateCcw, Clock, Building2, Shield, Percent, Trash2,
+  LogIn, Power, PowerOff, RotateCcw, Clock, Building2, Shield,
   CreditCard, History, Activity,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -34,13 +34,7 @@ interface SubDetail {
   plan: string; status: string; billing_cycle: string;
   trial_end: string | null; current_period_end: string | null;
   stripe_customer_id: string | null; stripe_subscription_id: string | null;
-  discount_percent: number; discount_reason: string | null;
-  discount_applied_at: string | null; discount_expires_at: string | null;
 }
-
-// Plan prices are loaded dynamically from country_settings (single source of truth).
-// We seed PT defaults to keep early renders sane, then overwrite from the DB.
-let PLAN_PRICES: Record<string, number> = { free: 0, pro: 49, garage: 99 };
 
 export default function AdminShopDetail() {
   const { t } = useLanguage();
@@ -68,16 +62,11 @@ export default function AdminShopDetail() {
   const [confirmAction, setConfirmAction] = useState<{ type: string; title: string; description: string; onConfirm: () => Promise<void> } | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
-  // Discount dialog
-  const [discountOpen, setDiscountOpen] = useState(false);
-  const [discountForm, setDiscountForm] = useState({ percent: "0", reason: "", permanent: true, expiresMonths: "1" });
-  const [discountSaving, setDiscountSaving] = useState(false);
-
   const fetchAll = useCallback(async () => {
     if (!id) return;
     const [shopRes, subRes, clientsRes, vehiclesRes, quotesRes, woRes, alertsRes, logsRes, teamRes, invoicesRes, servicesRes] = await Promise.all([
       supabase.from("shops").select("*").eq("id", id).maybeSingle(),
-      supabase.from("subscriptions").select("plan, status, billing_cycle, trial_end, current_period_end, stripe_customer_id, stripe_subscription_id, discount_percent, discount_reason, discount_applied_at, discount_expires_at").eq("shop_id", id).maybeSingle(),
+      supabase.from("subscriptions").select("plan, status, billing_cycle, trial_end, current_period_end, stripe_customer_id, stripe_subscription_id").eq("shop_id", id).maybeSingle(),
       supabase.from("clients").select("id, name, email, phone, created_at").eq("shop_id", id).is("deleted_at", null).order("created_at", { ascending: false }).limit(50),
       supabase.from("vehicles").select("id").eq("shop_id", id).is("deleted_at", null),
       supabase.from("quotes").select("id, number, status, total, created_at, client_id").eq("shop_id", id).order("created_at", { ascending: false }).limit(50),
@@ -170,21 +159,6 @@ export default function AdminShopDetail() {
 
   useEffect(() => {
     fetchAll();
-    // Refresh PLAN_PRICES from the single source of truth (country_settings PT).
-    (async () => {
-      const { data: pt } = await supabase
-        .from("country_settings")
-        .select("saas_pro_monthly,saas_garage_monthly")
-        .eq("code", "PT")
-        .maybeSingle();
-      if (pt) {
-        PLAN_PRICES = {
-          free: 0,
-          pro: Number(pt.saas_pro_monthly) || 0,
-          garage: Number(pt.saas_garage_monthly) || 0,
-        };
-      }
-    })();
     if (!id) return;
 
     const channel = supabase
@@ -294,92 +268,6 @@ export default function AdminShopDetail() {
   };
 
 
-  // --- Discount System ---
-  const openDiscountDialog = () => {
-    setDiscountForm({
-      percent: String(sub?.discount_percent || 0),
-      reason: "",
-      permanent: true,
-      expiresMonths: "1",
-    });
-    setDiscountOpen(true);
-  };
-
-  const handleApplyDiscount = async () => {
-    if (!id || !shop) return;
-    const percent = parseFloat(discountForm.percent);
-    if (isNaN(percent) || percent < 0 || percent > 80) {
-      toast.error("Desconto deve ser entre 0% e 80%");
-      return;
-    }
-    if (!discountForm.reason.trim()) {
-      toast.error("Motivo obrigatório para aplicar desconto");
-      return;
-    }
-
-    setDiscountSaving(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      let expiresAt: string | null = null;
-      if (!discountForm.permanent) {
-        const d = new Date();
-        d.setMonth(d.getMonth() + parseInt(discountForm.expiresMonths));
-        expiresAt = d.toISOString();
-      }
-
-      const { error } = await supabase.from("subscriptions").update({
-        discount_percent: percent,
-        discount_reason: discountForm.reason,
-        discount_applied_at: new Date().toISOString(),
-        discount_applied_by: user?.id || null,
-        discount_expires_at: expiresAt,
-      }).eq("shop_id", id);
-
-      if (error) { toast.error(error.message); return; }
-
-      const oldDiscount = sub?.discount_percent || 0;
-      await logAudit({
-        action: "discount_applied",
-        entityType: "subscription",
-        entityId: id,
-        details: {
-          name: shop.name,
-          old_discount: `${oldDiscount}%`,
-          new_discount: `${percent}%`,
-          reason: discountForm.reason,
-          permanent: discountForm.permanent,
-          expires_at: expiresAt,
-        },
-      });
-
-      toast.success(`Desconto de ${percent}% aplicado com sucesso`);
-      setDiscountOpen(false);
-    } finally {
-      setDiscountSaving(false);
-    }
-  };
-
-  const removeDiscount = () => {
-    if (!id) return;
-    confirmAndExecute(
-      "discount_remove",
-      "Remover Desconto",
-      `Tem a certeza que pretende remover o desconto de ${sub?.discount_percent}% da oficina "${shop?.name}"?`,
-      async () => {
-        const { error } = await supabase.from("subscriptions").update({
-          discount_percent: 0,
-          discount_reason: null,
-          discount_applied_at: null,
-          discount_applied_by: null,
-          discount_expires_at: null,
-        }).eq("shop_id", id);
-        if (error) { toast.error(error.message); return; }
-        await logAudit({ action: "discount_removed", entityType: "subscription", entityId: id, details: { name: shop?.name, old_discount: `${sub?.discount_percent}%` } });
-        toast.success("Desconto removido");
-      }
-    );
-  };
-
   // --- Edit dialog ---
   const openEditDialog = () => {
     if (!shop) return;
@@ -428,10 +316,6 @@ export default function AdminShopDetail() {
   const plan = sub?.plan || 'free';
   const trialDays = sub?.trial_end && new Date(sub.trial_end) > new Date()
     ? Math.ceil((new Date(sub.trial_end).getTime() - Date.now()) / 86400000) : 0;
-  const discount = sub?.discount_percent || 0;
-  const originalPrice = PLAN_PRICES[plan] || 0;
-  const discountedPrice = originalPrice * (1 - discount / 100);
-  const mrrImpact = originalPrice - discountedPrice;
 
   return (
     <div className="space-y-6">
@@ -466,9 +350,6 @@ export default function AdminShopDetail() {
             <Button variant="outline" size="sm" onClick={resetTrial} className="gap-1">
               <RotateCcw className="w-3 h-3" /> Reset Trial
             </Button>
-            <Button variant="outline" size="sm" onClick={openDiscountDialog} className="gap-1">
-              <Percent className="w-3 h-3" /> Desconto
-            </Button>
             <Badge variant="outline" className={shop.status === 'active' ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}>
               {shop.status === 'active' ? 'Ativa' : 'Suspensa'}
             </Badge>
@@ -497,41 +378,6 @@ export default function AdminShopDetail() {
               {sub.current_period_end && <span>Expira: {new Date(sub.current_period_end).toLocaleDateString("pt-PT")}</span>}
             </div>
 
-            {/* Discount info */}
-            {discount > 0 && (
-              <div className="mt-2 p-3 rounded-lg bg-success/5 border border-success/20">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <Percent className="w-4 h-4 text-success" />
-                    <span className="text-sm font-semibold text-success">{discount}% desconto</span>
-                    <span className="text-xs text-muted-foreground">
-                      <span className="line-through">€{originalPrice}</span> → <strong>€{discountedPrice.toFixed(2)}</strong>/mês
-                    </span>
-                    <span className="text-xs text-destructive">(-€{mrrImpact.toFixed(2)} MRR)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {sub.discount_expires_at ? (
-                      <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning">
-                        Expira: {new Date(sub.discount_expires_at).toLocaleDateString("pt-PT")}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px] bg-success/10 text-success">Permanente</Badge>
-                    )}
-                    <Button variant="ghost" size="sm" onClick={removeDiscount} className="h-6 text-xs text-destructive hover:text-destructive">
-                      <Trash2 className="w-3 h-3 mr-1" /> Remover
-                    </Button>
-                  </div>
-                </div>
-                {sub.discount_reason && (
-                  <p className="text-xs text-muted-foreground mt-1">Motivo: {sub.discount_reason}</p>
-                )}
-                {sub.discount_applied_at && (
-                  <p className="text-[10px] text-muted-foreground">
-                    Aplicado em: {new Date(sub.discount_applied_at).toLocaleString("pt-PT")}
-                  </p>
-                )}
-              </div>
-            )}
           </div>
         )}
       </div>
@@ -971,102 +817,6 @@ export default function AdminShopDetail() {
               {saving ? "A guardar..." : "Guardar"}
             </Button>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Discount Dialog */}
-      <Dialog open={discountOpen} onOpenChange={setDiscountOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Percent className="w-5 h-5 text-success" /> Aplicar Desconto
-            </DialogTitle>
-            <DialogDescription>
-              Aplique um desconto personalizado (até 80%) para esta oficina. Esta ação será auditada.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Percentagem de desconto *</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min="0"
-                  max="80"
-                  step="1"
-                  value={discountForm.percent}
-                  onChange={e => setDiscountForm({ ...discountForm, percent: e.target.value })}
-                  className="w-24"
-                />
-                <span className="text-sm text-muted-foreground">%</span>
-                {plan !== 'free' && (
-                  <span className="text-xs text-muted-foreground ml-2">
-                    €{PLAN_PRICES[plan]} → <strong>€{(PLAN_PRICES[plan] * (1 - parseFloat(discountForm.percent || "0") / 100)).toFixed(2)}</strong>/mês
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Motivo (obrigatório) *</Label>
-              <Textarea
-                value={discountForm.reason}
-                onChange={e => setDiscountForm({ ...discountForm, reason: e.target.value })}
-                placeholder="Ex: Parceiro estratégico, cliente antigo, promoção especial..."
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Duração</Label>
-              <div className="flex items-center gap-3">
-                <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={discountForm.permanent}
-                    onChange={() => setDiscountForm({ ...discountForm, permanent: true })}
-                    className="accent-primary"
-                  />
-                  Permanente
-                </label>
-                <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={!discountForm.permanent}
-                    onChange={() => setDiscountForm({ ...discountForm, permanent: false })}
-                    className="accent-primary"
-                  />
-                  Temporário
-                </label>
-              </div>
-              {!discountForm.permanent && (
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min="1"
-                    max="24"
-                    value={discountForm.expiresMonths}
-                    onChange={e => setDiscountForm({ ...discountForm, expiresMonths: e.target.value })}
-                    className="w-20"
-                  />
-                  <span className="text-sm text-muted-foreground">meses</span>
-                </div>
-              )}
-            </div>
-
-            {plan !== 'free' && parseFloat(discountForm.percent || "0") > 0 && (
-              <div className="p-3 rounded-lg bg-warning/5 border border-warning/20 text-xs space-y-1">
-                <p><strong>Impacto no MRR:</strong> -€{(PLAN_PRICES[plan] * parseFloat(discountForm.percent || "0") / 100).toFixed(2)}/mês</p>
-                <p><strong>Preço final:</strong> €{(PLAN_PRICES[plan] * (1 - parseFloat(discountForm.percent || "0") / 100)).toFixed(2)}/mês</p>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDiscountOpen(false)}>Cancelar</Button>
-            <Button onClick={handleApplyDiscount} disabled={discountSaving} className="gap-1">
-              {discountSaving ? "A aplicar..." : "Confirmar Desconto"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

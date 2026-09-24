@@ -96,7 +96,7 @@ const navSections = [
     items: [
       { path: "/admin/vehicles", label: "Veículos (Global)", icon: Car },
       { path: "/admin/plate-lookups", label: "Consultas de Matrículas", icon: Car },
-  { path: "/admin/insurers", label: "Seguradoras", icon: Car },
+      { path: "/admin/insurers", label: "Seguradoras", icon: Car },
       { path: "/admin/import", label: "Importar Clientes & Viaturas", icon: Upload },
       { path: "/admin/supplier-network", label: "Rede de Fornecedores", icon: Store },
       { path: "/admin/supplier-network/applications", label: "Candidaturas de Fornecedores", icon: Store },

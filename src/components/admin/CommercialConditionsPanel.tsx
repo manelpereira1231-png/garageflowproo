@@ -100,9 +100,9 @@ export function CommercialConditionsPanel({ shopId }: { shopId: string }) {
   };
 
   const remove = async () => {
-    if (!window.confirm("Remover esta condição e regressar ao preço normal na próxima renovação?")) return;
+    if (!window.confirm("Remover esta condição agora e regressar ao preço normal sem prorrata?")) return;
     setBusy(true);
-    try { await invoke({ action: "remove", shop_id: shopId, proration_behavior: "none" }); toast.success("Condição removida no Stripe."); await load(); }
+    try { await invoke({ action: "remove", shop_id: shopId, application_timing: "immediate", proration_behavior: "none" }); toast.success("Condição removida no Stripe."); await load(); }
     catch (error: any) { toast.error(error.message); }
     finally { setBusy(false); }
   };

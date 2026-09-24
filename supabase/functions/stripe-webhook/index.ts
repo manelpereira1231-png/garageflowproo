@@ -271,7 +271,6 @@ serve(async (req) => {
               update.current_period_end = periodEnd
                 ? new Date(periodEnd * 1000).toISOString()
                 : null;
-              await syncCommercialCondition(stripeSub, sub);
             } catch (e) {
               log("Could not sync plan from paid invoice subscription", {
                 stripeSubId,
@@ -285,7 +284,6 @@ serve(async (req) => {
             .update(update)
             .eq("id", sub.id);
 
-          await syncCommercialCondition(subscription, sub);
           log("Invoice paid — subscription activated", { customerId, subId: sub.id, plan: update.plan });
         } else {
           log("No subscription found for invoice.paid", { customerId });
@@ -381,7 +379,7 @@ serve(async (req) => {
             })
             .eq("id", sub.id);
 
-          await syncCommercialCondition(stripeSub, sub);
+          await syncCommercialCondition(subscription, sub);
 
           log("Subscription updated", { customerId, plan, status, billingCycle });
         }
@@ -421,6 +419,12 @@ serve(async (req) => {
               updated_at: new Date().toISOString(),
             })
             .eq("id", sub.id);
+
+          await supabaseAdmin.from("shop_commercial_conditions").update({
+            status: "cancelled",
+            cancelled_at: new Date().toISOString(),
+            sync_error: null,
+          }).eq("shop_id", sub.shop_id).in("status", ["pending", "active", "scheduled"]);
 
           log("Subscription deleted — status set to canceled (no auto plan)", { customerId });
         }
@@ -684,11 +688,7 @@ serve(async (req) => {
             })
             .eq("id", sub.id);
 
-          await supabaseAdmin.from("shop_commercial_conditions").update({
-            status: "cancelled",
-            cancelled_at: new Date().toISOString(),
-            sync_error: null,
-          }).eq("shop_id", sub.shop_id).in("status", ["pending", "active", "scheduled"]);
+          await syncCommercialCondition(stripeSub, sub);
 
           // Checkout creates a new subscription. Once its first payment is
           // confirmed, end the old Start trial immediately to avoid two live

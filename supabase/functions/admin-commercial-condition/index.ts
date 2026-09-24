@@ -86,17 +86,18 @@ serve(async (req) => {
     const currentCycle = subscription.billing_cycle === "yearly" ? "yearly" : "monthly";
     const targetPlan = String(body.target_plan || subscription.plan).toLowerCase();
     const cycle = body.target_cycle || currentCycle;
-    if (["free", "gratis", "gratuito"].includes(targetPlan)) return json({ error: "O plano grátis já não existe. Use o plano START." }, 400);
     const planChanged = targetPlan !== String(subscription.plan).toLowerCase() || cycle !== currentCycle;
     const { data: allPrices } = await admin.from("plan_country_prices")
       .select("plan_slug,cycle,amount,currency,stripe_price_id")
       .eq("country_code", country)
       .eq("active", true);
+    const { data: planRows } = await admin.from("plans").select("slug,name").eq("active", true);
+    const planName = (slug: string) => (planRows || []).find((p: any) => p.slug === slug)?.name || (slug === "free" ? "Start" : slug);
     const availablePlans = (allPrices || [])
-      .filter((r: any) => r.stripe_price_id && !["free", "gratis", "gratuito"].includes(String(r.plan_slug).toLowerCase()))
-      .map((r: any) => ({ plan_slug: r.plan_slug, cycle: r.cycle, amount_minor: Math.round(Number(r.amount) * 100), currency: String(r.currency || "EUR").toUpperCase() }));
+      .filter((r: any) => r.stripe_price_id && Number(r.amount) > 0)
+      .map((r: any) => ({ plan_slug: r.plan_slug, plan_name: planName(r.plan_slug), cycle: r.cycle, amount_minor: Math.round(Number(r.amount) * 100), currency: String(r.currency || "EUR").toUpperCase() }));
     const priceRow = (allPrices || []).find((r: any) => String(r.plan_slug).toLowerCase() === targetPlan && r.cycle === cycle);
-    if (!priceRow?.stripe_price_id) return json({ error: `O plano ${targetPlan.toUpperCase()} (${cycle === "yearly" ? "anual" : "mensal"}) não tem preço Stripe configurado para ${country}.` }, 409);
+    if (!priceRow?.stripe_price_id) return json({ error: `O plano ${targetPlan === "free" ? "START" : targetPlan.toUpperCase()} (${cycle === "yearly" ? "anual" : "mensal"}) não tem preço Stripe configurado para ${country}.` }, 409);
 
     const stripeSubscription = subscription.stripe_subscription_id
       ? await stripe.subscriptions.retrieve(subscription.stripe_subscription_id, { expand: ["schedule", "discounts"] })
@@ -143,7 +144,7 @@ serve(async (req) => {
 
     if (body.action === "preview") {
       const computed = computeCondition(body, baseMinor, stripeSubscription);
-      return json({ ...computed, target_plan: targetPlan, target_cycle: cycle, plan_changed: planChanged, base_amount_minor: baseMinor, currency, subscription, upcoming: await upcoming(), stripe_connected: !!stripeSubscription });
+      return json({ ...computed, target_plan: targetPlan, target_plan_name: planName(targetPlan), target_cycle: cycle, plan_changed: planChanged, base_amount_minor: baseMinor, currency, subscription, upcoming: await upcoming(), stripe_connected: !!stripeSubscription });
     }
 
     if (body.action === "remove") {

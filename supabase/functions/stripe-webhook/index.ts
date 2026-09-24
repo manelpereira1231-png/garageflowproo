@@ -151,7 +151,7 @@ async function syncCommercialCondition(subscription: Stripe.Subscription, sub: {
   }
 
   const { data: condition } = await supabaseAdmin.from("shop_commercial_conditions")
-    .select("id,status,effective_amount_minor,currency,ends_at,plan_slug,billing_cycle")
+    .select("id,status,effective_amount_minor,currency,ends_at,plan_slug,billing_cycle,duration_months,stripe_subscription_id")
     .eq("id", conditionId).eq("shop_id", sub.shop_id).maybeSingle();
   if (!condition) return;
   const plan = await resolvePlan(subscription);
@@ -160,6 +160,20 @@ async function syncCommercialCondition(subscription: Stripe.Subscription, sub: {
     await supabaseAdmin.from("shop_commercial_conditions").update({ status: "review_required", sync_error: "A subscrição mudou de plano ou ciclo; a condição requer revisão." }).eq("id", condition.id);
     await supabaseAdmin.from("subscriptions").update({ commercial_condition_id: null, effective_amount_minor: item?.price?.unit_amount ?? null, effective_currency: item?.price?.currency?.toUpperCase() ?? null }).eq("id", sub.id);
     return;
+  }
+  // Condição preparada antes do 1.º pagamento: as datas reais começam agora.
+  if (!condition.stripe_subscription_id) {
+    const start = new Date((subscription.start_date || Math.floor(Date.now() / 1000)) * 1000);
+    let endsAt: string | null = condition.ends_at;
+    if (condition.duration_months) {
+      const end = new Date(start); end.setUTCMonth(end.getUTCMonth() + Number(condition.duration_months));
+      endsAt = end.toISOString();
+    }
+    condition.ends_at = endsAt;
+    await supabaseAdmin.from("shop_commercial_conditions").update({
+      starts_at: start.toISOString(), ends_at: endsAt, stripe_subscription_id: subscription.id,
+      stripe_customer_id: typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id,
+    }).eq("id", condition.id);
   }
   const expired = condition.ends_at && new Date(condition.ends_at).getTime() <= Date.now();
   await supabaseAdmin.from("shop_commercial_conditions").update({ status: expired ? "expired" : "active", sync_error: null }).eq("id", condition.id);

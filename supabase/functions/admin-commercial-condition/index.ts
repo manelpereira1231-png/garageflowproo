@@ -197,6 +197,16 @@ serve(async (req) => {
       request_key: body.request_key,
       created_by: auth.user.id,
     };
+    // Uma nova condição substitui a anterior. Com subscrição Stripe que tenha
+    // calendário ativo, é obrigatório remover primeiro (evita perder fases).
+    if (current) {
+      const hasSchedule = stripeSubscription && (typeof stripeSubscription.schedule === "string" ? stripeSubscription.schedule : stripeSubscription.schedule?.id);
+      if (hasSchedule) return json({ error: "Já existe uma condição agendada na Stripe. Remova-a primeiro." }, 409);
+      if (stripeSubscription && current.stripe_coupon_id) {
+        await stripe.subscriptions.update(stripeSubscription.id, { discounts: [] as any, proration_behavior: "none" });
+      }
+      await admin.from("shop_commercial_conditions").update({ status: "cancelled", cancelled_by: auth.user.id, cancelled_at: new Date().toISOString() }).eq("id", current.id);
+    }
     const { data: inserted, error: insertError } = await admin.from("shop_commercial_conditions").insert(insertPayload).select("id").single();
     if (insertError) {
       if (insertError.code === "23505") {
@@ -207,18 +217,21 @@ serve(async (req) => {
     }
     conditionId = inserted.id;
 
+    // Sem subscrição Stripe, o cupão é consumido no primeiro checkout: a duração
+    // temporária tem de viver no próprio cupão (repeating) para regressar ao
+    // preço normal automaticamente. Com subscrição, o schedule controla as fases.
+    const tempMonths = endSeconds ? Math.max(1, Math.round((endSeconds - startSeconds) / (30.44 * 86400))) : null;
+    const couponDuration: any = !stripeSubscription && tempMonths
+      ? { duration: "repeating", duration_in_months: tempMonths }
+      : { duration: "forever" };
     const coupon = await stripe.coupons.create({
       ...(computed.percent_off != null ? { percent_off: computed.percent_off } : { amount_off: baseMinor - computed.effective_amount_minor, currency: currency.toLowerCase() }),
-      duration: "forever",
+      ...couponDuration,
       name: `GarageFlow · ${shop.name} · ${body.reason}`.slice(0, 40),
       metadata: { shop_id: body.shop_id, condition_id: conditionId, plan_slug: targetPlan },
     }, { idempotencyKey: `${body.request_key}:coupon` });
 
     if (!stripeSubscription) {
-      if (!["fixed_permanent", "percent_permanent"].includes(body.condition_type)) {
-        await stripe.coupons.del(coupon.id).catch(() => undefined);
-        throw new Error("Condições temporárias ou futuras só podem ser configuradas depois de existir uma subscrição Stripe ativa.");
-      }
       await admin.from("shop_commercial_conditions").update({ status: "scheduled", stripe_coupon_id: coupon.id, sync_error: null }).eq("id", conditionId);
       await admin.from("subscriptions").update({ commercial_condition_id: conditionId, effective_amount_minor: computed.effective_amount_minor, effective_currency: currency }).eq("id", subscription.id);
       return json({ success: true, prepared: true, condition_id: conditionId });

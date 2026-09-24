@@ -119,7 +119,7 @@ export default function Billing() {
   const [offer, setOffer] = useState<any>(null);
   useEffect(() => {
     if (!shopId) return;
-    (supabase.rpc as any)("get_my_commercial_offer", { _shop_id: shopId }).then(({ data }: any) => setOffer(Array.isArray(data) ? data[0] ?? null : null));
+    (supabase.rpc as any)("get_my_commercial_offer", { _shop_id: shopId }).then(({ data }: any) => { const o = Array.isArray(data) ? data[0] ?? null : null; setOffer(o); if (o?.billing_cycle === "yearly" || o?.billing_cycle === "monthly") setBillingCycle(o.billing_cycle); });
   }, [shopId]);
   const navigate = useNavigate();
 

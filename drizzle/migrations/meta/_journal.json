@@ -85,6 +85,13 @@
       "when": 1790283473858,
       "tag": "0011_vehicle_lookup_admin_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790285671347,
+      "tag": "0012_create_shop_commercial_conditions",
+      "breakpoints": true
     }
   ]
 }

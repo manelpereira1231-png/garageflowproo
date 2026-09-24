@@ -270,7 +270,7 @@ export default function Clients() {
 
   const openEdit = (c: ClientRow) => {
     setEditingId(c.id);
-    setForm({ name: c.name, phone: c.phone, email: c.email, company: c.company || "", nif: c.nif || "", notes: c.notes || "", is_fleet: !!c.is_fleet, fleet_name: c.fleet_name || "", fleet_manager: c.fleet_manager || "" });
+    setForm({ name: c.name, phone: c.phone, email: c.email, company: c.company || "", nif: c.nif || "", notes: c.notes || "", is_fleet: !!c.is_fleet, fleet_name: c.fleet_name || "", fleet_manager: c.fleet_manager || "", is_insurance: !!(c as any).is_insurance, insurer_id: (c as any).insurer_id || "" });
     setOpen(true);
   };
 

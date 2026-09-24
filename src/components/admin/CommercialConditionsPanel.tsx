@@ -121,6 +121,7 @@ export function CommercialConditionsPanel({ shopId }: { shopId: string }) {
   const isPermanent = form.type.endsWith("permanent");
   const isFree = form.type === "free_months";
   const isDated = form.type === "dated";
+  const isYearly = data.subscription.billing_cycle === "yearly";
 
   return <div className="space-y-4">
     <Card className="border-primary/30">
@@ -158,7 +159,7 @@ export function CommercialConditionsPanel({ shopId }: { shopId: string }) {
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Tipo de condição" wide><Select value={form.type} onValueChange={(value: ConditionType) => setForm({ ...form, type: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{Object.entries(typeLabels).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></Field>
         {!isFree && <Field label={isPercent ? "Desconto (%)" : "Novo preço"}><Input type="number" min="0" step="0.01" value={isPercent ? form.percent : form.value} onChange={e => setForm({ ...form, [isPercent ? "percent" : "value"]: e.target.value })} /></Field>}
-        {!isPermanent && !isDated && <Field label="Duração (meses)"><Input type="number" min="1" max="120" value={form.months} onChange={e => setForm({ ...form, months: e.target.value })} /></Field>}
+        {!isPermanent && !isDated && <Field label={isYearly ? "Duração (meses, múltiplos de 12)" : "Duração (meses)"}><Input type="number" min={isYearly ? "12" : "1"} step={isYearly ? "12" : "1"} max="120" value={form.months} onChange={e => setForm({ ...form, months: e.target.value })} /></Field>}
         <Field label="Começa"><Select value={form.timing} onValueChange={(value: Timing) => setForm({ ...form, timing: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="next_renewal">Na próxima renovação</SelectItem><SelectItem value="immediate">Imediatamente</SelectItem><SelectItem value="specific_date">Data específica</SelectItem></SelectContent></Select></Field>
         {form.timing === "specific_date" && <Field label="Data de início"><Input type="datetime-local" value={form.startsAt} onChange={e => setForm({ ...form, startsAt: e.target.value })} /></Field>}
         {isDated && <Field label="Data final"><Input type="datetime-local" value={form.endsAt} onChange={e => setForm({ ...form, endsAt: e.target.value })} /></Field>}

@@ -12,7 +12,6 @@ const nav = [
   { path: "/commercial/demos", label: "Pedidos de Demonstração", icon: Sparkles },
   { path: "/commercial/pipeline", label: "Pipeline de Vendas", icon: KanbanSquare },
   { path: "/commercial/meetings", label: "Centro de Reuniões", icon: CalendarClock },
-  { path: "/commercial/retention", label: "Centro de Retenção", icon: HeartHandshake },
   { path: "/commercial/intelligence", label: "Inteligência Comercial", icon: Lightbulb },
   { path: "/commercial/reports", label: "Relatórios", icon: FileBarChart2 },
   { path: "/commercial/objectives", label: "Objetivos", icon: Target },

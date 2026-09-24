@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useVehicleLookupEnabled } from "@/hooks/useVehicleLookupEnabled";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ export default function QuickVehicleForm({
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lookup, setLookup] = useState<LookupResult | null>(null);
+  const lookupEnabled = useVehicleLookupEnabled();
 
   const consult = async () => {
     const canon = canonicalPlate(plate);
@@ -75,10 +77,10 @@ export default function QuickVehicleForm({
       <div className="flex gap-2">
         <Input className="h-12 text-lg font-mono uppercase" placeholder="12-AA-34" value={plate}
           onChange={(e) => setPlate(autoFormatPlate(e.target.value, "PT"))} />
-        <Button type="button" variant="outline" className="h-12" onClick={consult} disabled={busy}>
+        {lookupEnabled && <Button type="button" variant="outline" className="h-12" onClick={consult} disabled={busy}>
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
           <span className="ml-1 hidden sm:inline">Consultar matrícula</span>
-        </Button>
+        </Button>}
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div><Label>Marca</Label><Input value={f.make} onChange={(e) => setF({ ...f, make: e.target.value })} /></div>

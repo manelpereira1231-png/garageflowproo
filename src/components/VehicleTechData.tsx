@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useVehicleLookupEnabled } from "@/hooks/useVehicleLookupEnabled";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,6 +17,7 @@ export default function VehicleTechData({ vehicle, onUpdated }: { vehicle: any; 
   const [pick, setPick] = useState<Record<string, boolean>>({});
   const [pending, setPending] = useState<{ data: TD; fetched_at: string; fill: Record<string, any> } | null>(null);
   const tech: TD | null = vehicle?.tech_data || null;
+  const lookupEnabled = useVehicleLookupEnabled();
 
   const save = async (data: TD, fetchedAt: string, apply: Diff[], fill: Record<string, any>) => {
     const patch: any = { tech_data: data, tech_source: "matricula_pt", tech_updated_at: fetchedAt, ...fill };
@@ -57,6 +59,9 @@ export default function VehicleTechData({ vehicle, onUpdated }: { vehicle: any; 
     } finally { setBusy(false); }
   };
 
+  // Serviço desligado: mostra apenas dados já guardados (se houver), sem ações de consulta.
+  if (!lookupEnabled && !tech) return null;
+
   return (
     <div className="rounded-xl border bg-card p-4 space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -65,13 +70,15 @@ export default function VehicleTechData({ vehicle, onUpdated }: { vehicle: any; 
           <p className="text-xs text-muted-foreground">
             {vehicle?.tech_updated_at
               ? `Última consulta técnica: ${new Date(vehicle.tech_updated_at).toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" })}`
-              : "Ainda sem consulta técnica."}
+              : lookupEnabled ? "Ainda sem consulta técnica." : ""}
           </p>
         </div>
-        <Button variant="outline" size="sm" className="min-h-[44px] sm:min-h-0" onClick={refresh} disabled={busy}>
-          {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-          Atualizar dados pela matrícula
-        </Button>
+        {lookupEnabled && (
+          <Button variant="outline" size="sm" className="min-h-[44px] sm:min-h-0" onClick={refresh} disabled={busy}>
+            {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+            Atualizar dados pela matrícula
+          </Button>
+        )}
       </div>
 
       {diffs && pending && (

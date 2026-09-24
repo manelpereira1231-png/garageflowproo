@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Car, Pencil, Trash2, FileDown, ScrollText, X, Loader2, CheckCircle2 } from "lucide-react";
+import { useVehicleLookupEnabled } from "@/hooks/useVehicleLookupEnabled";
 import { lookupPlate, matchCatalogModel, mapFuel, type LookupResult } from "@/lib/vehicleLookup";
 import { toast } from "sonner";
 import { toastError } from "@/lib/errorMessages";
@@ -138,6 +139,7 @@ export default function Vehicles() {
   useRealtimeTable("vehicles", { shopId: activeShopId, onChange: fetchData });
   useRealtimeTable("clients", { shopId: activeShopId, onChange: () => void fetchRefData() });
 
+  const lookupEnabled = useVehicleLookupEnabled();
   const [lookupBusy, setLookupBusy] = useState(false);
   const [lookup, setLookup] = useState<LookupResult | null>(null);
   const [lookupPlateRef, setLookupPlateRef] = useState("");
@@ -331,7 +333,7 @@ export default function Vehicles() {
                     aria-invalid={form.plate.length > 0 && !isValidPlate(form.plate, plateRegion)}
                     className={`h-12 text-lg mono tracking-wider ${form.plate.length > 0 && !isValidPlate(form.plate, plateRegion) ? "border-destructive" : ""}`}
                   />
-                  {plateRegion === "PT" && (
+                  {lookupEnabled && plateRegion === "PT" && (
                     <Button type="button" variant="secondary" className="h-12 sm:w-auto w-full" onClick={handleLookup} disabled={lookupBusy}>
                       {lookupBusy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
                       Consultar matrícula
@@ -339,7 +341,7 @@ export default function Vehicles() {
                   )}
                 </div>
                 <p className="text-[11px] text-muted-foreground">Formato: {plateExample}</p>
-                {existing && (
+                {lookupEnabled && existing && (
                   <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 space-y-2">
                     <p className="text-sm font-medium">Esta viatura já existe no GarageFlow.</p>
                     <p className="text-sm mono">{existing.plate} — {[existing.make, existing.model, existing.version].filter(Boolean).join(" ")}</p>
@@ -349,7 +351,7 @@ export default function Vehicles() {
                     </div>
                   </div>
                 )}
-                {lookup && (
+                {lookupEnabled && lookup && (
                   <div className={`rounded-lg border p-3 text-sm ${lookup.status === "ok" ? "border-success/40 bg-success/5" : "border-border bg-muted/40"}`}>
                     {lookup.status === "ok" && lookup.data ? (
                       <>

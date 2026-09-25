@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { insertWithNumber, nextDocNumber, friendlyDocError } from "@/lib/insertWithNumber";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -124,6 +125,22 @@ export default function QuoteForm() {
     };
     fetchData();
   }, [editId]);
+
+  // Live: if another user of this shop changes the quote status, reflect it
+  // immediately without discarding lines being edited here.
+  useRealtimeTable("quotes", {
+    filter: editId ? `id=eq.${editId}` : undefined,
+    event: "UPDATE",
+    enabled: !!editId,
+    shopId: editId ? undefined : null,
+    onChange: async () => {
+      const { data } = await supabase.from("quotes").select("status").eq("id", editId!).maybeSingle();
+      if (data?.status) setQuoteStatus((prev) => {
+        if (prev !== data.status) toast.info("Orçamento atualizado por outro utilizador da oficina.");
+        return data.status;
+      });
+    },
+  });
 
   useEffect(() => {
     if (!editId) {

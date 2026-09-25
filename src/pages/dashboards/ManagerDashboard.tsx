@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
+import { useLiveTick } from "@/hooks/useLiveTick";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ interface WorkOrderRow {
 export default function ManagerDashboard() {
   const { user, isReady } = useAuthReady();
   const shopId = useActiveShopId();
+  const liveTick = useLiveTick(["work_orders","quotes","appointments","invoices","clients"], shopId);
   const [loading, setLoading] = useState(true);
   const [activeOrders, setActiveOrders] = useState<WorkOrderRow[]>([]);
   const [todayAppointments, setTodayAppointments] = useState(0);
@@ -69,7 +71,7 @@ export default function ManagerDashboard() {
       setLowStock(((partsRes.data as any[]) || []).filter((p) => Number(p.stock_quantity || 0) <= Number(p.min_stock || 0)).length);
       setLoading(false);
     })();
-  }, [isReady, user, shopId]);
+  }, [isReady, user, shopId, liveTick]);
 
   if (loading) return <div className="p-6"><Skeleton className="h-64 w-full" /></div>;
 

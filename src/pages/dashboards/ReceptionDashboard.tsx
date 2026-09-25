@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
+import { useLiveTick } from "@/hooks/useLiveTick";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Card } from "@/components/ui/card";
@@ -23,6 +24,7 @@ export default function ReceptionDashboard() {
   const { t } = useLanguage();
   const { user, isReady } = useAuthReady();
   const shopId = useActiveShopId();
+  const liveTick = useLiveTick(["appointments","work_orders","quotes","clients","vehicles"], shopId);
   const [loading, setLoading] = useState(true);
   const [todayAppts, setTodayAppts] = useState<Appointment[]>([]);
   const [pendingCheckin, setPendingCheckin] = useState(0);
@@ -68,7 +70,7 @@ export default function ReceptionDashboard() {
       setNewClientsWeek(clientsRes.count || 0);
       setLoading(false);
     })();
-  }, [isReady, user, shopId]);
+  }, [isReady, user, shopId, liveTick]);
 
   if (loading) return <div className="p-6"><Skeleton className="h-64 w-full" /></div>;
 

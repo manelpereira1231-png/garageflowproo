@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useUrlSearchFilter } from "@/hooks/useUrlSearchFilter";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
+import { useLiveTick } from "@/hooks/useLiveTick";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -422,6 +423,8 @@ export default function Services() {
   });
 
   const fetchServices = () => setRefreshKey((k) => k + 1);
+  const liveTick = useLiveTick(["work_orders", "quotes"], activeShopId);
+  useEffect(() => { if (liveTick) setRefreshKey((k) => k + 1); }, [liveTick]);
 
   useEffect(() => {
     if (!activeShopId) return;

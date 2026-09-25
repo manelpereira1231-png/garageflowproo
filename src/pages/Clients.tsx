@@ -260,9 +260,20 @@ export default function Clients() {
       }
       toast.success(editingId ? t('clients.updated') : t('clients.created'));
       const newId = result.data?.id;
-      if (!editingId && form.is_insurance && newId) {
-        if (returnToClaims) { navigate(`/claims?new=1&client=${newId}`); }
-        else setClaimPrompt(newId);
+      if (form.is_insurance && newId) {
+        // Cliente de seguradora entra logo nos Sinistros (cria processo se ainda não tiver).
+        const { count } = await supabase.from("claims").select("id", { count: "exact", head: true })
+          .eq("shop_id", shopId).eq("client_id", newId);
+        if (!count) {
+          const { error: cErr } = await supabase.from("claims").insert({
+            shop_id: shopId, client_id: newId, insurer_id: payload.insurer_id,
+            claim_number: form.ins_claim || null, policy_number: form.ins_policy || null,
+            claim_date: form.ins_date || null, notes: form.ins_notes || null, status: "new",
+          } as any);
+          if (cErr) toastError(cErr, "Cliente guardado, mas não foi possível criar o sinistro");
+          else toast.success("Sinistro criado em Sinistros");
+          if (!editingId && returnToClaims) navigate("/claims");
+        }
       }
       setOpen(false);
       setEditingId(null);
@@ -466,7 +477,7 @@ export default function Clients() {
                    <Button variant="ghost" size="sm" onClick={() => emailClient(client.email)} className="h-11 w-8 p-0 sm:w-11" title="Email"><Mail className="w-5 h-5" /></Button>
                 )}
                  <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.id, client.portal_token, t('common.copied'))} className="h-11 w-8 p-0 sm:w-11" title="Portal"><Link2 className="w-4 h-4 text-primary" /></Button>
-                 <Button variant="ghost" size="sm" onClick={() => setClaimsClient(client)} className="h-11 w-8 p-0 sm:w-11" title="Sinistros"><ShieldAlert className="w-4 h-4 text-primary" /></Button>
+                 {(client as any).is_insurance && <Button variant="ghost" size="sm" onClick={() => setClaimsClient(client)} className="h-11 w-8 p-0 sm:w-11" title="Sinistros"><ShieldAlert className="w-4 h-4 text-primary" /></Button>}
                  <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="h-11 w-8 p-0 sm:w-11"><Pencil className="w-4 h-4" /></Button>
                  <Button variant="ghost" size="sm" onClick={() => setDeleteId(client.id)} className="h-11 w-8 p-0 text-destructive sm:w-11"><Trash2 className="w-4 h-4" /></Button>
               </div>
@@ -540,9 +551,11 @@ export default function Clients() {
                     <Button variant="ghost" size="sm" onClick={() => copyPortalLink(client.id, client.portal_token, t('common.copied'))} className="text-xs text-primary" title="Portal">
                       <Link2 className="w-3.5 h-3.5 mr-1" />{t('common.portal')}
                     </Button>
+                    {(client as any).is_insurance && (
                     <Button variant="ghost" size="sm" onClick={() => setClaimsClient(client)} className="text-xs" title="Sinistros">
                       <ShieldAlert className="w-3.5 h-3.5 mr-1" />Sinistros
                     </Button>
+                    )}
                     <Button variant="ghost" size="sm" onClick={() => openEdit(client)} className="text-xs">
                       <Pencil className="w-3.5 h-3.5 mr-1" />{t('common.edit')}
                     </Button>

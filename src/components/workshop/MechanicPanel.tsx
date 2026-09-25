@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -93,6 +94,8 @@ export default function MechanicPanel({ workOrderId, shopId, technicianName = ""
   }, [workOrderId, shopId]);
 
   useEffect(() => { void load(); }, [load]);
+  // Live: changes by owner/other technicians on this work order appear immediately.
+  useRealtimeTable("work_orders", { filter: `id=eq.${workOrderId}`, event: "UPDATE", onChange: () => { void load(); }, enabled: !!workOrderId });
 
   /** Fotos — reutiliza o bucket privado já usado pelo checklist. */
   const uploadPhoto = async (file: File) => {

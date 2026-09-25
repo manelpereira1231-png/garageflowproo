@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
+import { useLiveTick } from "@/hooks/useLiveTick";
 import { useAuthReady } from "@/hooks/useAuthReady";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Card } from "@/components/ui/card";
@@ -39,6 +40,7 @@ export default function TechnicianDashboard() {
   const { t } = useLanguage();
   const { user, isReady } = useAuthReady();
   const shopId = useActiveShopId();
+  const liveTick = useLiveTick(["work_orders","appointments","inspection_checklists"], shopId);
   const [loading, setLoading] = useState(true);
   const [today, setToday] = useState<TechService[]>([]);
   const [inProgress, setInProgress] = useState<TechService[]>([]);
@@ -87,7 +89,7 @@ export default function TechnicianDashboard() {
       setTotalDone(doneRes.count || 0);
       setLoading(false);
     })();
-  }, [isReady, user, shopId]);
+  }, [isReady, user, shopId, liveTick]);
 
   if (loading) {
     return (

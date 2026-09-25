@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
+import { useLiveTick } from "@/hooks/useLiveTick";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -183,7 +184,8 @@ export default function Inspections() {
     }
   };
 
-  useEffect(() => { load(); }, [activeShopId]);
+  const liveTick = useLiveTick(["inspection_checklists", "work_orders"], activeShopId);
+  useEffect(() => { load(); }, [activeShopId, liveTick]);
 
   const availableWOs = workOrders.filter(wo =>
     !checklists.some(cl => cl.work_order_id === wo.id)

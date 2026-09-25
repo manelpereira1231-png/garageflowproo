@@ -49,6 +49,7 @@ export default function ClaimDetail() {
 
   const [claim, setClaim] = useState<any>(null);
   const [insurers, setInsurers] = useState<any[]>([]);
+  const [insSel, setInsSel] = useState<InsurerSelection>(null);
   const [quotes, setQuotes] = useState<any[]>([]);
   const [contacts, setContacts] = useState<any[]>([]);
   const [comms, setComms] = useState<any[]>([]);
@@ -172,6 +173,7 @@ export default function ClaimDetail() {
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Sinistro guardado");
+    if (!patch) setInsSel(null);
     load();
   };
 

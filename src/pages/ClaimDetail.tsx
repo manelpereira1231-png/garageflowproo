@@ -319,11 +319,12 @@ export default function ClaimDetail() {
       {/* Cabeçalho + estado global */}
       <div className="flex items-start gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/claims")}><ArrowLeft className="w-5 h-5" /></Button>
-        <div className="flex-1">
-          <h1 className="page-title flex items-center gap-2">
-            <ShieldAlert className="w-6 h-6 text-primary" />
-            {claim.ref || "Sinistro"}{claim.claim_number ? <span className="text-base text-muted-foreground font-normal">· Processo {claim.claim_number}</span> : null}
+        <div className="flex-1 min-w-0">
+          <h1 className="page-title flex items-center gap-2 whitespace-nowrap">
+            <ShieldAlert className="w-6 h-6 text-primary shrink-0" />
+            {claim.ref || "Sinistro"}
           </h1>
+          {claim.claim_number ? <p className="text-sm text-muted-foreground break-all">Processo {claim.claim_number}</p> : null}
           <p className="text-sm text-muted-foreground">
             {claim.clients?.name} · {claim.vehicles ? `${claim.vehicles.make} ${claim.vehicles.model} — ${claim.vehicles.plate}` : "—"}
             {claim.work_orders?.number ? ` · OS ${claim.work_orders.number}` : ""}

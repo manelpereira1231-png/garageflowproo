@@ -272,6 +272,7 @@ export default function Clients() {
           } as any);
           if (cErr) toastError(cErr, "Cliente guardado, mas não foi possível criar o sinistro");
           else toast.success("Sinistro criado em Sinistros");
+          if (!editingId && returnToClaims) navigate("/claims");
         }
       }
       setOpen(false);

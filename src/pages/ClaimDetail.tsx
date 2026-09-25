@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -106,6 +107,13 @@ export default function ClaimDetail() {
   }, [id, activeShopId, navigate]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Live: same claim edited by another user (owner/technician) shows up here.
+  const liveOpts = { onChange: () => { void load(); }, enabled: !!id, debounceMs: 400 };
+  useRealtimeTable("claims", { ...liveOpts, filter: `id=eq.${id}`, event: "UPDATE" });
+  useRealtimeTable("claim_events", { ...liveOpts, filter: `claim_id=eq.${id}` });
+  useRealtimeTable("claim_communications", { ...liveOpts, filter: `claim_id=eq.${id}` });
+  useRealtimeTable("claim_documents", { ...liveOpts, filter: `claim_id=eq.${id}` });
 
   const set = (patch: Record<string, any>) => setClaim((c: any) => ({ ...c, ...patch }));
 
@@ -394,6 +402,23 @@ export default function ClaimDetail() {
               <p className="text-muted-foreground">Autorizado: {claim.amount_approved != null ? formatMoney(Number(claim.amount_approved)) : "—"}</p>
             </CardContent></Card>
           </div>
+          {(() => {
+            const q = quotes.find((x) => x.id === claim.quote_id);
+            const quoted = claim.amount_initial_quote != null && claim.amount_initial_quote !== "" ? Number(claim.amount_initial_quote) : (q ? Number(q.total) : null);
+            const approved = claim.amount_approved != null && claim.amount_approved !== "" ? Number(claim.amount_approved) : null;
+            const diff = quoted != null && approved != null ? Math.round((quoted - approved) * 100) / 100 : null;
+            const last = events[0];
+            return (
+              <Card><CardContent className="p-4 grid gap-3 grid-cols-2 sm:grid-cols-4 text-sm">
+                <div><p className="text-xs text-muted-foreground">Orçamentado</p><p className="font-semibold">{quoted != null ? formatMoney(quoted) : "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Autorizado</p><p className="font-semibold">{approved != null ? formatMoney(approved) : "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Diferença</p><p className="font-semibold">{diff != null ? formatMoney(diff) : "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Última atualização</p><p className="font-medium">{last ? new Date(last.created_at).toLocaleString("pt-PT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : new Date(claim.updated_at || claim.created_at).toLocaleString("pt-PT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>{last?.description || last?.title ? <p className="text-xs text-muted-foreground truncate">{last.title || last.description}</p> : null}</div>
+                {diff != null && diff !== 0 && <p className="col-span-2 sm:col-span-4 text-xs text-muted-foreground">A diferença é apenas informativa — não é cobrada automaticamente ao cliente.</p>}
+                <div className="col-span-2 sm:col-span-4"><p className="text-xs text-muted-foreground">Próxima ação</p><p className="font-medium">{claim.next_action || "Nenhuma definida"}{claim.next_action_date ? ` · ${claim.next_action_date}` : ""}</p></div>
+              </CardContent></Card>
+            );
+          })()}
           <Card><CardContent className="p-4 grid gap-2 sm:grid-cols-3 text-sm">
             <div><p className="text-xs text-muted-foreground">Orçamento</p><p className="font-medium">{quotes.find((q) => q.id === claim.quote_id)?.number || "Não associado"}</p></div>
             <div><p className="text-xs text-muted-foreground">Ordem de serviço</p><p className="font-medium">{claim.work_orders?.number || "Não associada"}</p></div>

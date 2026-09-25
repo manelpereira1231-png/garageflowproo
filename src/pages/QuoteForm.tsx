@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import LinkedClaimBanner from "@/components/LinkedClaimBanner";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { insertWithNumber, nextDocNumber, friendlyDocError } from "@/lib/insertWithNumber";
 import { Button } from "@/components/ui/button";
@@ -303,6 +304,7 @@ export default function QuoteForm() {
           <h1 className="page-title">{editId ? t('quotes.edit') : t('quotes.new')}</h1>
         </div>
       </div>
+      {editId && <LinkedClaimBanner quoteId={editId} />}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-card border border-border rounded-xl p-5 space-y-4">

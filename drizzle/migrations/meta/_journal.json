@@ -113,6 +113,13 @@
       "when": 1790357371193,
       "tag": "0015_realtime_inspection_checklists",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790357632084,
+      "tag": "0016_realtime_claims",
+      "breakpoints": true
     }
   ]
 }

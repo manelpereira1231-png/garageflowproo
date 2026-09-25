@@ -1,6 +1,7 @@
 import { MAX_LABOR_HOURS, MAX_LINE_QUANTITY, MAX_UNIT_PRICE, MAX_MILEAGE } from "@/lib/sanityLimits";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import LinkedClaimBanner from "@/components/LinkedClaimBanner";
 import { insertWithNumber, nextDocNumber, friendlyDocError } from "@/lib/insertWithNumber";
 import TechnicianSelect from "@/components/TechnicianSelect";
 import { Button } from "@/components/ui/button";
@@ -235,6 +236,7 @@ export default function ServiceForm() {
           <h1 className="page-title">{editId ? t('services.edit') : t('services.new')}</h1>
         </div>
       </div>
+      {editId && <LinkedClaimBanner workOrderId={editId} />}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-card border border-border rounded-xl p-5 space-y-4">

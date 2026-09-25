@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -103,6 +104,8 @@ export default function Claims() {
   }, [activeShopId]);
 
   useEffect(() => { load(); }, [load]);
+  // Live: claims changed by any user of this shop refresh the list/counters.
+  useRealtimeTable("claims", { shopId: activeShopId, onChange: () => { void load(); } });
 
   // Pré-preenchimento vindo da Ordem de Serviço (/claims?wo=<id>)
   useEffect(() => {

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { InsurerPicker, resolveInsurerId, type InsurerSelection } from "@/components/InsurerPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +49,7 @@ export default function ClaimDetail() {
 
   const [claim, setClaim] = useState<any>(null);
   const [insurers, setInsurers] = useState<any[]>([]);
+  const [insSel, setInsSel] = useState<InsurerSelection>(null);
   const [quotes, setQuotes] = useState<any[]>([]);
   const [contacts, setContacts] = useState<any[]>([]);
   const [comms, setComms] = useState<any[]>([]);
@@ -134,8 +136,13 @@ export default function ClaimDetail() {
   const persist = async (patch?: Record<string, any>) => {
     if (!claim) return;
     setSaving(true);
+    let insurerId = claim.insurer_id ?? null;
+    if (!patch && insSel && !insSel.insurerId && activeShopId) {
+      try { insurerId = await resolveInsurerId(activeShopId, insSel); }
+      catch (e: any) { setSaving(false); toast.error(e.message || "Erro na seguradora"); return; }
+    }
     const payload = patch ?? {
-      insurer_id: claim.insurer_id, claim_number: claim.claim_number, policy_number: claim.policy_number,
+      insurer_id: insurerId, claim_number: claim.claim_number, policy_number: claim.policy_number,
       process_number: claim.process_number, report_number: claim.report_number,
       claim_date: claim.claim_date || null, report_date: claim.report_date || null,
       claim_type: claim.claim_type, description: claim.description, location: claim.location,
@@ -166,6 +173,7 @@ export default function ClaimDetail() {
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Sinistro guardado");
+    if (!patch) setInsSel(null);
     load();
   };
 
@@ -505,11 +513,11 @@ export default function ClaimDetail() {
             <CardHeader><CardTitle className="text-base">Dados do sinistro</CardTitle></CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2">
               <div>
-                <Label>Seguradora</Label>
-                <Select value={claim.insurer_id || ""} onValueChange={(v) => set({ insurer_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                  <SelectContent>{insurers.map((i) => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}</SelectContent>
-                </Select>
+                <InsurerPicker
+                  shopId={activeShopId}
+                  value={insSel ?? (claim.insurer_id ? { insurerId: claim.insurer_id } : null)}
+                  onChange={(v) => { setInsSel(v); if (!v) set({ insurer_id: null }); else if (v.insurerId) set({ insurer_id: v.insurerId }); }}
+                />
               </div>
               <div><Label>Nº do sinistro</Label><Input value={claim.claim_number || ""} onChange={(e) => set({ claim_number: e.target.value })} /></div>
               <div><Label>Nº da apólice</Label><Input value={claim.policy_number || ""} onChange={(e) => set({ policy_number: e.target.value })} /></div>

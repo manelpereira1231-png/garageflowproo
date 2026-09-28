@@ -5449,6 +5449,125 @@ export type Database = {
         }
         Relationships: []
       }
+      historical_invoice_imports: {
+        Row: {
+          admin_email: string | null
+          admin_id: string
+          clients_matched: number
+          created_at: string
+          duplicates: number
+          error_details: Json
+          errors: number
+          finished_at: string | null
+          found: number
+          id: string
+          imported: number
+          pending: number
+          shop_id: string
+          shop_name: string | null
+          source: string
+          status: string
+          vehicles_matched: number
+        }
+        Insert: {
+          admin_email?: string | null
+          admin_id: string
+          clients_matched?: number
+          created_at?: string
+          duplicates?: number
+          error_details?: Json
+          errors?: number
+          finished_at?: string | null
+          found?: number
+          id?: string
+          imported?: number
+          pending?: number
+          shop_id: string
+          shop_name?: string | null
+          source: string
+          status?: string
+          vehicles_matched?: number
+        }
+        Update: {
+          admin_email?: string | null
+          admin_id?: string
+          clients_matched?: number
+          created_at?: string
+          duplicates?: number
+          error_details?: Json
+          errors?: number
+          finished_at?: string | null
+          found?: number
+          id?: string
+          imported?: number
+          pending?: number
+          shop_id?: string
+          shop_name?: string | null
+          source?: string
+          status?: string
+          vehicles_matched?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historical_invoice_imports_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historical_invoice_pending: {
+        Row: {
+          created_at: string
+          external_ref: string
+          id: string
+          import_id: string | null
+          payload: Json
+          reason: string | null
+          resolved_at: string | null
+          resolved_invoice_id: string | null
+          shop_id: string
+        }
+        Insert: {
+          created_at?: string
+          external_ref: string
+          id?: string
+          import_id?: string | null
+          payload: Json
+          reason?: string | null
+          resolved_at?: string | null
+          resolved_invoice_id?: string | null
+          shop_id: string
+        }
+        Update: {
+          created_at?: string
+          external_ref?: string
+          id?: string
+          import_id?: string | null
+          payload?: Json
+          reason?: string | null
+          resolved_at?: string | null
+          resolved_invoice_id?: string | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historical_invoice_pending_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "historical_invoice_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historical_invoice_pending_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inspection_checklists: {
         Row: {
           client_viewed_at: string | null
@@ -5737,7 +5856,11 @@ export type Database = {
           currency: string
           due_date: string | null
           emitida_em: string | null
+          external_ref: string | null
+          historical_import_id: string | null
+          historical_meta: Json | null
           id: string
+          is_historical: boolean
           legal_status: string
           notes: string | null
           number: string
@@ -5775,7 +5898,11 @@ export type Database = {
           currency?: string
           due_date?: string | null
           emitida_em?: string | null
+          external_ref?: string | null
+          historical_import_id?: string | null
+          historical_meta?: Json | null
           id?: string
+          is_historical?: boolean
           legal_status?: string
           notes?: string | null
           number: string
@@ -5813,7 +5940,11 @@ export type Database = {
           currency?: string
           due_date?: string | null
           emitida_em?: string | null
+          external_ref?: string | null
+          historical_import_id?: string | null
+          historical_meta?: Json | null
           id?: string
+          is_historical?: boolean
           legal_status?: string
           notes?: string | null
           number?: string

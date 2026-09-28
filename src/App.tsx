@@ -182,6 +182,7 @@ const AdminVehiclesGlobal = lazyRetry(() => import("@/pages/admin/AdminVehiclesG
 const AdminPlateLookups = lazyRetry(() => import("@/pages/admin/AdminPlateLookups"));
 const AdminInsurers = lazyRetry(() => import("@/pages/admin/AdminInsurers"));
 const AdminDataImport = lazyRetry(() => import("@/pages/admin/AdminDataImport"));
+const AdminHistoricalInvoices = lazyRetry(() => import("@/pages/admin/AdminHistoricalInvoices"));
 const AdminMarketListings = lazyRetry(() => import("@/pages/admin/AdminMarketListings"));
 const AdminMarketEscrows = lazyRetry(() => import("@/pages/admin/AdminMarketEscrows"));
 const AdminMarketActivations = lazyRetry(() => import("@/pages/admin/AdminMarketActivations"));
@@ -515,6 +516,7 @@ const adminRoutes = [
   { path: "/admin/plate-lookups", element: <AdminPlateLookups /> },
   { path: "/admin/insurers", element: <AdminInsurers /> },
   { path: "/admin/import", element: <AdminDataImport /> },
+  { path: "/admin/historical-invoices", element: <AdminHistoricalInvoices /> },
   { path: "/admin/market-listings", element: <AdminMarketListings /> },
   { path: "/admin/market-escrows", element: <AdminMarketEscrows /> },
   { path: "/admin/market-activations", element: <AdminMarketActivations /> },

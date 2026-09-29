@@ -95,21 +95,21 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
     const [quotesRes, invoicesRes, remindersRes, deliveredRes] = await Promise.all([
       supabase
         .from("quotes")
-        .select("id, number, total, validity_date, created_at, client_id, clients(name)")
+        .select("id, number, total, validity_date, created_at, client_id, clients(name, company)")
         .in("shop_id", ids)
         .in("status", ["draft", "sent"])
         .order("created_at", { ascending: false })
         .limit(200),
       supabase
         .from("invoices")
-        .select("id, number, total, due_date, clients(name)")
+        .select("id, number, total, due_date, clients(name, company)")
         .in("shop_id", ids)
         .in("status", ["issued", "partial"])
         .order("due_date", { ascending: true })
         .limit(200),
       supabase
         .from("service_reminders")
-        .select("id, service_type, next_service_date, vehicle_id, client_id, clients(name), vehicles(plate)")
+        .select("id, service_type, next_service_date, vehicle_id, client_id, clients(name, company), vehicles(plate)")
         .in("shop_id", ids)
         .eq("status", "pending")
         .lt("next_service_date", today)

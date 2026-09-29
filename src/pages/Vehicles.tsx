@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useUrlSearchFilter } from "@/hooks/useUrlSearchFilter";
 import { useSearchParams } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
@@ -107,7 +108,7 @@ export default function Vehicles() {
   } = useServerList<any>({
     table: "vehicles",
     shopId: activeShopId,
-    select: "*, clients(name)",
+    select: "*, clients(name, company)",
     page,
     pageSize: PAGE_SIZE,
     orderBy,
@@ -282,7 +283,7 @@ export default function Vehicles() {
     if (!activeShopId) return;
     const { data } = await supabase
       .from("vehicles")
-      .select("*, clients(name)")
+      .select("*, clients(name, company)")
       .eq("shop_id", activeShopId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
@@ -295,7 +296,7 @@ export default function Vehicles() {
       VIN: v.vin || '',
       [t('vehicles.mileage')]: v.mileage,
       [t('vehicles.fuel')]: v.fuel,
-      [t('vehicles.client')]: (v.clients as any)?.name || '',
+      [t('vehicles.client')]: clientDisplayName(v.clients as any) || '',
       [t('vehicles.notes') || 'Notas']: v.notes || '',
     }));
     exportToCsv(csvData, 'veiculos');
@@ -474,7 +475,7 @@ export default function Vehicles() {
               <span className="mono font-medium text-foreground">{v.plate}</span>
               <span>{v.mileage.toLocaleString()} km</span>
               <span>{v.fuel}</span>
-              {(v.clients as any)?.name && <span>👤 {(v.clients as any).name}</span>}
+              {clientDisplayName(v.clients as any) && <span>👤 {(v.clients as any).name}</span>}
             </div>
           </div>
         ))}
@@ -510,7 +511,7 @@ export default function Vehicles() {
                   </div>
                 </TableCell>
                 <TableCell className="mono font-medium">{v.plate}</TableCell>
-                <TableCell>{(v.clients as any)?.name || "—"}</TableCell>
+                <TableCell>{clientDisplayName(v.clients as any) || "—"}</TableCell>
                 <TableCell className="mono">{v.mileage.toLocaleString()} km</TableCell>
                 <TableCell>{v.fuel}</TableCell>
                 <TableCell>

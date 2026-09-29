@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import ClaimsHistory from "@/components/ClaimsHistory";
 import VehicleTechData from "@/components/VehicleTechData";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,7 +83,7 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
     const load = async () => {
       setLoading(true);
       const [vRes, hRes, woRes, remRes, warRes] = await Promise.all([
-        supabase.from("vehicles").select("*, clients(name, nif)").eq("id", vehicleId).maybeSingle(),
+        supabase.from("vehicles").select("*, clients(name, company, nif)").eq("id", vehicleId).maybeSingle(),
         supabase.from("vehicle_global_history").select("*").eq("vehicle_id", vehicleId).order("event_date", { ascending: false }).limit(200),
         supabase.from("work_orders").select("id, number, status, total, created_at, completed_at, entry_mileage, technician, diagnosis, client_description, notes, lines, quote_id").eq("vehicle_id", vehicleId).order("created_at", { ascending: false }).limit(50),
         supabase.from("service_reminders").select("id, service_type, next_service_date, next_service_km, status").eq("vehicle_id", vehicleId).eq("status", "pending").order("next_service_date", { ascending: true }).limit(10),
@@ -363,7 +364,7 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                   </div>
                   <div className="min-w-0">
                     <span className="text-xs text-muted-foreground block">{t("passport.owner", "Proprietário")}</span>
-                    <p className="font-medium break-words">{(vehicle.clients as any)?.name || notRegistered}</p>
+                    <p className="font-medium break-words">{clientDisplayName(vehicle.clients as any) || notRegistered}</p>
                     {(vehicle.clients as any)?.nif && (
                       <p className="text-[10px] text-muted-foreground">{taxLabel}: {(vehicle.clients as any).nif}</p>
                     )}
@@ -697,7 +698,7 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                   </ul>
                 </div>
               )}
-              <VehicleTechData vehicle={vehicle} onUpdated={async () => { const { data } = await supabase.from("vehicles").select("*, clients(name, nif)").eq("id", vehicleId).maybeSingle(); if (data) setVehicle(data); }} />
+              <VehicleTechData vehicle={vehicle} onUpdated={async () => { const { data } = await supabase.from("vehicles").select("*, clients(name, company, nif)").eq("id", vehicleId).maybeSingle(); if (data) setVehicle(data); }} />
               {/* ─── Histórico de sinistros ─── */}
               <ClaimsHistory vehicleId={vehicleId} title="Histórico de sinistros" />
             </div>

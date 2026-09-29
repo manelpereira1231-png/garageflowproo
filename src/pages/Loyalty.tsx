@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,9 +44,9 @@ export default function Loyalty() {
   const load = async () => {
     if (!activeShopId) return;
     const [membersRes, clientsRes, txRes] = await Promise.all([
-      supabase.from("loyalty_points").select("*, clients(name, email, phone)").eq("shop_id", activeShopId).order("points", { ascending: false }),
+      supabase.from("loyalty_points").select("*, clients(name, company, email, phone)").eq("shop_id", activeShopId).order("points", { ascending: false }),
       supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name"),
-      supabase.from("loyalty_transactions").select("*, clients(name)").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(50),
+      supabase.from("loyalty_transactions").select("*, clients(name, company)").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(50),
     ]);
     if (membersRes.data) setMembers(membersRes.data);
     if (clientsRes.data) setClients(clientsRes.data);
@@ -107,13 +108,13 @@ export default function Loyalty() {
           await sendEmail({
             to: clientEmail,
             subject: `🎉 Subiu para ${newTier.charAt(0).toUpperCase() + newTier.slice(1)}! — ${shopName}`,
-            html: loyaltyEmailHtml('tier_upgrade', (member.clients as any)?.name || '', shopName, pts, newTier, newPoints),
+            html: loyaltyEmailHtml('tier_upgrade', clientDisplayName(member.clients as any) || '', shopName, pts, newTier, newPoints),
           });
         } else {
           await sendEmail({
             to: clientEmail,
             subject: isRedeem ? `Resgate de ${pts} pontos — ${shopName}` : `Ganhou ${pts} pontos! — ${shopName}`,
-            html: loyaltyEmailHtml(isRedeem ? 'points_redeemed' : 'points_earned', (member.clients as any)?.name || '', shopName, pts, undefined, newPoints),
+            html: loyaltyEmailHtml(isRedeem ? 'points_redeemed' : 'points_earned', clientDisplayName(member.clients as any) || '', shopName, pts, undefined, newPoints),
           });
         }
       } catch (e: any) {
@@ -133,7 +134,7 @@ export default function Loyalty() {
   const totalRedeemed = members.reduce((s, m) => s + (m.total_redeemed || 0), 0);
   const redemptionRate = totalEarned > 0 ? ((totalRedeemed / totalEarned) * 100).toFixed(1) : '0';
   const filtered = members.filter(m =>
-    (m.clients as any)?.name?.toLowerCase().includes(search.toLowerCase())
+    clientDisplayName(m.clients as any)?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -170,7 +171,7 @@ export default function Loyalty() {
               <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">{t('loyalty.empty')}</TableCell></TableRow>
             ) : filtered.map(m => (
               <TableRow key={m.id}>
-                <TableCell className="font-medium">{(m.clients as any)?.name}</TableCell>
+                <TableCell className="font-medium">{clientDisplayName(m.clients as any)}</TableCell>
                 <TableCell className="text-center font-bold text-lg">{m.points}</TableCell>
                 <TableCell className="text-center"><Badge variant="outline" className={TIER_COLORS[getTier(m.points)]}>{getTier(m.points)}</Badge></TableCell>
                 <TableCell className="text-right text-sm text-muted-foreground">{m.total_earned || 0}</TableCell>
@@ -193,7 +194,7 @@ export default function Loyalty() {
         ) : filtered.map(m => (
           <div key={m.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">{(m.clients as any)?.name}</p>
+              <p className="text-sm font-medium">{clientDisplayName(m.clients as any)}</p>
               <Badge variant="outline" className={`text-[10px] ${TIER_COLORS[getTier(m.points)]}`}>{getTier(m.points)}</Badge>
             </div>
             <div className="flex items-center justify-between">
@@ -227,7 +228,7 @@ export default function Loyalty() {
               {transactions.map(tx => (
                 <div key={tx.id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2">
                   <div>
-                    <span className="font-medium">{(tx.clients as any)?.name}</span>
+                    <span className="font-medium">{clientDisplayName(tx.clients as any)}</span>
                     <span className="text-muted-foreground ml-2">{tx.description}</span>
                   </div>
                   <span className={`font-bold ${tx.points > 0 ? 'text-success' : 'text-destructive'}`}>

@@ -37,7 +37,7 @@ export default function CommercialDashboard() {
       const [quotesRes, clientsRes, allQuotesRes, approvedRes] = await Promise.all([
         supabase
           .from("quotes")
-          .select("id, number, status, total, created_at, clients(name)")
+          .select("id, number, status, total, created_at, clients(name, company)")
           .eq("shop_id", shopId)
           .in("status", ["draft", "sent", "pending"])
           .order("created_at", { ascending: false })

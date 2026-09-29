@@ -41,7 +41,7 @@ export default function ReceptionDashboard() {
       const [apptRes, checkinRes, checkoutRes, clientsRes] = await Promise.all([
         supabase
           .from("appointments")
-          .select("id, date, time, status, clients(name), vehicles(plate)")
+          .select("id, date, time, status, clients(name, company), vehicles(plate)")
           .eq("shop_id", shopId)
           .eq("date", todayIso)
           .order("time", { ascending: true }),

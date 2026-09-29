@@ -79,7 +79,7 @@ export default function Claims() {
     if (!activeShopId) return;
     const [cl, ins, cli, veh, wo] = await Promise.all([
       supabase.from("claims")
-        .select("*, insurers(name), clients(name), vehicles(make, model, plate), work_orders(number)")
+        .select("*, insurers(name), clients(name, company), vehicles(make, model, plate), work_orders(number)")
         .eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(500),
       supabase.from("insurers").select("*").eq("shop_id", activeShopId).order("name"),
       supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),

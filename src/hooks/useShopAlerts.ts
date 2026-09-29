@@ -184,7 +184,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
     const [alertsRes, partsRes, overdueRes, apptRes, ordersRes, quotesRes] = await Promise.all([
       supabase
         .from("alerts")
-        .select("*, clients(name, phone, email), vehicles(make, model, plate)")
+        .select("*, clients(name, company, phone, email), vehicles(make, model, plate)")
         .in("shop_id", ids)
         .order("created_at", { ascending: false })
         .limit(300),
@@ -195,26 +195,26 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
         .eq("active", true),
       supabase
         .from("invoices")
-        .select("id, shop_id, number, total, due_date, clients(name)")
+        .select("id, shop_id, number, total, due_date, clients(name, company)")
         .in("shop_id", ids)
         .in("status", ["issued", "partial"])
         .lt("due_date", today()),
       supabase
         .from("appointments")
-        .select("id, shop_id, date, time, service_type, status, source, client_name, clients(name)")
+        .select("id, shop_id, date, time, service_type, status, source, client_name, clients(name, company)")
         .in("shop_id", ids)
         .eq("status", "pending")
         .order("date", { ascending: true })
         .limit(30),
       supabase
         .from("work_orders")
-        .select("id, shop_id, number, status, created_at, completed_at, delivered_at, quote_id, clients(name), vehicles(make, model, plate)")
+        .select("id, shop_id, number, status, created_at, completed_at, delivered_at, quote_id, clients(name, company), vehicles(make, model, plate)")
         .in("shop_id", ids)
         .in("status", ["in_progress", "waiting_parts", "completed"])
         .limit(200),
       supabase
         .from("quotes")
-        .select("id, shop_id, number, status, total, date, created_at, clients(name)")
+        .select("id, shop_id, number, status, total, date, created_at, clients(name, company)")
         .in("shop_id", ids)
         .in("status", ["sent", "approved"])
         .limit(200),
@@ -261,7 +261,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
           shopId: inv.shop_id,
           type: "invoice_overdue",
           title: `Fatura ${inv.number} vencida`,
-          subtitle: (inv.clients as any)?.name || null,
+          subtitle: clientDisplayName(inv.clients as any) || null,
           message: `${money(inv.total)} · vencida ${dayLabel(late)}`,
           priority: late >= 30 ? "critical" : "high",
           dueDate: inv.due_date,
@@ -272,7 +272,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
 
     // ---- MARCAÇÕES: pedidos por responder, com link para a marcação ----
     for (const ap of ((apptRes.data as any[]) || [])) {
-      const name = (ap.clients as any)?.name || ap.client_name || "Cliente";
+      const name = clientDisplayName(ap.clients as any) || ap.client_name || "Cliente";
       const when = `${new Date(ap.date).toLocaleDateString("pt-PT")} às ${String(ap.time).slice(0, 5)}`;
       out.push(
         derivedAlert({
@@ -295,7 +295,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
     for (const o of orders) {
       const veh = (o.vehicles as any) || null;
       const vehLabel = veh ? `${veh.make || ""} ${veh.model || ""} — ${veh.plate || ""}`.trim() : null;
-      const subtitle = [(o.clients as any)?.name, vehLabel].filter(Boolean).join(" · ") || null;
+      const subtitle = [clientDisplayName(o.clients as any), vehLabel].filter(Boolean).join(" · ") || null;
 
       // Veículo já entregue = situação encerrada, sem alerta.
       if (o.delivered_at) continue;
@@ -338,7 +338,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
 
     // ---- ORÇAMENTOS: aprovados sem ação e enviados sem resposta ----
     for (const q of ((quotesRes.data as any[]) || [])) {
-      const clientName = (q.clients as any)?.name || null;
+      const clientName = clientDisplayName(q.clients as any) || null;
       if (q.status === "approved") {
         // Já convertido em serviço = ação tratada, não gera alerta.
         if (convertedQuoteIds.has(q.id)) continue;

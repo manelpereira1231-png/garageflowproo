@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { laborChargeLine } from "@/lib/laborLine";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -282,7 +283,7 @@ export default function QuoteApproval() {
         entity_id: quote.id,
         details: {
           quote_number: quote.number,
-          client_name: (quote.clients as any)?.name,
+          client_name: clientDisplayName(quote.clients as any),
           client_comment: clientComment.trim() || null,
           action_at: new Date().toISOString(),
         },
@@ -299,7 +300,7 @@ export default function QuoteApproval() {
         const veh = quote.vehicles as any;
         const vehicleLabel = `${veh?.make || ''} ${veh?.model || ''}`.trim();
         const plate = veh?.plate || '';
-        const clientName = (quote.clients as any)?.name || 'Cliente';
+        const clientName = clientDisplayName(quote.clients as any) || 'Cliente';
         const approved = action === 'approved';
         const title = approved ? 'Orçamento aprovado' : 'Orçamento rejeitado';
         const verb = approved ? 'aprovou' : 'rejeitou';
@@ -328,7 +329,7 @@ export default function QuoteApproval() {
         }
 
         const clientEmail = (quote.clients as any)?.email as string | undefined;
-        const clientName = (quote.clients as any)?.name || "—";
+        const clientName = clientDisplayName(quote.clients as any) || "—";
         const veh = quote.vehicles as any;
         const vehicleLabel = `${veh?.make || ''} ${veh?.model || ''}`.trim();
         const plate = veh?.plate || '';
@@ -614,7 +615,7 @@ export default function QuoteApproval() {
                   <User className="w-4 h-4 text-primary" />
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('client')}</span>
                 </div>
-                <p className="font-semibold text-foreground">{(quote.clients as any)?.name}</p>
+                <p className="font-semibold text-foreground">{clientDisplayName(quote.clients as any)}</p>
                 {(quote.clients as any)?.company && (
                   <p className="text-sm text-muted-foreground">{(quote.clients as any).company}</p>
                 )}

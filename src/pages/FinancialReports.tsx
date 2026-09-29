@@ -1,4 +1,5 @@
 import { exportSaftInBackground } from "@/lib/saftExport";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useState, useEffect } from "react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,7 +52,7 @@ export default function FinancialReports() {
 
       const [invoicesRes, workOrdersRes, quotesRes, paymentsRes] = await Promise.all([
         supabase.from("invoices").select("*").eq("shop_id", activeShopId).neq("status", "cancelled"),
-        supabase.from("work_orders").select("*, clients(name)").eq("shop_id", activeShopId),
+        supabase.from("work_orders").select("*, clients(name, company)").eq("shop_id", activeShopId),
         supabase.from("quotes").select("id, status").eq("shop_id", activeShopId),
         supabase.from("payments").select("*").eq("shop_id", activeShopId),
       ]);
@@ -134,7 +135,7 @@ export default function FinancialReports() {
       // Top clients
       const clientRevenue: Record<string, { name: string; total: number; count: number }> = {};
       workOrders.forEach(wo => {
-        const clientName = (wo.clients as any)?.name || 'Desconhecido';
+        const clientName = clientDisplayName(wo.clients as any) || 'Desconhecido';
         if (!clientRevenue[clientName]) clientRevenue[clientName] = { name: clientName, total: 0, count: 0 };
         clientRevenue[clientName].total += Number(wo.total || 0);
         clientRevenue[clientName].count++;

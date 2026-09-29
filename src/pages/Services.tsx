@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useUrlSearchFilter } from "@/hooks/useUrlSearchFilter";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { useLiveTick } from "@/hooks/useLiveTick";
@@ -215,7 +216,7 @@ export default function Services() {
       const vehicleInfo = `${(s.vehicles as any)?.make || ''} ${(s.vehicles as any)?.model || ''}`.trim();
       const plate = (s.vehicles as any)?.plate || '';
       const vehicleFull = `${vehicleInfo}${plate ? ` — ${plate}` : ''}`.trim();
-      const clientName = (s.clients as any)?.name || '';
+      const clientName = clientDisplayName(s.clients as any) || '';
 
       let subject: string;
       let html: string;
@@ -348,7 +349,7 @@ export default function Services() {
 
     openWhatsApp({
       phone,
-      clientName: (s.clients as any)?.name,
+      clientName: clientDisplayName(s.clients as any),
       type: 'service',
       number: s.number,
       plate: (s.vehicles as any)?.plate,
@@ -405,7 +406,7 @@ export default function Services() {
   } = useServerList<any>({
     table: "work_orders",
     shopId: activeShopId,
-    select: "*, clients(name, email, phone, nif), vehicles(make, model, plate), quotes(token)",
+    select: "*, clients(name, company, email, phone, nif), vehicles(make, model, plate), quotes(token)",
     page,
     pageSize: PAGE_SIZE,
     orderBy,
@@ -562,7 +563,7 @@ export default function Services() {
       type: 'service', number: s.number, date: formatLocalDate(s.created_at),
       shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone,
       shopNif: shop.nif, shopAddress: shop.address, shopLogoUrl: shop.logo_url,
-      clientName: (s.clients as any)?.name || '', clientEmail: (s.clients as any)?.email,
+      clientName: clientDisplayName(s.clients as any) || '', clientEmail: (s.clients as any)?.email,
       clientPhone: (s.clients as any)?.phone, clientNif: (s.clients as any)?.nif,
       vehicleMake: (s.vehicles as any)?.make || '', vehicleModel: (s.vehicles as any)?.model || '',
       vehiclePlate: (s.vehicles as any)?.plate || '', lines, subtotal: s.subtotal, vatTotal: s.vat_total,
@@ -604,12 +605,12 @@ export default function Services() {
     // A grelha só tem uma página — a exportação lê a lista completa no servidor.
     const { data: all } = await supabase
       .from("work_orders")
-      .select("*, clients(name), vehicles(make, model, plate)")
+      .select("*, clients(name, company), vehicles(make, model, plate)")
       .eq("shop_id", activeShopId)
       .order("created_at", { ascending: false })
       .limit(5000);
     const csvData = (all || []).map((s: any) => ({
-      Número: s.number, Cliente: (s.clients as any)?.name,
+      Número: s.number, Cliente: clientDisplayName(s.clients as any),
 
       Veículo: `${(s.vehicles as any)?.make} ${(s.vehicles as any)?.model}`,
       Matrícula: (s.vehicles as any)?.plate, Status: s.status, Subtotal: s.subtotal,
@@ -771,7 +772,7 @@ export default function Services() {
               </Badge>
             </div>
             <div>
-              <p className="text-sm font-semibold">{(s.clients as any)?.name}</p>
+              <p className="text-sm font-semibold">{clientDisplayName(s.clients as any)}</p>
               <p className="text-xs text-muted-foreground">
                 {(s.vehicles as any)?.make} {(s.vehicles as any)?.model} — {(s.vehicles as any)?.plate}
                 {s.technician && <span> · 🔧 {s.technician}</span>}
@@ -889,7 +890,7 @@ export default function Services() {
                 </TableCell>
                 <TableCell className="px-3 py-3 align-middle whitespace-normal overflow-hidden">
                   <div className="min-w-0 leading-tight">
-                    <span className="font-medium break-words">{(s.clients as any)?.name}</span>
+                    <span className="font-medium break-words">{clientDisplayName(s.clients as any)}</span>
                     {s.technician && <p className="text-xs text-muted-foreground break-words">🔧 {s.technician}</p>}
                   </div>
                 </TableCell>
@@ -996,7 +997,7 @@ export default function Services() {
             status: commsService.status,
             shopId: activeShopId,
             shopName: shop?.name,
-            clientName: (commsService.clients as any)?.name,
+            clientName: clientDisplayName(commsService.clients as any),
             clientPhone: (commsService.clients as any)?.phone,
             clientEmail: (commsService.clients as any)?.email,
             vehicleMake: (commsService.vehicles as any)?.make,

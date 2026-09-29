@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { clientDisplayName, clientContactName } from "@/lib/clientDisplayName";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -15,6 +16,7 @@ import {
 export interface ComboClient {
   id: string;
   name: string;
+  company?: string | null;
   nif?: string | null;
   email?: string | null;
   phone?: string | null;
@@ -63,7 +65,7 @@ export default function ClientCombobox({
             className,
           )}
         >
-          <span className="truncate">{selected ? selected.name : placeholder}</span>
+          <span className="truncate">{selected ? clientDisplayName(selected) : placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -83,7 +85,7 @@ export default function ClientCombobox({
               {clients.map((c) => (
                 <CommandItem
                   key={c.id}
-                  value={`${c.name} ${c.nif ?? ""} ${c.email ?? ""} ${c.phone ?? ""} ${c.id}`}
+                  value={`${c.company ?? ""} ${c.name} ${c.nif ?? ""} ${c.email ?? ""} ${c.phone ?? ""} ${c.id}`}
                   onSelect={() => {
                     onChange(c.id);
                     setOpen(false);
@@ -95,7 +97,7 @@ export default function ClientCombobox({
                       value === c.id ? "opacity-100" : "opacity-0",
                     )}
                   />
-                  <span className="truncate">{c.name}</span>
+                  <span className="truncate">{clientDisplayName(c)}{clientContactName(c) && <span className="ml-1 text-xs text-muted-foreground">· {clientContactName(c)}</span>}</span>
                   {c.nif && (
                     <span className="ml-2 text-xs text-muted-foreground shrink-0">{c.nif}</span>
                   )}

@@ -1,4 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { clientDisplayName, clientContactName } from "@/lib/clientDisplayName";
 import { InsurerPicker, resolveInsurerId, type InsurerSelection } from "@/components/InsurerPicker";
 import { useState, useEffect, useCallback } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -464,7 +465,7 @@ export default function Clients() {
         ) : filtered.map(client => (
           <div key={client.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
              <div className="flex min-w-0 items-center gap-1 overflow-hidden sm:block sm:overflow-visible">
-               <span className="min-w-0 flex-1 truncate text-sm font-semibold leading-snug sm:block sm:whitespace-normal sm:break-words sm:text-base" title={client.name}>{client.name}</span>
+               <span className="min-w-0 flex-1 truncate text-sm font-semibold leading-snug sm:block sm:whitespace-normal sm:break-words sm:text-base" title={clientDisplayName(client)}>{clientDisplayName(client)}</span>
               <div className="flex shrink-0 items-center sm:mt-3 sm:flex-wrap sm:justify-between sm:gap-1 sm:border-t sm:border-border/60 sm:pt-2">
                  {client.phone && (
                    <Button variant="ghost" size="sm" onClick={() => callClient(client.phone)} className="h-11 w-8 p-0 text-primary sm:w-11" title={`Ligar ${client.phone}`}><Phone className="w-5 h-5" /></Button>
@@ -514,7 +515,7 @@ export default function Clients() {
               </TableRow>
             ) : filtered.map(client => (
               <TableRow key={client.id}>
-                <TableCell className="font-medium">{client.name}</TableCell>
+                <TableCell className="font-medium"><div>{clientDisplayName(client)}</div>{clientContactName(client) && <div className="text-xs text-muted-foreground">Contacto: {clientContactName(client)}</div>}</TableCell>
                 <TableCell>
                   <div className="flex flex-col gap-0.5 text-sm">
                     {client.phone && <span className="flex items-center gap-1.5 whitespace-nowrap"><Phone className="w-3 h-3 text-muted-foreground" />{client.phone}</span>}

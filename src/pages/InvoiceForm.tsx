@@ -251,7 +251,7 @@ export default function InvoiceForm() {
             <Select value={clientId} onValueChange={(v) => { setClientId(v); setVehicleId(""); }}>
               <SelectTrigger><SelectValue placeholder={t('invoices.selectClient')} /></SelectTrigger>
               <SelectContent>
-                {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name} {c.nif ? `(${c.nif})` : ''}</SelectItem>)}
+                {clients.map(c => <SelectItem key={c.id} value={c.id}>{clientDisplayName(c)} {c.nif ? `(${c.nif})` : ''}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

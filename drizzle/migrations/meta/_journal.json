@@ -127,6 +127,13 @@
       "when": 1790606320498,
       "tag": "0017_historical_invoice_import",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790682734024,
+      "tag": "0018_quote_photos_and_vehicle_schedule",
+      "breakpoints": true
     }
   ]
 }

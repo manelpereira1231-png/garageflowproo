@@ -671,6 +671,7 @@ export type Database = {
       appointments: {
         Row: {
           assigned_to: string | null
+          auto_kind: string | null
           client_email: string | null
           client_id: string | null
           client_name: string | null
@@ -680,6 +681,7 @@ export type Database = {
           duration_minutes: number
           id: string
           notes: string | null
+          quote_id: string | null
           service_id: string | null
           service_type: string
           shop_id: string
@@ -690,6 +692,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          auto_kind?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string | null
@@ -699,6 +702,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           notes?: string | null
+          quote_id?: string | null
           service_id?: string | null
           service_type?: string
           shop_id: string
@@ -709,6 +713,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          auto_kind?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string | null
@@ -718,6 +723,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           notes?: string | null
+          quote_id?: string | null
           service_id?: string | null
           service_type?: string
           shop_id?: string
@@ -732,6 +738,20 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes_public"
             referencedColumns: ["id"]
           },
           {
@@ -8815,12 +8835,18 @@ export type Database = {
           cost_total: number
           created_at: string
           date: string
+          delivery_date: string | null
+          delivery_time: string | null
           id: string
           labor_hours: number
           lines: Json
           notes: string | null
           number: string
+          photos: Json
           profit: number
+          reception_date: string | null
+          reception_time: string | null
+          share_photos: boolean
           shop_id: string
           signature_data: string | null
           signature_hash: string | null
@@ -8843,12 +8869,18 @@ export type Database = {
           cost_total?: number
           created_at?: string
           date?: string
+          delivery_date?: string | null
+          delivery_time?: string | null
           id?: string
           labor_hours?: number
           lines?: Json
           notes?: string | null
           number: string
+          photos?: Json
           profit?: number
+          reception_date?: string | null
+          reception_time?: string | null
+          share_photos?: boolean
           shop_id: string
           signature_data?: string | null
           signature_hash?: string | null
@@ -8871,12 +8903,18 @@ export type Database = {
           cost_total?: number
           created_at?: string
           date?: string
+          delivery_date?: string | null
+          delivery_time?: string | null
           id?: string
           labor_hours?: number
           lines?: Json
           notes?: string | null
           number?: string
+          photos?: Json
           profit?: number
+          reception_date?: string | null
+          reception_time?: string | null
+          share_photos?: boolean
           shop_id?: string
           signature_data?: string | null
           signature_hash?: string | null

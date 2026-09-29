@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { supabase } from "@/integrations/supabase/client";
 import { insertWithNumber, nextInvoiceNumber, friendlyDocError } from "@/lib/insertWithNumber";
 import { Button } from "@/components/ui/button";
@@ -214,7 +215,7 @@ export default function InvoiceForm() {
     let autoSend = false;
     if (issueNow && activeId) {
       const client = clients.find(c => c.id === clientId);
-      const clientName = client?.name || '';
+      const clientName = clientDisplayName(client) || '';
       sendPushNotification(
         activeId,
         `Nova fatura ${number}`,

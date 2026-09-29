@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -148,7 +149,7 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
         total: Number(q.total || 0),
         validity_date: q.validity_date ?? null,
         created_at: q.created_at,
-        clientName: q.clients?.name ?? null,
+        clientName: clientDisplayName(q.clients) ?? null,
         clientId: q.client_id ?? null,
       }));
     const quotesValue = quotes.reduce((s, q) => s + q.total, 0);
@@ -173,7 +174,7 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
         outstanding: Math.max(0, Number(i.total || 0) - (paidByInvoice.get(i.id) || 0)),
         due_date: i.due_date ?? null,
         overdue: !!i.due_date && i.due_date < today,
-        clientName: i.clients?.name ?? null,
+        clientName: clientDisplayName(i.clients) ?? null,
       }))
       .filter((i) => i.outstanding > 0);
     const paymentsValue = invoices.reduce((s, i) => s + i.outstanding, 0);
@@ -187,7 +188,7 @@ export function useMoneyAtStake(shopIds: string[]): MoneyAtStake {
       id: r.id,
       service_type: r.service_type ?? null,
       next_service_date: r.next_service_date ?? null,
-      clientName: r.clients?.name ?? null,
+      clientName: clientDisplayName(r.clients) ?? null,
       clientId: r.client_id ?? null,
 
       plate: r.vehicles?.plate ?? null,

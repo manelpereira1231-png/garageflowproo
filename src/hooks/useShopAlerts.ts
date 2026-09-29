@@ -114,10 +114,10 @@ function mapRow(row: any): UnifiedAlert {
     type: row.type,
     title: row.title,
     message: row.message ?? null,
-    clientName: client?.name ?? null,
+    clientName: clientDisplayName(client) ?? null,
     plate: vehicle?.plate ?? null,
   };
-  const parts = [client?.name, vehicle?.plate].filter(Boolean);
+  const parts = [clientDisplayName(client), vehicle?.plate].filter(Boolean);
   return {
     id: row.id,
     derived: false,
@@ -134,7 +134,7 @@ function mapRow(row: any): UnifiedAlert {
     dueDate: row.due_date ?? null,
     clientId: row.client_id ?? null,
     vehicleId: row.vehicle_id ?? null,
-    clientName: client?.name ?? null,
+    clientName: clientDisplayName(client) ?? null,
     clientPhone: client?.phone ?? null,
     clientEmail: client?.email ?? null,
     make: vehicle?.make ?? null,

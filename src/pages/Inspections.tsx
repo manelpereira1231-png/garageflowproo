@@ -360,7 +360,7 @@ export default function Inspections() {
   };
 
   const getWOLabel = (wo: any) => {
-    const client = wo.clients?.name || '';
+    const client = clientDisplayName(wo.clients) || '';
     const vehicle = wo.vehicles ? `${wo.vehicles.make} ${wo.vehicles.model}` : '';
     const plate = wo.vehicles?.plate || '';
     return `${wo.number} — ${client} — ${vehicle} — ${plate}`;

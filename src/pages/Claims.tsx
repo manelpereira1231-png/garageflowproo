@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
@@ -164,7 +165,7 @@ export default function Claims() {
       if (!q) return true;
       const hay = [
         c.ref, quoteNums[c.quote_id], quoteNums[c.invoice_id], c.claim_number, c.policy_number, c.process_number, c.expert_name,
-        c.insurers?.name, c.clients?.name, c.work_orders?.number,
+        c.insurers?.name, clientDisplayName(c.clients), c.work_orders?.number,
         c.vehicles?.plate, c.vehicles?.make, c.vehicles?.model,
         CLAIM_STATUS_LABELS[c.status as keyof typeof CLAIM_STATUS_LABELS],
       ].filter(Boolean).join(" ").toLowerCase();
@@ -334,7 +335,7 @@ export default function Claims() {
                       <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/claims/${c.id}`)}>
                         <TableCell className="font-medium">{c.ref}<div className="text-xs text-muted-foreground">{c.claim_number || ""}</div></TableCell>
                         <TableCell>{c.insurers?.name || "—"}</TableCell>
-                        <TableCell>{c.clients?.name || "—"}</TableCell>
+                        <TableCell>{clientDisplayName(c.clients) || "—"}</TableCell>
                         <TableCell>{c.vehicles ? `${c.vehicles.make} ${c.vehicles.model} — ${c.vehicles.plate}` : "—"}</TableCell>
                         <TableCell>{c.work_orders?.number || "—"}</TableCell>
                         <TableCell>
@@ -363,7 +364,7 @@ export default function Claims() {
                       </div>
                       <p className="text-sm">{c.insurers?.name || "Sem seguradora"}</p>
                       <p className="text-xs text-muted-foreground">
-                        {c.clients?.name} · {c.vehicles?.plate}
+                        {clientDisplayName(c.clients)} · {c.vehicles?.plate}
                       </p>
                     </CardContent>
                   </Card>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
@@ -117,7 +118,7 @@ export default function ReceptionDashboard() {
                     {a.time ? String(a.time).slice(0, 5) : "—"}
                   </span>
                   <span className="truncate">
-                    {a.clients?.name || "Sem cliente"} · {a.vehicles?.plate || "—"}
+                    {clientDisplayName(a.clients) || "Sem cliente"} · {a.vehicles?.plate || "—"}
                   </span>
                 </div>
                 <Badge variant="outline">{a.status || "agendado"}</Badge>

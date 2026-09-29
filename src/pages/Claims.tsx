@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
@@ -79,10 +80,10 @@ export default function Claims() {
     if (!activeShopId) return;
     const [cl, ins, cli, veh, wo] = await Promise.all([
       supabase.from("claims")
-        .select("*, insurers(name), clients(name), vehicles(make, model, plate), work_orders(number)")
+        .select("*, insurers(name), clients(name, company), vehicles(make, model, plate), work_orders(number)")
         .eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(500),
       supabase.from("insurers").select("*").eq("shop_id", activeShopId).order("name"),
-      supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),
+      supabase.from("clients").select("id, name, company, nif").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),
       supabase.from("vehicles").select("id, client_id, make, model, plate").eq("shop_id", activeShopId).is("deleted_at", null).limit(1000),
       supabase.from("work_orders").select("id, number, client_id, vehicle_id, status").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(300),
     ]);
@@ -164,7 +165,7 @@ export default function Claims() {
       if (!q) return true;
       const hay = [
         c.ref, quoteNums[c.quote_id], quoteNums[c.invoice_id], c.claim_number, c.policy_number, c.process_number, c.expert_name,
-        c.insurers?.name, c.clients?.name, c.work_orders?.number,
+        c.insurers?.name, clientDisplayName(c.clients), c.work_orders?.number,
         c.vehicles?.plate, c.vehicles?.make, c.vehicles?.model,
         CLAIM_STATUS_LABELS[c.status as keyof typeof CLAIM_STATUS_LABELS],
       ].filter(Boolean).join(" ").toLowerCase();
@@ -334,7 +335,7 @@ export default function Claims() {
                       <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/claims/${c.id}`)}>
                         <TableCell className="font-medium">{c.ref}<div className="text-xs text-muted-foreground">{c.claim_number || ""}</div></TableCell>
                         <TableCell>{c.insurers?.name || "—"}</TableCell>
-                        <TableCell>{c.clients?.name || "—"}</TableCell>
+                        <TableCell>{clientDisplayName(c.clients) || "—"}</TableCell>
                         <TableCell>{c.vehicles ? `${c.vehicles.make} ${c.vehicles.model} — ${c.vehicles.plate}` : "—"}</TableCell>
                         <TableCell>{c.work_orders?.number || "—"}</TableCell>
                         <TableCell>
@@ -363,7 +364,7 @@ export default function Claims() {
                       </div>
                       <p className="text-sm">{c.insurers?.name || "Sem seguradora"}</p>
                       <p className="text-xs text-muted-foreground">
-                        {c.clients?.name} · {c.vehicles?.plate}
+                        {clientDisplayName(c.clients)} · {c.vehicles?.plate}
                       </p>
                     </CardContent>
                   </Card>
@@ -421,7 +422,7 @@ export default function Claims() {
               </div>
               <Select value={form.client_id} onValueChange={(v) => { setForm({ ...form, client_id: v, vehicle_id: "", work_order_id: "" }); setAddVehicle(false); }}>
                 <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Selecionar cliente" /></SelectTrigger>
-                <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{clientDisplayName(c)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>

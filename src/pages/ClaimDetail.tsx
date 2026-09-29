@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useParams, useNavigate } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,7 +70,7 @@ export default function ClaimDetail() {
     if (!id || !activeShopId) return;
     const [c, ins, ct, cm, dc, ev] = await Promise.all([
       supabase.from("claims")
-        .select("*, insurers(*), clients(id, name, email, phone), vehicles(id, make, model, plate, year), work_orders(id, number, status, total)")
+        .select("*, insurers(*), clients(id, name, company, nif, email, phone), vehicles(id, make, model, plate, year), work_orders(id, number, status, total)")
         .eq("id", id).maybeSingle(),
       supabase.from("insurers").select("*").eq("shop_id", activeShopId).order("name"),
       supabase.from("claim_contacts").select("*").eq("claim_id", id).order("is_primary", { ascending: false }),
@@ -334,7 +335,7 @@ export default function ClaimDetail() {
           </h1>
           {claim.claim_number ? <p className="text-sm text-muted-foreground break-all">Processo {claim.claim_number}</p> : null}
           <p className="text-sm text-muted-foreground">
-            {claim.clients?.name} · {claim.vehicles ? `${claim.vehicles.make} ${claim.vehicles.model} — ${claim.vehicles.plate}` : "—"}
+            {clientDisplayName(claim.clients)} · {claim.vehicles ? `${claim.vehicles.make} ${claim.vehicles.model} — ${claim.vehicles.plate}` : "—"}
             {claim.work_orders?.number ? ` · OS ${claim.work_orders.number}` : ""}
           </p>
         </div>
@@ -392,7 +393,7 @@ export default function ClaimDetail() {
           <div className="grid gap-3 md:grid-cols-2">
             <Card><CardContent className="p-4 text-sm space-y-1">
               <p className="text-xs text-muted-foreground">Cliente</p>
-              <button className="font-semibold hover:underline text-left" onClick={() => navigate(`/clients?search=${encodeURIComponent(claim.clients?.name || "")}`)}>{claim.clients?.name || "—"}</button>
+              <button className="font-semibold hover:underline text-left" onClick={() => navigate(`/clients?search=${encodeURIComponent(clientDisplayName(claim.clients) || "")}`)}>{clientDisplayName(claim.clients) || "—"}</button>
               <p className="text-muted-foreground">{[claim.clients?.phone, claim.clients?.email].filter(Boolean).join(" · ") || "Sem contacto"}</p>
             </CardContent></Card>
             <Card><CardContent className="p-4 text-sm space-y-1">
@@ -491,7 +492,7 @@ export default function ClaimDetail() {
                 <div className="rounded-lg border border-border p-3 text-sm grid grid-cols-2 gap-1">
                   <span className="text-muted-foreground">Número</span><span>{inv.number}</span>
                   <span className="text-muted-foreground">Valor</span><span>{formatMoney(Number(inv.total))}</span>
-                  <span className="text-muted-foreground">Entidade faturada</span><span>{inv.client_name || claim.clients?.name}</span>
+                  <span className="text-muted-foreground">Entidade faturada</span><span>{inv.client_name || clientDisplayName(claim.clients)}</span>
                   <span className="text-muted-foreground">Data</span><span>{inv.date ? new Date(inv.date).toLocaleDateString("pt-PT") : "—"}</span>
                   <span className="text-muted-foreground">Estado</span><span>{inv.status}</span>
                 </div>) : null; })()}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
@@ -41,7 +42,7 @@ export default function ReceptionDashboard() {
       const [apptRes, checkinRes, checkoutRes, clientsRes] = await Promise.all([
         supabase
           .from("appointments")
-          .select("id, date, time, status, clients(name), vehicles(plate)")
+          .select("id, date, time, status, clients(name, company), vehicles(plate)")
           .eq("shop_id", shopId)
           .eq("date", todayIso)
           .order("time", { ascending: true }),
@@ -117,7 +118,7 @@ export default function ReceptionDashboard() {
                     {a.time ? String(a.time).slice(0, 5) : "—"}
                   </span>
                   <span className="truncate">
-                    {a.clients?.name || "Sem cliente"} · {a.vehicles?.plate || "—"}
+                    {clientDisplayName(a.clients) || "Sem cliente"} · {a.vehicles?.plate || "—"}
                   </span>
                 </div>
                 <Badge variant="outline">{a.status || "agendado"}</Badge>

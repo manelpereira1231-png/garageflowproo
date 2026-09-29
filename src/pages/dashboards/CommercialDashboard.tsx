@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
@@ -37,7 +38,7 @@ export default function CommercialDashboard() {
       const [quotesRes, clientsRes, allQuotesRes, approvedRes] = await Promise.all([
         supabase
           .from("quotes")
-          .select("id, number, status, total, created_at, clients(name)")
+          .select("id, number, status, total, created_at, clients(name, company)")
           .eq("shop_id", shopId)
           .in("status", ["draft", "sent", "pending"])
           .order("created_at", { ascending: false })
@@ -114,7 +115,7 @@ export default function CommercialDashboard() {
               <li key={q.id} className="py-2 flex items-center justify-between gap-2">
                 <Link to={`/quotes/edit/${q.id}`} className="flex-1 min-w-0 flex items-center gap-2 hover:underline">
                   <span className="font-mono text-xs text-muted-foreground">{q.number || "—"}</span>
-                  <span className="truncate">{q.clients?.name || "Sem cliente"}</span>
+                  <span className="truncate">{clientDisplayName(q.clients) || "Sem cliente"}</span>
                 </Link>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold">€{Number(q.total || 0).toFixed(2)}</span>

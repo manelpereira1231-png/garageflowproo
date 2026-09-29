@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,7 @@ export default function Warranties() {
   const fetchData = useCallback(async () => {
     if (!activeShopId) return;
     const [wRes, cRes, vRes] = await Promise.all([
-      supabase.from("warranties").select("*, clients(name), vehicles(make, model, plate)").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(300),
+      supabase.from("warranties").select("*, clients(name, company), vehicles(make, model, plate)").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(300),
       supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),
       supabase.from("vehicles").select("id, make, model, plate, client_id").eq("shop_id", activeShopId).is("deleted_at", null).limit(1000),
     ]);
@@ -124,7 +125,7 @@ export default function Warranties() {
   const filtered = warranties.filter(w => {
     const matchSearch = !search || 
       w.description?.toLowerCase().includes(search.toLowerCase()) ||
-      (w.clients as any)?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      clientDisplayName(w.clients as any)?.toLowerCase().includes(search.toLowerCase()) ||
       (w.vehicles as any)?.plate?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'all' || w.status === statusFilter || 
       (statusFilter === 'expiring' && w.status === 'active' && differenceInDays(new Date(w.end_date), new Date()) <= 30 && differenceInDays(new Date(w.end_date), new Date()) >= 0);
@@ -245,7 +246,7 @@ export default function Warranties() {
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm">
                         <User className="w-3 h-3 text-muted-foreground" />
-                        {(w.clients as any)?.name}
+                        {clientDisplayName(w.clients as any)}
                       </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
@@ -282,7 +283,7 @@ export default function Warranties() {
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-sm truncate">{w.description}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <User className="w-3 h-3" /> {(w.clients as any)?.name}
+                      <User className="w-3 h-3" /> {clientDisplayName(w.clients as any)}
                     </p>
                   </div>
                   {getStatusBadge(w.status, w.end_date)}

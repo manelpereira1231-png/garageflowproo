@@ -68,7 +68,7 @@ export default function QuoteForm() {
   useEffect(() => {
     const fetchData = async () => {
       if (!activeShopId) return;
-      const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
+      const { data: c } = await supabase.from("clients").select("id, name, company, nif").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
       if (c) setClients(c);
       const { data: v } = await supabase.from("vehicles").select("id, client_id, make, model, plate").eq("shop_id", activeShopId).is("deleted_at", null).order("make");
       if (v) setVehicles(v);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense, useMemo } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { supabase } from "@/integrations/supabase/client";
 import { TrendingUp, FileText, Wrench, Users, DollarSign, BarChart3, Bell, AlertTriangle, CheckCircle, Clock, CreditCard, Star, Search, Gift, Shield, ChevronRight, Building2, Layers, Target } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -196,7 +197,7 @@ function OwnerDashboard() {
 
         const [ordersRes, quotesRes, clientsRes, allOrdersRes, allQuotesRes, partsUsedRes, invoicesMonthRes, allClientsRes] = await Promise.all([
           supabase.from("work_orders")
-            .select("shop_id, total, profit, status, number, created_at, clients(name), vehicles(plate, make, model)")
+            .select("shop_id, total, profit, status, number, created_at, clients(name, company), vehicles(plate, make, model)")
             .in("shop_id", shopIds)
             .gte("created_at", monthStart)
             .order("created_at", { ascending: false }),
@@ -1065,7 +1066,7 @@ function OwnerDashboard() {
                       {shopBadge && <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">{shopBadge}</span>}
                     </div>
                     <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
-                      <span className="truncate">{(s.clients as any)?.name || '—'}</span>
+                      <span className="truncate">{clientDisplayName(s.clients as any) || '—'}</span>
                       {s.status && <><span>·</span><span>{t(`service.${s.status}`)}</span></>}
                       {time && <><span>·</span><span>{time}</span></>}
                     </div>

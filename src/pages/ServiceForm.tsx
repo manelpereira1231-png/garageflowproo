@@ -1,4 +1,5 @@
 import { MAX_LABOR_HOURS, MAX_LINE_QUANTITY, MAX_UNIT_PRICE, MAX_MILEAGE } from "@/lib/sanityLimits";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import LinkedClaimBanner from "@/components/LinkedClaimBanner";
@@ -63,7 +64,7 @@ export default function ServiceForm() {
   useEffect(() => {
     const fetchData = async () => {
       if (!activeShopId) return;
-      const { data: c } = await supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
+      const { data: c } = await supabase.from("clients").select("id, name, company, nif").eq("shop_id", activeShopId).is("deleted_at", null).order("name");
       if (c) setClients(c);
       const { data: v } = await supabase.from("vehicles").select("id, client_id, make, model, plate").eq("shop_id", activeShopId).is("deleted_at", null).order("make");
       if (v) setVehicles(v);
@@ -246,7 +247,7 @@ export default function ServiceForm() {
               <Label>{t('quotes.client')} *</Label>
               <Select value={clientId} onValueChange={setClientId}>
                 <SelectTrigger><SelectValue placeholder={t('quotes.selectClient')} /></SelectTrigger>
-                <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{clientDisplayName(c)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">

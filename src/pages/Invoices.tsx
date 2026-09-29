@@ -1,4 +1,5 @@
 import { exportSaftInBackground } from "@/lib/saftExport";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useUrlSearchFilter } from "@/hooks/useUrlSearchFilter";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
@@ -109,7 +110,7 @@ export default function Invoices() {
   } = useServerList<any>({
     table: "invoices",
     shopId: activeShopId,
-    select: "*, clients(name, email, phone, nif), vehicles(make, model, plate)",
+    select: "*, clients(name, company, email, phone, nif), vehicles(make, model, plate)",
     page,
     pageSize: PAGE_SIZE,
     orderBy,
@@ -156,12 +157,12 @@ export default function Invoices() {
     if (!can("invoices.export") || !activeShopId) return;
     const { data: all } = await supabase
       .from("invoices")
-      .select("*, clients(name)")
+      .select("*, clients(name, company)")
       .eq("shop_id", activeShopId)
       .order("created_at", { ascending: false })
       .limit(5000);
     const csvData = (all || []).map((inv: any) => ({
-      Número: inv.number, Cliente: (inv.clients as any)?.name,
+      Número: inv.number, Cliente: clientDisplayName(inv.clients as any),
       Status: inv.status, Subtotal: inv.subtotal, [getTaxLabelLocal()]: inv.vat_total,
       Total: inv.total, Vencimento: inv.due_date, Data: inv.created_at?.slice(0, 10),
     }));
@@ -205,7 +206,7 @@ export default function Invoices() {
         invoice: inv,
         items: items || [],
         shop,
-        clientName: (inv.clients as any)?.name || '',
+        clientName: clientDisplayName(inv.clients as any) || '',
         clientEmail: (inv.clients as any)?.email,
         clientPhone: (inv.clients as any)?.phone,
         clientNif: (inv.clients as any)?.nif,
@@ -299,7 +300,7 @@ export default function Invoices() {
       await openWhatsApp({
         link: payUrl || undefined,
         phone,
-        clientName: (inv.clients as any)?.name,
+        clientName: clientDisplayName(inv.clients as any),
         type: 'invoice',
         number: inv.number,
         plate: (inv.vehicles as any)?.plate,
@@ -369,7 +370,7 @@ export default function Invoices() {
         shopNif: shop.nif,
         shopAddress: shop.address,
         shopLogoUrl: shop.logo_url,
-        clientName: (inv.clients as any)?.name || '',
+        clientName: clientDisplayName(inv.clients as any) || '',
         invoiceNumber: inv.number,
         invoiceDate: new Date(inv.created_at || Date.now()).toLocaleDateString(dateLocale),
         vehicleInfo: vehicle,
@@ -562,7 +563,7 @@ export default function Invoices() {
                   </Badge>
                 </div>
               </div>
-              <p className="text-sm font-semibold">{(inv.clients as any)?.name}</p>
+              <p className="text-sm font-semibold">{clientDisplayName(inv.clients as any)}</p>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="text-sm font-semibold mono text-foreground">{cur}{inv.total?.toFixed(2)}</span>
                 <span>{inv.due_date || '—'}</span>
@@ -632,7 +633,7 @@ export default function Invoices() {
             ) : filtered.map(inv => (
               <TableRow key={inv.id} className="hover:bg-muted/50">
                 <TableCell className="px-3 py-3 font-medium mono">{inv.number}</TableCell>
-                <TableCell className="px-3 py-3 whitespace-normal break-words">{(inv.clients as any)?.name}</TableCell>
+                <TableCell className="px-3 py-3 whitespace-normal break-words">{clientDisplayName(inv.clients as any)}</TableCell>
                 <TableCell className="hidden md:table-cell px-3 py-3 whitespace-normal">
                   {(inv.vehicles as any) ? (
                     <>

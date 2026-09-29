@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -102,20 +103,20 @@ export default function CommandPalette() {
             .limit(5) : empty,
           can("vehicles.view") ? supabase
             .from("vehicles")
-            .select("id, make, model, plate, vin, clients(name)")
+            .select("id, make, model, plate, vin, clients(name, company)")
             .eq("shop_id", activeShopId)
             .is("deleted_at", null)
             .or([...plateFilters, `make.ilike.${searchTerm}`, `model.ilike.${searchTerm}`, `vin.ilike.${searchTerm}`].join(","))
             .limit(5) : empty,
           can("quotes.view") ? supabase
             .from("quotes")
-            .select("id, number, total, status, clients(name)")
+            .select("id, number, total, status, clients(name, company)")
             .eq("shop_id", activeShopId)
             .or(`number.ilike.${searchTerm}`)
             .limit(5) : empty,
           can("invoices.view") ? supabase
             .from("invoices")
-            .select("id, number, total, status, clients(name)")
+            .select("id, number, total, status, clients(name, company)")
             .eq("shop_id", activeShopId)
             .or(`number.ilike.${searchTerm}`)
             .limit(5) : empty,
@@ -127,7 +128,7 @@ export default function CommandPalette() {
             .limit(5) : empty,
           can("work_orders.view") ? supabase
             .from("work_orders")
-            .select("id, number, total, status, technician, clients(name), vehicles(plate,make,model)")
+            .select("id, number, total, status, technician, clients(name, company), vehicles(plate,make,model)")
             .eq("shop_id", activeShopId)
             .or(`number.ilike.${searchTerm},technician.ilike.${searchTerm}`)
             .limit(5) : empty,
@@ -139,7 +140,7 @@ export default function CommandPalette() {
             .limit(5) : empty,
           can("agenda.view") ? supabase
             .from("appointments")
-            .select("id, date, time, status, notes, clients(name), vehicles(plate)")
+            .select("id, date, time, status, notes, clients(name, company), vehicles(plate)")
             .eq("shop_id", activeShopId)
             .or(`notes.ilike.${searchTerm}`)
             .limit(5) : empty,
@@ -156,25 +157,25 @@ export default function CommandPalette() {
           id: v.id,
           type: "vehicle" as const,
           title: `${v.make} ${v.model} — ${v.plate}`,
-          subtitle: (v.clients as any)?.name || "",
+          subtitle: clientDisplayName(v.clients as any) || "",
         })),
         ...(quotesRes.data || []).map((q) => ({
           id: q.id,
           type: "quote" as const,
           title: q.number,
-          subtitle: `${(q.clients as any)?.name || ""} · ${formatMoney(q.total || 0)}`,
+          subtitle: `${clientDisplayName(q.clients as any) || ""} · ${formatMoney(q.total || 0)}`,
         })),
         ...(servicesRes.data || []).map((s: any) => ({
           id: s.id,
           type: "service" as const,
           title: s.number,
-          subtitle: `${(s.clients as any)?.name || ""} · ${(s.vehicles as any)?.plate || ""} · ${s.status}`,
+          subtitle: `${clientDisplayName(s.clients as any) || ""} · ${(s.vehicles as any)?.plate || ""} · ${s.status}`,
         })),
         ...(invoicesRes.data || []).map((i) => ({
           id: i.id,
           type: "invoice" as const,
           title: i.number,
-          subtitle: `${(i.clients as any)?.name || ""} · ${formatMoney(i.total || 0)}`,
+          subtitle: `${clientDisplayName(i.clients as any) || ""} · ${formatMoney(i.total || 0)}`,
         })),
         ...(catalogRes.data || []).map((c: any) => ({
           id: c.id,
@@ -191,7 +192,7 @@ export default function CommandPalette() {
         ...(apptsRes.data || []).map((a: any) => ({
           id: a.id,
           type: "appointment" as const,
-          title: (a.clients as any)?.name || (isPt ? "Marcação" : "Appointment"),
+          title: clientDisplayName(a.clients as any) || (isPt ? "Marcação" : "Appointment"),
           subtitle: `${a.date || ""} ${a.time ? String(a.time).slice(0, 5) : ""} · ${(a.vehicles as any)?.plate || ""}`,
         })),
       ];

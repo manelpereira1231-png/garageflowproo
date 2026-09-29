@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { supabase } from "@/integrations/supabase/client";
 import { insertWithNumber, nextInvoiceNumber, friendlyDocError } from "@/lib/insertWithNumber";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,7 @@ export default function InvoiceForm() {
 
       const [shopRes, clientsRes, vehiclesRes] = await Promise.all([
         supabase.from("shops").select("*").eq("id", activeId).maybeSingle(),
-        supabase.from("clients").select("id, name, nif, email, phone").eq("shop_id", activeId).is("deleted_at", null).order("name"),
+        supabase.from("clients").select("id, name, company, nif, email, phone").eq("shop_id", activeId).is("deleted_at", null).order("name"),
         supabase.from("vehicles").select("id, make, model, plate, client_id").eq("shop_id", activeId).is("deleted_at", null),
       ]);
       if (shopRes.data) setShop(shopRes.data);
@@ -214,7 +215,7 @@ export default function InvoiceForm() {
     let autoSend = false;
     if (issueNow && activeId) {
       const client = clients.find(c => c.id === clientId);
-      const clientName = client?.name || '';
+      const clientName = clientDisplayName(client) || '';
       sendPushNotification(
         activeId,
         `Nova fatura ${number}`,
@@ -250,7 +251,7 @@ export default function InvoiceForm() {
             <Select value={clientId} onValueChange={(v) => { setClientId(v); setVehicleId(""); }}>
               <SelectTrigger><SelectValue placeholder={t('invoices.selectClient')} /></SelectTrigger>
               <SelectContent>
-                {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name} {c.nif ? `(${c.nif})` : ''}</SelectItem>)}
+                {clients.map(c => <SelectItem key={c.id} value={c.id}>{clientDisplayName(c)} {c.nif ? `(${c.nif})` : ''}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

@@ -1,4 +1,5 @@
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useServerList } from "@/hooks/useServerList";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
@@ -111,7 +112,7 @@ export default function Quotes() {
   } = useServerList<any>({
     table: "quotes",
     shopId: activeShopId,
-    select: "*, clients(name, email, phone, nif), vehicles(make, model, plate)",
+    select: "*, clients(name, company, email, phone, nif), vehicles(make, model, plate)",
     page,
     pageSize: PAGE_SIZE,
     orderBy,
@@ -270,7 +271,7 @@ export default function Quotes() {
       const subject = `${prefix}${langLabels[lang] || langLabels.pt} ${q.number} — ${shop.name}`;
       const html = quoteEmailHtml({
         shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone, shopNif: shop.nif,
-        shopAddress: shop.address, shopLogoUrl: shop.logo_url, clientName: (q.clients as any)?.name || '',
+        shopAddress: shop.address, shopLogoUrl: shop.logo_url, clientName: clientDisplayName(q.clients as any) || '',
         quoteNumber: q.number, quoteDate: q.date || formatLocalDate(q.created_at),
         validityDate: q.validity_date, lines, subtotal: q.subtotal, vatTotal: q.vat_total, total: q.total,
         currency: shop.currency || 'EUR', vehicleInfo, notes: q.notes, approvalUrl, lang,
@@ -322,7 +323,7 @@ export default function Quotes() {
       type: 'quote', number: q.number, date: q.date || formatLocalDate(q.created_at),
       validityDate: q.validity_date, shopName: shop.name, shopEmail: shop.email, shopPhone: shop.phone,
       shopNif: shop.nif, shopAddress: shop.address, shopLogoUrl: shop.logo_url,
-      clientName: (q.clients as any)?.name || '', clientEmail: (q.clients as any)?.email,
+      clientName: clientDisplayName(q.clients as any) || '', clientEmail: (q.clients as any)?.email,
       clientPhone: (q.clients as any)?.phone, clientNif: (q.clients as any)?.nif,
       vehicleMake: (q.vehicles as any)?.make || '', vehicleModel: (q.vehicles as any)?.model || '',
       vehiclePlate: (q.vehicles as any)?.plate || '', lines, subtotal: q.subtotal, vatTotal: q.vat_total,
@@ -369,7 +370,7 @@ export default function Quotes() {
     const pdf = await buildQuotePdfBlob(q);
     openWhatsApp({
       phone,
-      clientName: (q.clients as any)?.name,
+      clientName: clientDisplayName(q.clients as any),
       type: 'quote',
       number: q.number,
       plate: (q.vehicles as any)?.plate,
@@ -385,12 +386,12 @@ export default function Quotes() {
     if (!activeShopId) return;
     const { data: all } = await supabase
       .from("quotes")
-      .select("*, clients(name), vehicles(make, model, plate)")
+      .select("*, clients(name, company), vehicles(make, model, plate)")
       .eq("shop_id", activeShopId)
       .order("created_at", { ascending: false })
       .limit(5000);
     const csvData = (all || []).map((q: any) => ({
-      Número: q.number, Cliente: (q.clients as any)?.name,
+      Número: q.number, Cliente: clientDisplayName(q.clients as any),
       Veículo: `${(q.vehicles as any)?.make} ${(q.vehicles as any)?.model}`,
       Matrícula: (q.vehicles as any)?.plate, Status: q.status, Subtotal: q.subtotal,
       [getTaxLabel()]: q.vat_total, Total: q.total, Lucro: q.profit, Data: q.date, Validade: q.validity_date,
@@ -560,7 +561,7 @@ export default function Quotes() {
               </Badge>
             </div>
             <div>
-              <p className="text-sm font-semibold">{(q.clients as any)?.name}</p>
+              <p className="text-sm font-semibold">{clientDisplayName(q.clients as any)}</p>
               <p className="text-xs text-muted-foreground">{(q.vehicles as any)?.make} {(q.vehicles as any)?.model} — {(q.vehicles as any)?.plate}</p>
             </div>
             <div className="flex items-center justify-between">
@@ -643,7 +644,7 @@ export default function Quotes() {
             ) : filtered.map(q => (
               <TableRow key={q.id} className="hover:bg-muted/50">
                 <TableCell className="px-3 py-3 font-medium mono">{q.number}</TableCell>
-                <TableCell className="px-3 py-3 whitespace-normal break-words">{(q.clients as any)?.name}</TableCell>
+                <TableCell className="px-3 py-3 whitespace-normal break-words">{clientDisplayName(q.clients as any)}</TableCell>
                 <TableCell className="hidden md:table-cell px-3 py-3 whitespace-normal">
                   <span className="break-words">{(q.vehicles as any)?.make} {(q.vehicles as any)?.model}</span>
                   <span className="mono text-xs text-muted-foreground ml-1 whitespace-nowrap">({(q.vehicles as any)?.plate})</span>

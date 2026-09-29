@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useShopRole } from "@/hooks/useShopRole";
@@ -116,7 +117,7 @@ const { id } = useParams<{ id: string }>();
     const activeShopId = localStorage.getItem("garageflow_active_shop");
     let query = supabase
       .from("invoices")
-      .select("*, clients(name, email, phone, nif), vehicles(make, model, plate)")
+      .select("*, clients(name, company, email, phone, nif), vehicles(make, model, plate)")
       .eq("id", id);
     if (activeShopId) query = query.eq("shop_id", activeShopId);
     const { data: inv } = await query.maybeSingle();
@@ -174,7 +175,7 @@ const { id } = useParams<{ id: string }>();
         invoice: { ...invoice, status: effectiveStatus },
         items,
         shop,
-        clientName: (invoice.clients as any)?.name || '',
+        clientName: clientDisplayName(invoice.clients as any) || '',
         clientEmail,
         clientPhone: (invoice.clients as any)?.phone,
         clientNif: (invoice.clients as any)?.nif,
@@ -211,7 +212,7 @@ const { id } = useParams<{ id: string }>();
         shopNif: shop.nif,
         shopAddress: shop.address,
         shopLogoUrl: shop.logo_url,
-        clientName: (invoice.clients as any)?.name || '',
+        clientName: clientDisplayName(invoice.clients as any) || '',
         invoiceNumber: invoice.number,
         invoiceDate: new Date(invoice.created_at || Date.now()).toLocaleDateString(getCountryConfig().locale),
         vehicleInfo: `${(invoice.vehicles as any)?.make || ''} ${(invoice.vehicles as any)?.model || ''}`.trim(),
@@ -265,7 +266,7 @@ const { id } = useParams<{ id: string }>();
           await openWhatsApp({
             phone: clientPhone,
             link: payUrl || undefined,
-            clientName: (invoice.clients as any)?.name || '',
+            clientName: clientDisplayName(invoice.clients as any) || '',
             type: 'invoice',
             number: invoice.number,
             plate: (invoice.vehicles as any)?.plate,
@@ -434,7 +435,7 @@ const { id } = useParams<{ id: string }>();
     if (!invoice || !shop) return null;
     const doc = await generateInvoicePdf({
       invoice, items, shop,
-      clientName: (invoice.clients as any)?.name || '',
+      clientName: clientDisplayName(invoice.clients as any) || '',
       clientEmail: (invoice.clients as any)?.email,
       clientPhone: (invoice.clients as any)?.phone,
       clientNif: (invoice.clients as any)?.nif,
@@ -539,7 +540,7 @@ const { id } = useParams<{ id: string }>();
         shopNif: shop.nif,
         shopAddress: shop.address,
         shopLogoUrl: shop.logo_url,
-        clientName: (invoice.clients as any)?.name || '',
+        clientName: clientDisplayName(invoice.clients as any) || '',
         invoiceNumber: invoice.number,
         invoiceDate: new Date(invoice.created_at || Date.now()).toLocaleDateString(getCountryConfig().locale),
         vehicleInfo: `${(invoice.vehicles as any)?.make || ''} ${(invoice.vehicles as any)?.model || ''}`.trim(),
@@ -589,7 +590,7 @@ const { id } = useParams<{ id: string }>();
       await openWhatsApp({
         phone,
         link: waPayUrl || undefined,
-        clientName: (invoice.clients as any)?.name || '',
+        clientName: clientDisplayName(invoice.clients as any) || '',
         type: 'invoice',
         number: invoice.number,
         plate: (invoice.vehicles as any)?.plate,
@@ -620,7 +621,7 @@ const { id } = useParams<{ id: string }>();
     try {
       const doc = await generateInvoicePdf({
         invoice, items, shop,
-        clientName: (invoice.clients as any)?.name || '',
+        clientName: clientDisplayName(invoice.clients as any) || '',
         clientEmail: (invoice.clients as any)?.email,
         clientPhone: (invoice.clients as any)?.phone,
         clientNif: (invoice.clients as any)?.nif,
@@ -793,7 +794,7 @@ const { id } = useParams<{ id: string }>();
         <Card>
           <CardHeader><CardTitle className="text-sm">{t('quotes.client')}</CardTitle></CardHeader>
           <CardContent className="text-sm space-y-1">
-            <p className="font-medium">{(invoice.clients as any)?.name}</p>
+            <p className="font-medium">{clientDisplayName(invoice.clients as any)}</p>
             {(invoice.clients as any)?.nif && <p className="text-muted-foreground">NIF: {(invoice.clients as any)?.nif}</p>}
             {(invoice.clients as any)?.email && <p className="text-muted-foreground">{(invoice.clients as any)?.email}</p>}
             {(invoice.clients as any)?.phone && <p className="text-muted-foreground">{(invoice.clients as any)?.phone}</p>}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -89,7 +90,7 @@ export default function Workshop() {
     let query = supabase
       .from("work_orders")
       // Drop heavy `lines` JSON from list — only fetched on demand for the dialog
-      .select("id, number, status, total, created_at, completed_at, delivered_at, technician, diagnosis, client_description, entry_mileage, labor_hours, clients(name, phone, email), vehicles(make, model, plate, year, fuel)")
+      .select("id, number, status, total, created_at, completed_at, delivered_at, technician, diagnosis, client_description, entry_mileage, labor_hours, clients(name, company, phone, email), vehicles(make, model, plate, year, fuel)")
       .eq("shop_id", activeShopId)
       .order("created_at", { ascending: false })
       .limit(50);
@@ -149,7 +150,7 @@ export default function Workshop() {
         sendPushNotification(
           activeShopId,
           `OS ${wo.number} — ${statusConfig[nextStatus]?.label || nextStatus}`,
-          `${vehicle} (${(wo.clients as any)?.name || ''})`,
+          `${vehicle} (${clientDisplayName(wo.clients as any) || ''})`,
           '/workshop'
         );
       }
@@ -443,7 +444,7 @@ export default function Workshop() {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <User className="w-4 h-4 shrink-0" />
-                  <span>{(wo.clients as any)?.name}</span>
+                  <span>{clientDisplayName(wo.clients as any)}</span>
                   {(wo.clients as any)?.phone && <span className="text-xs">📞 {(wo.clients as any).phone}</span>}
                 </div>
               </div>
@@ -531,7 +532,7 @@ export default function Workshop() {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <User className="w-4 h-4" />
-                  {(selected.clients as any)?.name}
+                  {clientDisplayName(selected.clients as any)}
                   {(selected.clients as any)?.phone && <span>📞 {(selected.clients as any).phone}</span>}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -753,7 +754,7 @@ export default function Workshop() {
             status: selected.status,
             shopId: activeShopId,
             shopName,
-            clientName: (selected.clients as any)?.name,
+            clientName: clientDisplayName(selected.clients as any),
             clientPhone: (selected.clients as any)?.phone,
             clientEmail: (selected.clients as any)?.email,
             vehicleMake: (selected.vehicles as any)?.make,

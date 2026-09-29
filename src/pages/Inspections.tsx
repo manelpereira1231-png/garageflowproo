@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { useLiveTick } from "@/hooks/useLiveTick";
 import { supabase } from "@/integrations/supabase/client";
@@ -163,7 +164,7 @@ export default function Inspections() {
     try {
       const [clRes, woRes] = await Promise.all([
         supabase.from("inspection_checklists").select("*").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
-        supabase.from("work_orders").select("id, number, status, client_id, vehicle_id, clients(name), vehicles(make, model, plate)").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
+        supabase.from("work_orders").select("id, number, status, client_id, vehicle_id, clients(name, company), vehicles(make, model, plate)").eq("shop_id", activeShopId).order("created_at", { ascending: false }),
       ]);
       const cl = (clRes.data ?? []).map((c: any) => ({
         ...c,
@@ -359,7 +360,7 @@ export default function Inspections() {
   };
 
   const getWOLabel = (wo: any) => {
-    const client = wo.clients?.name || '';
+    const client = clientDisplayName(wo.clients) || '';
     const vehicle = wo.vehicles ? `${wo.vehicles.make} ${wo.vehicles.model}` : '';
     const plate = wo.vehicles?.plate || '';
     return `${wo.number} — ${client} — ${vehicle} — ${plate}`;
@@ -693,7 +694,7 @@ export default function Inspections() {
                   </p>
                 )}
                 {wo?.clients && (
-                  <p className="text-xs text-muted-foreground">👤 {(wo.clients as any)?.name}</p>
+                  <p className="text-xs text-muted-foreground">👤 {clientDisplayName(wo.clients as any)}</p>
                 )}
 
                 <div>
@@ -941,7 +942,7 @@ export default function Inspections() {
                   <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-xl px-4 py-3 border border-border">
                     <Car className="w-4 h-4 text-primary" />
                     <span className="font-mono font-bold text-foreground">{wo.number}</span>
-                    {wo.clients && <span>— {(wo.clients as any)?.name}</span>}
+                    {wo.clients && <span>— {clientDisplayName(wo.clients as any)}</span>}
                     {wo.vehicles && <span>— {(wo.vehicles as any)?.make} {(wo.vehicles as any)?.model} ({(wo.vehicles as any)?.plate})</span>}
                   </div>
                 )}

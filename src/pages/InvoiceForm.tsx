@@ -53,7 +53,7 @@ export default function InvoiceForm() {
 
       const [shopRes, clientsRes, vehiclesRes] = await Promise.all([
         supabase.from("shops").select("*").eq("id", activeId).maybeSingle(),
-        supabase.from("clients").select("id, name, nif, email, phone").eq("shop_id", activeId).is("deleted_at", null).order("name"),
+        supabase.from("clients").select("id, name, company, nif, email, phone").eq("shop_id", activeId).is("deleted_at", null).order("name"),
         supabase.from("vehicles").select("id, make, model, plate, client_id").eq("shop_id", activeId).is("deleted_at", null),
       ]);
       if (shopRes.data) setShop(shopRes.data);

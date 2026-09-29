@@ -70,7 +70,7 @@ export default function ClaimDetail() {
     if (!id || !activeShopId) return;
     const [c, ins, ct, cm, dc, ev] = await Promise.all([
       supabase.from("claims")
-        .select("*, insurers(*), clients(id, name, email, phone), vehicles(id, make, model, plate, year), work_orders(id, number, status, total)")
+        .select("*, insurers(*), clients(id, name, company, nif, email, phone), vehicles(id, make, model, plate, year), work_orders(id, number, status, total)")
         .eq("id", id).maybeSingle(),
       supabase.from("insurers").select("*").eq("shop_id", activeShopId).order("name"),
       supabase.from("claim_contacts").select("*").eq("claim_id", id).order("is_primary", { ascending: false }),

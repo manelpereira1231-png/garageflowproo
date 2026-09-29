@@ -83,7 +83,7 @@ export default function Claims() {
         .select("*, insurers(name), clients(name, company), vehicles(make, model, plate), work_orders(number)")
         .eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(500),
       supabase.from("insurers").select("*").eq("shop_id", activeShopId).order("name"),
-      supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),
+      supabase.from("clients").select("id, name, company, nif").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),
       supabase.from("vehicles").select("id, client_id, make, model, plate").eq("shop_id", activeShopId).is("deleted_at", null).limit(1000),
       supabase.from("work_orders").select("id, number, client_id, vehicle_id, status").eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(300),
     ]);
@@ -422,7 +422,7 @@ export default function Claims() {
               </div>
               <Select value={form.client_id} onValueChange={(v) => { setForm({ ...form, client_id: v, vehicle_id: "", work_order_id: "" }); setAddVehicle(false); }}>
                 <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Selecionar cliente" /></SelectTrigger>
-                <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{clientDisplayName(c)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>

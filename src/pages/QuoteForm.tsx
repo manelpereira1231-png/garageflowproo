@@ -57,6 +57,12 @@ export default function QuoteForm() {
   const [lines, setLines] = useState<LineItem[]>([]);
   const [laborHours, setLaborHours] = useState("0");
   const [quoteStatus, setQuoteStatus] = useState("draft");
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [sharePhotos, setSharePhotos] = useState(false);
+  const [recDate, setRecDate] = useState("");
+  const [recTime, setRecTime] = useState("");
+  const [delDate, setDelDate] = useState("");
+  const [delTime, setDelTime] = useState("");
   // Shop defaults from Settings — authoritative source for labor rate + VAT
   const [shopDefaults, setShopDefaults] = useState<{ labor_rate: number; vat_rate: number }>({
     labor_rate: 35,
@@ -101,6 +107,11 @@ export default function QuoteForm() {
           setClientId(quote.client_id);
           setVehicleId(quote.vehicle_id);
           setNotes(quote.notes || "");
+          const q: any = quote;
+          setPhotos(Array.isArray(q.photos) ? q.photos.filter((p: any) => typeof p === "string") : []);
+          setSharePhotos(!!q.share_photos);
+          setRecDate(q.reception_date || ""); setRecTime(q.reception_time ? String(q.reception_time).slice(0, 5) : "");
+          setDelDate(q.delivery_date || ""); setDelTime(q.delivery_time ? String(q.delivery_time).slice(0, 5) : "");
           setQuoteStatus(quote.status);
           setLaborHours(String(quote.labor_hours || 0));
           const quoteLines = Array.isArray(quote.lines) ? quote.lines : [];
@@ -220,6 +231,9 @@ export default function QuoteForm() {
         lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
         subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
         notes: notes || null,
+        share_photos: sharePhotos,
+        reception_date: recDate || null, reception_time: recTime || null,
+        delivery_date: delDate || null, delivery_time: delTime || null,
       }).eq("id", editId).eq("shop_id", activeShopId);
 
       if (error) toast.error(error.message);
@@ -514,6 +528,33 @@ export default function QuoteForm() {
             <div className="space-y-1.5"><Label>{t('quotes.validityDays')}</Label><Input type="number" value={validityDays} onChange={e => setValidityDays(e.target.value)} /></div>
           </div>
           <div className="space-y-1.5"><Label>{t('quotes.notes')}</Label><Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder={t('quotes.notesPlaceholder')} /></div>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+          <div>
+            <p className="text-sm font-medium">Receção e entrega da viatura (opcional)</p>
+            <p className="text-xs text-muted-foreground">O cliente vê estas datas no orçamento. Só entram na Agenda depois de o cliente aprovar.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5"><Label>Receção — data</Label><Input type="date" value={recDate} onChange={e => setRecDate(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>Receção — hora</Label><Input type="time" value={recTime} onChange={e => setRecTime(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>Entrega — data</Label><Input type="date" value={delDate} onChange={e => setDelDate(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>Entrega — hora</Label><Input type="time" value={delTime} onChange={e => setDelTime(e.target.value)} /></div>
+          </div>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+          {editId && activeShopId ? (
+            <>
+              <QuotePhotos quoteId={editId} shopId={activeShopId} photos={photos} onChange={setPhotos} />
+              <label className="flex items-center gap-3 min-h-[44px] cursor-pointer">
+                <Switch checked={sharePhotos} onCheckedChange={setSharePhotos} />
+                <span className="text-sm">Incluir fotografias no orçamento enviado ao cliente</span>
+              </label>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">Fotografias (até 7): crie o orçamento primeiro e depois abra-o para as adicionar.</p>
+          )}
         </div>
 
         <Button type="submit" className="w-full h-12 text-base" disabled={loading}>

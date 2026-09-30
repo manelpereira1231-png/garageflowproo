@@ -134,6 +134,13 @@
       "when": 1790682734024,
       "tag": "0018_quote_photos_and_vehicle_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790770755407,
+      "tag": "0019_quote_events_only_after_approval",
+      "breakpoints": true
     }
   ]
 }

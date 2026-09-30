@@ -186,6 +186,7 @@ export default function QuoteApproval() {
   const [clientComment, setClientComment] = useState("");
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [signerName, setSignerName] = useState<string>("");
+  const [publicPhotos, setPublicPhotos] = useState<string[]>([]);
   const t = (key: string) => translations[lang]?.[key] || translations.pt[key] || key;
 
   useEffect(() => {
@@ -209,6 +210,11 @@ export default function QuoteApproval() {
       setQuote(q);
       setShop(s);
       setLoading(false);
+      if (q.photo_count > 0) {
+        supabase.functions.invoke("quote-public-photos", { body: { token } })
+          .then(({ data }) => setPublicPhotos(Array.isArray(data?.photos) ? data.photos : []))
+          .catch(() => {});
+      }
 
       if (['approved', 'rejected', 'converted'].includes(q.status)) {
         setResult(q.status === 'rejected' ? 'rejected' : 'approved');
@@ -608,6 +614,30 @@ export default function QuoteApproval() {
           </div>
 
           <div className="p-6 sm:p-8 space-y-6">
+            {(() => {
+              const fmt = (d?: string, h?: string) => d ? `${d.split("-").reverse().join("/")}${h ? ` às ${String(h).slice(0, 5)}` : ""}` : null;
+              const rec = fmt(quote.reception_date, quote.reception_time);
+              const del = fmt(quote.delivery_date, quote.delivery_time);
+              if (!rec && !del) return null;
+              return (
+                <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 grid gap-1 sm:grid-cols-2 text-sm">
+                  {rec && <p><Calendar className="w-4 h-4 inline mr-1 text-primary" />Entrada prevista: <strong>{rec}</strong></p>}
+                  {del && <p><Calendar className="w-4 h-4 inline mr-1 text-primary" />Entrega prevista: <strong>{del}</strong></p>}
+                </div>
+              );
+            })()}
+            {publicPhotos.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fotografias da viatura</p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {publicPhotos.map((u) => (
+                    <a key={u} href={u} target="_blank" rel="noopener noreferrer" className="aspect-square rounded-lg overflow-hidden border border-border bg-muted">
+                      <img src={u} alt="Fotografia da viatura" className="w-full h-full object-cover" loading="lazy" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Client & Vehicle Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-muted/50 rounded-xl p-4 border border-border/50">

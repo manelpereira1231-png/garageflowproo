@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { QuotePhotos } from "@/components/quotes/QuotePhotos";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import LinkedClaimBanner from "@/components/LinkedClaimBanner";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
@@ -251,6 +253,7 @@ export default function QuoteForm() {
         lines: lines as any, labor_hours: parseFloat(laborHours) || 0,
         subtotal, vat_total: vatTotal, total, cost_total: costTotal, profit,
         status: 'draft', notes: notes || null, token: crypto.randomUUID(),
+        reception_date: recDate || null, reception_time: recTime || null, delivery_date: delDate || null, delivery_time: delTime || null,
         }).select("id").single() as any,
       });
 

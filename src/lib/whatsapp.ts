@@ -294,7 +294,9 @@ export async function openWhatsApp(params: WhatsAppMessageParams): Promise<boole
   // 2) Fallback: open WhatsApp (app on mobile, Web on desktop) directly in the
   // conversation with the message pre-filled, and hand the PDF to the user
   // as a local download so it's ready to attach in one click.
-  if (params.pdfBlob) {
+  // No telemóvel não descarregamos o PDF: a descarga abre o documento no ecrã
+  // (sobretudo iPhone) e impede o WhatsApp de abrir.
+  if (params.pdfBlob && !mobile) {
     downloadPdfBlob(params.pdfBlob, filename);
   }
   // Abrir primeiro (mantém o gesto do utilizador) e só depois copiar o texto

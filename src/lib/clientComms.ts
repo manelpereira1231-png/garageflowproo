@@ -204,7 +204,8 @@ export async function sendWorkOrderWhatsApp(
   // de awaits (sincronizar orçamento) o browser bloquearia o popup.
   let preopened: Window | null = null;
   try {
-    preopened = window.open("", "_blank", "noopener,noreferrer");
+    // Sem 'noopener' (senão devolve null e abria-se uma 2.ª janela).
+    preopened = isMobileDevice() ? null : window.open("", "_blank");
     preopened?.document?.write?.(
       "<p style=\"font-family:sans-serif;color:#666;padding:24px;\">A abrir o WhatsApp…</p>",
     );
@@ -237,4 +238,9 @@ export async function sendWorkOrderWhatsApp(
   }
 
   return openWhatsApp({ ...base, customMessage: finalBody, preopenedWindow: preopened });
+}
+
+function isMobileDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 }

@@ -205,14 +205,21 @@ function openUrl(url: string, sameTab: boolean) {
   // browser já não considera o clique "recente" e pode bloquear a nova janela.
   // Tentamos abrir numa nova janela e, se for bloqueada, navegamos na própria
   // janela — assim o WhatsApp abre sempre.
+  // IMPORTANTE: não passar 'noopener' em window.open — com essa flag o
+  // browser abre a aba mas devolve null, e antes isso levava a uma 2.ª
+  // abertura na própria página (GarageFlow saía para o WhatsApp Web).
   let win: Window | null = null;
   try {
-    win = window.open(url, '_blank', 'noopener,noreferrer');
+    win = window.open(url, '_blank');
+    if (win) { try { win.opener = null; } catch { /* ignore */ } }
   } catch {
     win = null;
   }
   if (!win) {
-    window.location.href = url;
+    // Popup bloqueado: uma única abertura via link, sem sair do GarageFlow.
+    const a = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    document.body.appendChild(a); a.click(); a.remove();
   }
 }
 

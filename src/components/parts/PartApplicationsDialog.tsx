@@ -48,6 +48,12 @@ export function PartApplicationsDialog({ part, shopId, canEdit, open, onOpenChan
     setLoading(false);
   };
   useEffect(() => { if (open) { load(); setForm(empty); setEditId(null); } /* eslint-disable-next-line */ }, [open, part?.id]);
+  useEffect(() => {
+    if (!open) return;
+    db.from("vehicle_catalog").select("make, model").order("make").order("model").limit(5000)
+      .then(({ data }: any) => setCatalog(data || []));
+    /* eslint-disable-next-line */
+  }, [open]);
 
   const save = async () => {
     if (!part || !shopId) return;

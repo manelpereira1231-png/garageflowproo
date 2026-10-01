@@ -7178,6 +7178,78 @@ export type Database = {
           },
         ]
       }
+      part_applications: {
+        Row: {
+          created_at: string
+          engine: string | null
+          engine_code: string | null
+          id: string
+          make: string | null
+          model: string | null
+          notes: string | null
+          oem_reference: string | null
+          part_brand: string | null
+          part_id: string
+          shop_id: string
+          updated_at: string
+          version: string | null
+          vin: string | null
+          year_from: number | null
+          year_to: number | null
+        }
+        Insert: {
+          created_at?: string
+          engine?: string | null
+          engine_code?: string | null
+          id?: string
+          make?: string | null
+          model?: string | null
+          notes?: string | null
+          oem_reference?: string | null
+          part_brand?: string | null
+          part_id: string
+          shop_id: string
+          updated_at?: string
+          version?: string | null
+          vin?: string | null
+          year_from?: number | null
+          year_to?: number | null
+        }
+        Update: {
+          created_at?: string
+          engine?: string | null
+          engine_code?: string | null
+          id?: string
+          make?: string | null
+          model?: string | null
+          notes?: string | null
+          oem_reference?: string | null
+          part_brand?: string | null
+          part_id?: string
+          shop_id?: string
+          updated_at?: string
+          version?: string | null
+          vin?: string | null
+          year_from?: number | null
+          year_to?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "part_applications_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "part_applications_part_id_fkey"
+            columns: ["part_id"]
+            isOneToOne: false
+            referencedRelation: "parts_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_commissions: {
         Row: {
           amount: number

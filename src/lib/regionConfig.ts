@@ -232,7 +232,12 @@ export function listActiveCountries(): CountryConfig[] {
  * Call once at app boot, AFTER loadCountriesFromDB().
  */
 export async function detectCountryByIP(): Promise<void> {
-  if (localStorage.getItem(COUNTRY_KEY)) return; // respect explicit choice
+  // A shop's country (set at registration) is the source of truth once a shop
+  // is active — never override it because someone travels. Anonymous visitors
+  // always follow their real location, so a stale value left by a previous
+  // demo/session (e.g. PT) can't make a Brazilian visitor see Portugal content.
+  if (localStorage.getItem("garageflow_active_shop")) return;
+  const previous = localStorage.getItem(COUNTRY_KEY);
   try {
     const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/detect-country`;
     const ctrl = new AbortController();

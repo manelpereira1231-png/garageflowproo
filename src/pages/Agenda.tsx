@@ -554,6 +554,7 @@ export default function Agenda() {
   const clientVehicles = form.client_id ? vehicles.filter(v => v.client_id === form.client_id) : vehicles;
 
   const [statusFilterTab, setStatusFilterTab] = useState("all");
+  const [mobileDayIdx, setMobileDayIdx] = useState(() => (new Date().getDay() + 6) % 7);
 
   const filteredAppointments = useMemo(() => {
     if (statusFilterTab === "all") return appointments;
@@ -662,7 +663,7 @@ export default function Agenda() {
 
       {/* Reschedule dialog */}
       <Dialog open={!!rescheduleAppt} onOpenChange={(o) => !o && setRescheduleAppt(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Reagendar marcação</DialogTitle>
           </DialogHeader>
@@ -809,12 +810,14 @@ export default function Agenda() {
 
       {/* Status filter tabs */}
       <Tabs value={statusFilterTab} onValueChange={setStatusFilterTab}>
-        <TabsList className="h-8">
-          <TabsTrigger value="all" className="text-xs px-3 h-7">{t('common.all')} ({totalWeek})</TabsTrigger>
-          <TabsTrigger value="scheduled" className="text-xs px-3 h-7">{t('agenda.scheduled')} ({scheduledCount})</TabsTrigger>
-          <TabsTrigger value="confirmed" className="text-xs px-3 h-7">{t('agenda.confirmed')} ({confirmedCount})</TabsTrigger>
-          <TabsTrigger value="completed" className="text-xs px-3 h-7">{t('agenda.completed')} ({completedCount})</TabsTrigger>
+        <div className="-mx-1 overflow-x-auto px-1">
+        <TabsList className="h-10 sm:h-8 w-max">
+          <TabsTrigger value="all" className="text-xs px-3 h-9 sm:h-7">{t('common.all')} ({totalWeek})</TabsTrigger>
+          <TabsTrigger value="scheduled" className="text-xs px-3 h-9 sm:h-7">{t('agenda.scheduled')} ({scheduledCount})</TabsTrigger>
+          <TabsTrigger value="confirmed" className="text-xs px-3 h-9 sm:h-7">{t('agenda.confirmed')} ({confirmedCount})</TabsTrigger>
+          <TabsTrigger value="completed" className="text-xs px-3 h-9 sm:h-7">{t('agenda.completed')} ({completedCount})</TabsTrigger>
         </TabsList>
+        </div>
       </Tabs>
 
       {/* Status legend */}
@@ -827,8 +830,74 @@ export default function Agenda() {
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <Card>
+      {/* Mobile: day picker + event list (touch friendly) */}
+      <div className="sm:hidden space-y-3">
+        <div className="grid grid-cols-7 gap-1">
+          {weekDays.map((day, i) => {
+            const isToday = isSameDay(day, new Date());
+            const active = i === mobileDayIdx;
+            const count = getDayAppCount(day);
+            return (
+              <button key={i} type="button" onClick={() => setMobileDayIdx(i)}
+                className={`min-h-[56px] rounded-lg border text-center transition-colors ${active ? 'bg-primary text-primary-foreground border-primary' : isToday ? 'border-primary/50 bg-card' : 'border-border bg-card'}`}>
+                <div className="text-[10px] uppercase opacity-80">{format(day, "EEE", { locale })}</div>
+                <div className="text-base font-bold leading-tight">{format(day, "d")}</div>
+                <div className="h-3 text-[10px]">{count > 0 ? count : ""}</div>
+              </button>
+            );
+          })}
+        </div>
+        {(() => {
+          const day = weekDays[mobileDayIdx] || weekDays[0];
+          const apps = HOURS.flatMap(h => getFilteredAppsForDayHour(day, h));
+          return (
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-foreground capitalize">{format(day, "EEEE, d MMMM", { locale })}</p>
+              {apps.length === 0 && <p className="text-sm text-muted-foreground py-6 text-center">Sem marcações neste dia.</p>}
+              {apps.map(app => (
+                <div key={app.id} className={`rounded-lg border p-3 ${STATUS_COLORS[app.status] || STATUS_COLORS.scheduled}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 text-sm font-semibold">
+                        <Clock className="w-4 h-4 shrink-0" />{app.time.slice(0, 5)}
+                        {app.duration_minutes > 0 && <span className="text-xs font-normal opacity-75">· {app.duration_minutes} min</span>}
+                      </div>
+                      <div className="text-sm font-medium mt-1 break-words">{app.service_type}</div>
+                      {app.client_name && <div className="text-xs opacity-80 break-words">{app.client_name}</div>}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {app.status === "scheduled" && (
+                      <Button size="sm" variant="outline" className="h-10" onClick={() => updateStatus(app.id, "confirmed")}>
+                        <CalendarCheck className="w-4 h-4 mr-1" />{t('agenda.confirmed')}
+                      </Button>
+                    )}
+                    {(app.status === "scheduled" || app.status === "confirmed") && (
+                      <Button size="sm" variant="outline" className="h-10" onClick={() => updateStatus(app.id, "completed")}>
+                        <CheckCircle2 className="w-4 h-4 mr-1" />{t('agenda.completed')}
+                      </Button>
+                    )}
+                    {(app.source === 'portal' || app.source === 'public') && app.status !== 'pending' && (
+                      <Button size="sm" variant="outline" className="h-10" onClick={() => openReschedule(app)} aria-label="Reagendar">
+                        <CalendarClock className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline" className="h-10" onClick={() => openEdit(app)} aria-label="Editar">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-10 text-destructive" onClick={() => setDeleteConfirm(app.id)} aria-label="Apagar">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* Calendar grid (tablet/desktop) */}
+      <Card className="hidden sm:block">
         <CardContent className="p-0 overflow-x-auto">
           <div className="min-w-[640px] sm:min-w-[700px]">
             <div className="grid grid-cols-[52px_repeat(7,minmax(84px,1fr))] sm:grid-cols-[60px_repeat(7,1fr)] border-b border-border">
@@ -901,7 +970,7 @@ export default function Agenda() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(v) => { setDialogOpen(v); if (!v) { setEditingAppt(null); resetForm(); } }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingAppt ? t('agenda.editAppointment') : t('agenda.new')}</DialogTitle></DialogHeader>
           <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
             {catalog.length > 0 && (
@@ -921,11 +990,11 @@ export default function Agenda() {
               <Label>{t('agenda.serviceType')} *</Label>
               <Input value={form.service_type} onChange={e => setForm({ ...form, service_type: e.target.value, service_id: "" })} placeholder={t('agenda.serviceTypePlaceholder')} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
               <div><Label>{t('agenda.date')}</Label><Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
               <div><Label>{t('agenda.time')}</Label><Input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
               <div>
                 <Label>{t('agenda.duration')}</Label>
                 <Select value={String(form.duration_minutes)} onValueChange={v => setForm({ ...form, duration_minutes: Number(v) })}>

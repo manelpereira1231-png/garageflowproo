@@ -50,7 +50,7 @@ export function PartApplicationsDialog({ part, shopId, canEdit, open, onOpenChan
     const payload = {
       make: t(form.make), model: t(form.model), engine: t(form.engine), version: t(form.version),
       year_from: n(form.year_from), year_to: n(form.year_to), oem_reference: t(form.oem_reference),
-      part_brand: t(form.part_brand), engine_code: t(form.engine_code), vin: t(form.vin), notes: t(form.notes),
+      part_brand: t(form.part_brand), engine_code: t(form.engine_code), vin: t(form.vin), notes: t(form.notes), mileage_km: n(form.mileage_km.replace(/\D/g, "")),
     };
     if (!payload.make && !payload.model && !payload.engine_code && !payload.vin && !payload.oem_reference) {
       toast.error("Indique pelo menos marca, modelo, código de motor, VIN ou referência."); return;
@@ -77,7 +77,7 @@ export function PartApplicationsDialog({ part, shopId, canEdit, open, onOpenChan
     setForm({
       make: a.make ?? "", model: a.model ?? "", engine: a.engine ?? "", version: a.version ?? "",
       year_from: a.year_from?.toString() ?? "", year_to: a.year_to?.toString() ?? "", oem_reference: a.oem_reference ?? "",
-      part_brand: a.part_brand ?? "", engine_code: a.engine_code ?? "", vin: a.vin ?? "", notes: a.notes ?? "",
+      part_brand: a.part_brand ?? "", engine_code: a.engine_code ?? "", vin: a.vin ?? "", notes: a.notes ?? "", mileage_km: a.mileage_km?.toString() ?? "",
     });
   };
 

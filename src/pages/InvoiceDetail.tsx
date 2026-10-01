@@ -26,6 +26,7 @@ import { formatMoney } from "@/lib/money";
 import { getTaxLabel, getCountryConfig } from "@/lib/regionConfig";
 import { usePlatformInvoiceFee } from "@/hooks/usePlatformInvoiceFee";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
+import PartialCreditNotes from "@/components/invoices/PartialCreditNotes";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -887,6 +888,14 @@ const { id } = useParams<{ id: string }>();
           <CardContent><p className="text-sm text-muted-foreground whitespace-pre-wrap">{invoice.notes}</p></CardContent>
         </Card>
       )}
+
+      <PartialCreditNotes
+        invoice={invoice}
+        items={items}
+        currency={shop?.currency || "EUR"}
+        canCreate={can("invoices.cancel")}
+        billingProvider={billingProvider}
+      />
 
       {/* Payment Dialog */}
       <Dialog open={showPayment} onOpenChange={setShowPayment}>

@@ -169,6 +169,13 @@
       "when": 1790815126047,
       "tag": "0023_brazil_local_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790816069343,
+      "tag": "0024_fix_get_shop_country_code_member_check",
+      "breakpoints": true
     }
   ]
 }

@@ -250,8 +250,21 @@ export async function detectCountryByIP(): Promise<void> {
     clearTimeout(t);
     if (!r.ok) return;
     const j = await r.json();
-    if (j?.country && getCountriesMap()[j.country]) {
-      localStorage.setItem(COUNTRY_KEY, j.country);
+    if (j?.country && getCountriesMap()[j.country] && j.country !== previous) {
+      setCountryCode(j.country);
+      // A browser that remembered the OTHER country: reload once so every
+      // static illustration/price picks the new country (no mixed content).
+      // Safe from loops: on the next load stored === detected.
+      if (previous) {
+        try {
+          const lang = localStorage.getItem('garageflow_language');
+          if ((lang === 'pt' || lang === 'pt-BR') && (j.country === 'BR' || j.country === 'PT')) {
+            localStorage.setItem('garageflow_language', j.country === 'BR' ? 'pt-BR' : 'pt');
+          }
+        } catch {}
+        window.location.reload();
+        return;
+      }
       // Notify listeners (LanguageContext, useCountryPricing) so UI updates
       // without a page reload — critical for IN/BR/UK first-time visitors.
       try {

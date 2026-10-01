@@ -57,6 +57,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const onCountryDetected = (e: Event) => {
       const country = (e as CustomEvent).detail?.country as string | undefined;
       const explicit = localStorage.getItem('garageflow_language');
+      // Portuguese variant follows the country (pt-PT ⇄ pt-BR), so a stale
+      // variant from a previous visit never mixes Brazil and Portugal content.
+      if ((explicit === 'pt' || explicit === 'pt-BR') && (country === 'BR' || country === 'PT')) {
+        const next = country === 'BR' ? 'pt-BR' : 'pt';
+        localStorage.setItem('garageflow_language', next);
+        setLanguageState(next);
+        return;
+      }
       if (explicit) return; // always respect user's explicit choice
       // India: do NOT auto-pick — popup will ask. Provisional EN already set.
       if (country === 'IN') return;

@@ -155,6 +155,13 @@
       "when": 1790814192415,
       "tag": "0021_part_applications_km",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790814550588,
+      "tag": "0022_partial_credit_notes",
+      "breakpoints": true
     }
   ]
 }

@@ -142,8 +142,9 @@ export function PartApplicationsDialog({ part, shopId, canEdit, open, onOpenChan
             <p className="text-sm font-semibold">{editId ? "Editar compatibilidade" : "Adicionar compatibilidade"}</p>
             <p className="text-xs font-semibold text-muted-foreground">Detalhes do Veículo</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {f("make", "Marca (ex.: Land Rover)")}{f("model", "Modelo (ex.: Range Rover Sport II (L494))")}
-              {f("version", "Versão / motorização (ex.: 3.0 SDV6 4x4, 5 portas)")}
+              {combo("make", "Marca", "pa-makes", makes, "Escolha ou escreva", v => { const m = makes.find(x => x.toLowerCase() === v.trim().toLowerCase()); if (m && m !== form.make) setForm(fm => ({ ...fm, make: m, model: "", version: "" })); })}
+              {combo("model", "Modelo", "pa-models", models, makeKey ? "Escolha ou escreva" : "Escolha primeiro a marca")}
+              {combo("version", "Versão / motorização (ex.: 3.0 SDV6 4x4, 5 portas)", "pa-versions", versions)}
               <div className="grid grid-cols-2 gap-3">{f("year_from", "Ano de", true)}{f("year_to", "Ano até", true)}</div>
               {f("oem_reference", "Referência")}{f("vin", "Nº Chassis")}
               {f("engine_code", "Código do Motor")}{f("mileage_km", "Quilómetros", true)}

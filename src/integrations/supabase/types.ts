@@ -11196,6 +11196,24 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_catalog: {
+        Row: {
+          id: string
+          make: string
+          model: string
+        }
+        Insert: {
+          id?: string
+          make: string
+          model: string
+        }
+        Update: {
+          id?: string
+          make?: string
+          model?: string
+        }
+        Relationships: []
+      }
       vehicle_global_history: {
         Row: {
           created_at: string

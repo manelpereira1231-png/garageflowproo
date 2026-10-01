@@ -98,6 +98,14 @@ export function PartApplicationsDialog({ part, shopId, canEdit, open, onOpenChan
       <Input className="h-11" inputMode={numeric ? "numeric" : undefined} value={form[k]} onChange={e => setForm({ ...form, [k]: e.target.value })} /></div>
   );
 
+  const combo = (k: keyof typeof empty, label: string, listId: string, options: string[], placeholder?: string, onPick?: (v: string) => void) => (
+    <div><Label className="text-xs">{label}</Label>
+      <Input className="h-11" list={listId} placeholder={placeholder} value={form[k]}
+        onChange={e => { const v = e.target.value; setForm({ ...form, [k]: v }); onPick?.(v); }} />
+      <datalist id={listId}>{options.map(o => <option key={o} value={o} />)}</datalist>
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

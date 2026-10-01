@@ -24,6 +24,8 @@ import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { formatMoney } from "@/lib/money";
 import { useShopRole } from "@/hooks/useShopRole";
 import { GsnPartPickerButton } from "@/components/parts/GsnPartPickerButton";
+import { PartApplicationsDialog, describeApplication, type PartApplication } from "@/components/parts/PartApplicationsDialog";
+import { Car } from "lucide-react";
 
 interface Part {
   id: string; shop_id: string; name: string; reference: string | null; supplier: string | null;
@@ -63,6 +65,9 @@ export default function Stock() {
   const [reserved, setReserved] = useState<Record<string, number>>({});
   const [movementSearch, setMovementSearch] = useState("");
   const [search, setSearch] = useState("");
+  const [vehicleQuery, setVehicleQuery] = useState("");
+  const [apps, setApps] = useState<PartApplication[]>([]);
+  const [appsPart, setAppsPart] = useState<{ id: string; name: string } | null>(null);
   useUrlSearchFilter(setSearch);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [movementDialog, setMovementDialog] = useState<string | null>(null);
@@ -119,10 +124,34 @@ export default function Stock() {
   useRealtimeTable("stock_movements", { shopId: activeShopId, onChange: load });
   useRealtimeTable("parts_orders", { shopId: activeShopId, onChange: load });
 
+  const loadApps = async () => {
+    if (!activeShopId) return;
+    const { data } = await (supabase as any).from("part_applications").select("*").eq("shop_id", activeShopId);
+    setApps((data as PartApplication[]) || []);
+  };
+  useEffect(() => { loadApps(); /* eslint-disable-next-line */ }, [activeShopId]);
+  const appsByPart = apps.reduce<Record<string, PartApplication[]>>((m, a) => { (m[a.part_id] ||= []).push(a); return m; }, {});
+  const vehicleMatch = (pid: string) => {
+    const q = vehicleQuery.trim().toLowerCase();
+    if (!q) return true;
+    const tokens = q.split(/\s+/);
+    return (appsByPart[pid] || []).some(a => {
+      const yearTok = tokens.find(t => /^\d{4}$/.test(t));
+      const hay = [a.make, a.model, a.version, a.engine, a.engine_code, a.vin, a.oem_reference, a.part_brand].filter(Boolean).join(" ").toLowerCase();
+      const textOk = tokens.filter(t => t !== yearTok).every(t => hay.includes(t));
+      const y = yearTok ? Number(yearTok) : null;
+      const yearOk = y == null || ((a.year_from == null || a.year_from <= y) && (a.year_to == null || a.year_to >= y));
+      return textOk && yearOk;
+    });
+  };
+
   const suppliers = [...new Set(parts.map(p => p.supplier).filter(Boolean))] as string[];
 
   const filtered = parts.filter(p => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || (p.reference || "").toLowerCase().includes(search.toLowerCase());
+    const sq = search.toLowerCase();
+    const matchSearch = p.name.toLowerCase().includes(sq) || (p.reference || "").toLowerCase().includes(sq) || (p.supplier || "").toLowerCase().includes(sq)
+      || (appsByPart[p.id] || []).some(a => [a.oem_reference, a.part_brand].filter(Boolean).join(" ").toLowerCase().includes(sq));
+    if (!vehicleMatch(p.id)) return false;
     const matchSupplier = supplierFilter === "all" || p.supplier === supplierFilter;
     const matchStock = stockFilter === "all" || 
       (stockFilter === "low" && p.active && p.stock_quantity <= p.min_stock) ||
@@ -464,6 +493,10 @@ export default function Stock() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('stock.search')} className="pl-9" />
             </div>
+            <div className="relative flex-1">
+              <Car className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input value={vehicleQuery} onChange={e => setVehicleQuery(e.target.value)} placeholder="Peças para a viatura (ex.: BMW 320d 2015)" className="pl-9" />
+            </div>
             {suppliers.length > 0 && (
               <Select value={supplierFilter} onValueChange={setSupplierFilter}>
                 <SelectTrigger className="w-[180px]"><Filter className="w-3 h-3 mr-1" /><SelectValue placeholder={t('stock.supplier')} /></SelectTrigger>
@@ -509,8 +542,10 @@ export default function Stock() {
                   <div>
                     <span className="font-semibold text-sm">{p.name}</span>
                     {p.reference && <p className="text-xs text-muted-foreground">{p.reference}</p>}
+                    {(appsByPart[p.id]?.length ?? 0) > 0 && <p className="text-[11px] text-muted-foreground">{appsByPart[p.id].length} viatura(s): {describeApplication(appsByPart[p.id][0])}</p>}
                   </div>
                   <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setAppsPart({ id: p.id, name: p.name })} title="Viaturas compatíveis"><Car className="w-3.5 h-3.5" /></Button>
                     {can("stock.manage") && <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setMovementDialog(p.id)} title={t('stock.addMovement')}><ArrowUpDown className="w-3.5 h-3.5" /></Button>}
                     {can("stock.manage") && <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEdit(p)}><Pencil className="w-3.5 h-3.5" /></Button>}
                     {can("stock.manage") && <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => handleDelete(p.id)}><Trash2 className="w-3.5 h-3.5" /></Button>}
@@ -616,6 +651,9 @@ export default function Stock() {
                       <TableCell className="font-medium">{formatMoney(p.sale_price)}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setAppsPart({ id: p.id, name: p.name })} title={`Viaturas compatíveis (${appsByPart[p.id]?.length ?? 0})`}>
+                            <Car className="w-3.5 h-3.5" />
+                          </Button>
                           {can("stock.manage") && (
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMovementDialog(p.id)} title={t('stock.addMovement')}>
                               <ArrowUpDown className="w-3.5 h-3.5" />
@@ -842,6 +880,7 @@ export default function Stock() {
           </div>
         </DialogContent>
       </Dialog>
+      <PartApplicationsDialog part={appsPart} shopId={activeShopId} canEdit={can("stock.manage")} open={!!appsPart} onOpenChange={o => { if (!o) setAppsPart(null); }} onChanged={loadApps} />
     </div>
   );
 }

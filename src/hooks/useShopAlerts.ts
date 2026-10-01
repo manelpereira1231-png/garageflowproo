@@ -64,8 +64,14 @@ type DerivedState = {
 };
 
 
-const money = (v: any) =>
-  new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(Number(v || 0));
+// Moeda segue o país da oficina ativa (sincronizado em garageflow_country). PT continua em EUR/pt-PT.
+const money = (v: any) => {
+  let br = false;
+  try { br = localStorage.getItem("garageflow_country") === "BR"; } catch { /* PT */ }
+  return br
+    ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v || 0))
+    : new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(Number(v || 0));
+};
 
 const daysSince = (iso: string | null | undefined) => {
   if (!iso) return 0;
@@ -407,6 +413,12 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
 
 
   useEffect(() => { void load(); }, [load]);
+  // Quando o país da oficina é confirmado (ex.: BR → R$), recalcula os valores.
+  useEffect(() => {
+    const onCountry = () => { void load(); };
+    window.addEventListener("garageflow:pricing-updated", onCountry);
+    return () => window.removeEventListener("garageflow:pricing-updated", onCountry);
+  }, [load]);
 
   // Tempo real: além dos alertas guardados, escutamos as origens reais para
   // que um alerta desapareça sozinho quando a situação é resolvida

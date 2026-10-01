@@ -88,6 +88,8 @@ const bootRegionalConfig = () => {
   // from it via `setCountryCode()` inside `getShopCountry()`.
   void import("@/hooks/useShopCountry").then((m) => {
     void m.getShopCountry();
+    // Retry once: the session may hydrate after the first call (race on fresh page loads).
+    window.setTimeout(() => { void m.getShopCountry(); }, 2500);
     const onShopChange = () => { void m.getShopCountry(); };
     window.addEventListener("garageflow:shop-context-changed", onShopChange);
     window.addEventListener("garageflow:active-shop-changed", onShopChange);

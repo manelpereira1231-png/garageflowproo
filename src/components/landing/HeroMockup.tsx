@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { Wrench, FileText, Users, BarChart3, CheckCircle2, Clock, MessageCircle, Bell } from "lucide-react";
+import { getCountryCode } from "@/lib/regionConfig";
+const IS_BR = (() => { try { return getCountryCode() === "BR"; } catch { return false; } })();
+const CUR = IS_BR ? "R$" : "€";
+
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -53,14 +57,14 @@ const KPIS = [
   { v: "12", l: "Em curso", c: "text-primary" },
   { v: "5", l: "Aprovação", c: "text-amber-500" },
   { v: "3", l: "Prontos", c: "text-green-500" },
-  { v: "€4.2k", l: "Mês", c: "text-foreground" },
+  { v: `${CUR}4.2k`, l: "Mês", c: "text-foreground" },
 ];
 
 const ORDERS = [
-  { c: "Maria Silva", v: "BMW 320d · 02-AB-12", s: "Em curso", color: "bg-primary/15 text-primary", time: "2h" },
-  { c: "João Pereira", v: "VW Golf · 45-CD-67", s: "Aprovação", color: "bg-amber-400/15 text-amber-600", time: "30m" },
-  { c: "Ana Costa", v: "Renault Clio · 88-EF-90", s: "Pronto", color: "bg-green-400/15 text-green-600", time: "1h" },
-  { c: "Pedro Sousa", v: "Audi A4 · 12-GH-34", s: "Em curso", color: "bg-primary/15 text-primary", time: "4h" },
+  { c: "Maria Silva", v: IS_BR ? "BMW 320d · BRA2E19" : "BMW 320d · 02-AB-12", s: "Em curso", color: "bg-primary/15 text-primary", time: "2h" },
+  { c: "João Pereira", v: IS_BR ? "VW Gol · RIO4B21" : "VW Golf · 45-CD-67", s: "Aprovação", color: "bg-amber-400/15 text-amber-600", time: "30m" },
+  { c: "Ana Costa", v: IS_BR ? "Renault Kwid · SPX7C33" : "Renault Clio · 88-EF-90", s: "Pronto", color: "bg-green-400/15 text-green-600", time: "1h" },
+  { c: "Pedro Sousa", v: IS_BR ? "Audi A4 · MGA1D45" : "Audi A4 · 12-GH-34", s: "Em curso", color: "bg-primary/15 text-primary", time: "4h" },
 ];
 
 /**
@@ -78,7 +82,7 @@ export default function HeroMockup() {
         <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/70 shrink-0" />
         <span className="w-2.5 h-2.5 rounded-full bg-green-400/70 shrink-0" />
         <div className="ml-2 sm:ml-3 min-w-0 px-2.5 py-0.5 rounded-md bg-background text-[10px] text-muted-foreground font-mono truncate">
-          app.garageflow.pt/dashboard
+          {IS_BR ? "app.garageflow.com.br/dashboard" : "app.garageflow.pt/dashboard"}
         </div>
       </div>
 
@@ -165,7 +169,7 @@ export default function HeroMockup() {
             </div>
             <div className="p-2 space-y-1.5 bg-[#ECE5DD]">
               <div className="bg-white rounded-lg p-1.5 max-w-[85%] shadow-sm">
-                <p className="text-[11px] text-neutral-800">Orçamento #1042 pronto: €245</p>
+                <p className="text-[11px] text-neutral-800">Orçamento #1042 pronto: {CUR}245</p>
               </div>
               <div className="bg-[#DCF8C6] rounded-lg p-1.5 max-w-[85%] shadow-sm ml-auto">
                 <p className="text-[11px] text-neutral-800 flex items-center gap-1">Aprovado <CheckCircle2 className="w-3 h-3 text-green-600" /></p>
@@ -192,7 +196,7 @@ export default function HeroMockup() {
         </div>
         <div className="p-2 space-y-1.5 bg-[#ECE5DD] h-[calc(100%-52px)]">
           <div className="bg-white rounded-lg p-1.5 max-w-[80%] shadow-sm">
-            <p className="text-[9px] text-neutral-800">Orçamento #1042 pronto: €245</p>
+            <p className="text-[9px] text-neutral-800">Orçamento #1042 pronto: {CUR}245</p>
           </div>
           <div className="bg-[#DCF8C6] rounded-lg p-1.5 max-w-[80%] shadow-sm ml-auto">
             <p className="text-[9px] text-neutral-800 flex items-center gap-1">Aprovado <CheckCircle2 className="w-2.5 h-2.5 text-green-600" /></p>

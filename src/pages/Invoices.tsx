@@ -91,6 +91,23 @@ export default function Invoices() {
     filters.status === "overdue" ? { col: "due_date", op: "lt" as const, value: todayIso } : null,
   ].filter(Boolean) as { col: string; op: "gte" | "lte" | "lt"; value: string | number }[];
 
+  // "Com nota de crédito": total (invoices.credit_note_*) or partial (credit_notes table)
+  const [creditIds, setCreditIds] = useState<string[] | null>(null);
+  useEffect(() => {
+    if (filters.status !== "credit_notes" || !activeShopId) { setCreditIds(null); return; }
+    let alive = true;
+    (async () => {
+      const [{ data: a }, { data: b }] = await Promise.all([
+        supabase.from("invoices").select("id").eq("shop_id", activeShopId)
+          .or("credit_note_number.not.is.null,credit_note_provider_id.not.is.null").limit(1000),
+        (supabase as any).from("credit_notes").select("invoice_id").eq("shop_id", activeShopId).limit(1000),
+      ]);
+      const ids = Array.from(new Set([...(a || []).map((r: any) => r.id), ...(b || []).map((r: any) => r.invoice_id)]));
+      if (alive) setCreditIds(ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+    })();
+    return () => { alive = false; };
+  }, [filters.status, activeShopId, refreshKey]);
+
   const searchExtraClauses = useCallback(async (term: string) => {
     if (!activeShopId) return [];
     const [{ data: cs }, { data: vs }] = await Promise.all([
@@ -122,7 +139,8 @@ export default function Invoices() {
     inFilters: {
       status: filters.status === "overdue"
         ? ["issued", "partial"]
-        : filters.status !== "all" ? [filters.status] : undefined,
+        : filters.status !== "all" && filters.status !== "credit_notes" ? [filters.status] : undefined,
+      id: filters.status === "credit_notes" ? (creditIds ?? ["00000000-0000-0000-0000-000000000000"]) : undefined,
     },
     compare,
     refreshKey,
@@ -484,6 +502,7 @@ export default function Invoices() {
                   { value: 'partial', label: t('invoices.status_partial') },
                   { value: 'overdue', label: 'Vencidas' },
                   { value: 'cancelled', label: t('invoices.status_cancelled') },
+                  { value: 'credit_notes', label: 'Com nota de crédito' },
                 ]}
               />
               <FilterCombobox

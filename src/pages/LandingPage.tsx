@@ -609,9 +609,7 @@ export default function LandingPage() {
       {/* Faturação legal — apenas para mercados com integração fiscal (PT/BR) */}
       <Reveal>
       {(() => {
-        const country = (typeof window !== "undefined"
-          ? localStorage.getItem("garageflow_country")
-          : null) || "PT";
+        const country = countryCode || "PT";
         if (country !== "PT" && country !== "BR") return null;
         const suffix = country === "PT" ? "pt" : "br";
         const providerName = suffix === "pt" ? "InvoiceXpress" : "eNotas";
@@ -1089,7 +1087,7 @@ export default function LandingPage() {
             <nav aria-label="Oficinas por cidade">
               <p className="font-semibold text-foreground mb-1.5">Por cidade</p>
               <ul className="space-y-1">
-                <li><Link to="/oficinas/lisboa" className="hover:text-foreground transition-colors">Oficinas em Lisboa</Link></li>
+                {countryCode !== "BR" && <li><Link to="/oficinas/lisboa" className="hover:text-foreground transition-colors">Oficinas em Lisboa</Link></li>}
                 <li><Link to="/oficinas/porto" className="hover:text-foreground transition-colors">Oficinas no Porto</Link></li>
                 <li><Link to="/oficinas/braga" className="hover:text-foreground transition-colors">Oficinas em Braga</Link></li>
                 <li><Link to="/oficinas/coimbra" className="hover:text-foreground transition-colors">Oficinas em Coimbra</Link></li>

@@ -16,3 +16,8 @@
 - [ ] Correct Demo client cards on mobile/iPad and remove the call action
 - [ ] Validate Demo-to-real transition, refresh, mobile, and iPad layouts
 - [x] Implementar condições comerciais por oficina sincronizadas realmente com Stripe
+
+- [x] Agenda: arrastar marcações para outro dia/hora (computador/tablet)
+- [x] Filtro "Com nota de crédito" nas faturas (InvoiceXpress total + parcial já existiam)
+- [x] Brasil: página inicial, demo BR (AutoPrime São Paulo), país da oficina corrigido
+- [ ] Testar emissão real de nota de crédito no InvoiceXpress (precisa de oficina com InvoiceXpress ligado)

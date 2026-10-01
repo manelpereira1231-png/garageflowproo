@@ -10,6 +10,7 @@ import { Helmet } from "react-helmet-async";
 import { Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { startDemo } from "@/lib/salesDemo";
+import { getCountryCode } from "@/lib/regionConfig";
 
 export default function SelfDemo() {
   const [error, setError] = useState<string | null>(null);
@@ -49,9 +50,9 @@ export default function SelfDemo() {
           </Button>
         </> : <>
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-          <h1 className="mt-4 text-xl font-semibold">A preparar a AutoPrime Lisboa</h1>
+          <h1 className="mt-4 text-xl font-semibold">{getCountryCode() === "BR" ? "Preparando a AutoPrime São Paulo" : "A preparar a AutoPrime Lisboa"}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {["A criar a oficina de demonstração…", "A carregar clientes e viaturas…", "A preparar orçamentos e reparações…", "Quase pronto — a abrir o painel…"][Math.min(stage, 3)]}
+            {(getCountryCode() === "BR" ? ["Criando a oficina de demonstração…", "Carregando clientes e veículos…", "Preparando orçamentos e serviços…", "Quase pronto — abrindo o painel…"] : ["A criar a oficina de demonstração…", "A carregar clientes e viaturas…", "A preparar orçamentos e reparações…", "Quase pronto — a abrir o painel…"])[Math.min(stage, 3)]}
           </p>
           <div className="mx-auto mt-4 h-1 w-56 overflow-hidden rounded-full bg-muted">
             <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${25 + stage * 22}%` }} />

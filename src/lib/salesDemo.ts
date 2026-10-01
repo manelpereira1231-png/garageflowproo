@@ -108,7 +108,9 @@ export function currentDemoPlan(): DemoPlan {
 }
 
 async function callDemo(action: "start" | "plan" | "reset" | "end", plan: DemoPlan) {
-  const { data, error } = await supabase.functions.invoke("sales-demo", { body: { action, plan } });
+  let country: string | undefined;
+  try { const { getCountryCode } = await import("@/lib/regionConfig"); country = getCountryCode() === "BR" ? "BR" : "PT"; } catch { /* PT */ }
+  const { data, error } = await supabase.functions.invoke("sales-demo", { body: { action, plan, country } });
   if (error) throw new Error(error.message);
   if ((data as any)?.error) throw new Error((data as any).error);
   return data as { shop_id: string; plan: DemoPlan; session?: { access_token: string; refresh_token: string } };
@@ -133,6 +135,8 @@ export async function startDemo(plan: DemoPlan, mode: "self" | "sales" = "self")
   authUid = uid;
   if (uid) localStorage.setItem(DEMO_UID_KEY, uid);
   localStorage.setItem(ACTIVE_SHOP_KEY, res.shop_id);
+  // O país da oficina demo passa a ser a referência imediatamente (BR → R$, CPF/CNPJ, placa).
+  try { const { setCountryCode } = await import("@/lib/regionConfig"); setCountryCode((res as any).country === "BR" ? "BR" : "PT"); } catch { /* ignore */ }
   // Demonstração: ERP completo em português, sem ecrãs de onboarding.
   localStorage.setItem("garageflow_app_mode", "pro");
   localStorage.setItem("garageflow_onboarding_status", "completed");

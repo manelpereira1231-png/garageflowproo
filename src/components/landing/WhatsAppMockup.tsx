@@ -1,4 +1,8 @@
 import { CheckCheck, MessageCircle } from "lucide-react";
+import { getCountryCode } from "@/lib/regionConfig";
+const IS_BR = (() => { try { return getCountryCode() === "BR"; } catch { return false; } })();
+const CUR = IS_BR ? "R$" : "€";
+
 
 export default function WhatsAppMockup() {
   return (
@@ -17,7 +21,7 @@ export default function WhatsAppMockup() {
         <div className="p-3 space-y-2 bg-[#ECE5DD] min-h-[280px]">
           <div className="bg-white rounded-xl rounded-tl-sm p-2 max-w-[85%] shadow-sm">
             <p className="text-[11px] text-foreground">Olá Maria 👋 O orçamento #1042 está pronto.</p>
-            <p className="text-[10px] text-muted-foreground mt-1">Travões + óleo · <span className="font-semibold text-foreground">€ 245,00</span></p>
+            <p className="text-[10px] text-muted-foreground mt-1">{IS_BR ? "Freios + óleo" : "Travões + óleo"} · <span className="font-semibold text-foreground">{CUR} 245,00</span></p>
             <p className="text-[9px] text-muted-foreground/70 text-right mt-1">10:24</p>
           </div>
           <div className="bg-white rounded-xl rounded-tl-sm p-2 max-w-[85%] shadow-sm">

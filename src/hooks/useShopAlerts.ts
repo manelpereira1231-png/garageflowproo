@@ -413,6 +413,12 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
 
 
   useEffect(() => { void load(); }, [load]);
+  // Quando o país da oficina é confirmado (ex.: BR → R$), recalcula os valores.
+  useEffect(() => {
+    const onCountry = () => { void load(); };
+    window.addEventListener("garageflow:pricing-updated", onCountry);
+    return () => window.removeEventListener("garageflow:pricing-updated", onCountry);
+  }, [load]);
 
   // Tempo real: além dos alertas guardados, escutamos as origens reais para
   // que um alerta desapareça sozinho quando a situação é resolvida

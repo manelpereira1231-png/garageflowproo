@@ -65,13 +65,13 @@ export default function Vehicles() {
   const [shopMeta, setShopMeta] = useState<{ currency?: string; country?: string } | null>(null);
   const [form, setForm] = useState({
     client_id: "", make: "", model: "", variant: "", year: new Date().getFullYear().toString(),
-    plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
+    plate: "", vin: "", renavam: "", mileage: "0", fuel: "Gasolina", notes: ""
   });
 
   const resetForm = () => {
     setForm({
       client_id: "", make: "", model: "", variant: "", year: new Date().getFullYear().toString(),
-      plate: "", vin: "", mileage: "0", fuel: "Gasolina", notes: ""
+      plate: "", vin: "", renavam: "", mileage: "0", fuel: "Gasolina", notes: ""
     });
     setLookup(null); setExisting(null);
   };
@@ -216,7 +216,7 @@ export default function Vehicles() {
     const payload: any = {
       shop_id: shopId, client_id: form.client_id, make: form.make, model: form.model,
       version: versionToSave,
-      year: parseInt(form.year), plate: normalizedPlate, vin: form.vin || null,
+      year: parseInt(form.year), plate: normalizedPlate, vin: form.vin || null, renavam: form.renavam?.replace(/\D/g, "") || null,
       mileage: mileageValue, fuel: form.fuel, notes: form.notes || null,
     };
     if (lookup?.status === "ok" && lookup.data && canonicalPlate(lookupPlateRef) === canonicalPlate(normalizedPlate)) {
@@ -259,7 +259,7 @@ export default function Vehicles() {
     }
     setForm({
       client_id: v.client_id, make: v.make, model: baseModel, variant,
-      year: String(v.year), plate: v.plate, vin: v.vin || "",
+      year: String(v.year), plate: v.plate, vin: v.vin || "", renavam: (v as any).renavam || "",
       mileage: String(v.mileage), fuel: v.fuel, notes: v.notes || "",
     });
     setOpen(true);
@@ -388,6 +388,7 @@ export default function Vehicles() {
 
                 <div className="space-y-1.5"><Label>{t('vehicles.year')}</Label><Input type="number" value={form.year} onChange={e => setForm({...form, year: e.target.value})} /></div>
                 <div className="space-y-1.5"><Label>{t('vehicles.vin')}</Label><Input value={form.vin} onChange={e => setForm({...form, vin: e.target.value})} /></div>
+                {plateRegion === "BR" && <div className="space-y-1.5"><Label>RENAVAM</Label><Input inputMode="numeric" maxLength={11} value={form.renavam} onChange={e => setForm({...form, renavam: e.target.value.replace(/\D/g, "").slice(0, 11)})} placeholder="00000000000" /></div>}
                 <div className="space-y-1.5"><Label>{t('vehicles.mileage')}</Label><Input type="text" inputMode="numeric" value={form.mileage ? Number(form.mileage.replace(/\D/g, "")).toLocaleString() : ""} onChange={e => setForm({...form, mileage: e.target.value.replace(/\D/g, "").slice(0, 8)})} placeholder="0" aria-invalid={(parseInt(form.mileage || "0", 10) || 0) > MAX_MILEAGE} className={(parseInt(form.mileage || "0", 10) || 0) > MAX_MILEAGE ? "border-destructive" : ""} />{(parseInt(form.mileage || "0", 10) || 0) > MAX_MILEAGE && <p className="text-[11px] text-destructive">Máximo {MAX_MILEAGE.toLocaleString()} km.</p>}</div>
                 <div className="space-y-1.5">
                   <Label>{t('vehicles.fuel')}</Label>

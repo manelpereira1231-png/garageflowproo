@@ -25,10 +25,13 @@ export function InsurerPicker({
 
   useEffect(() => {
     if (!shopId) return;
-    Promise.all([
-      supabase.from("insurer_catalog").select("id, name").eq("active", true).order("sort_order").order("name"),
+    (async () => {
+      const { data: sh } = await supabase.from("shops").select("country_code").eq("id", shopId).maybeSingle();
+      return (sh?.country_code || "PT").toUpperCase();
+    })().then((cc) => Promise.all([
+      supabase.from("insurer_catalog").select("id, name").eq("active", true).eq("country_code", cc).order("sort_order").order("name"),
       supabase.from("insurers").select("id, name, catalog_id, active").eq("shop_id", shopId).order("name"),
-    ]).then(([c, s]) => { setCatalog(c.data || []); setShopIns(s.data || []); });
+    ])).then(([c, s]) => { setCatalog(c.data || []); setShopIns(s.data || []); });
   }, [shopId]);
 
   const options: Opt[] = useMemo(() => {

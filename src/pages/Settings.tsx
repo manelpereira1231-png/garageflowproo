@@ -67,7 +67,7 @@ export default function SettingsPage() {
   const [form, setForm] = useState({
     name: "", email: "", phone: "", country: "",
     currency: "", vat_rate: "", labor_rate: "", language: "",
-    nif: "", address: "", timezone: "",
+    nif: "", address: "", timezone: "", state_registration: "", municipal_registration: "", tax_regime: "",
   });
   const [openingHours, setOpeningHours] = useState<OpeningHours>(DEFAULT_OPENING_HOURS);
 
@@ -103,7 +103,7 @@ export default function SettingsPage() {
           vat_rate: String(shopData.vat_rate ?? getDefaultVatRate(cc)),
           labor_rate: String(shopData.labor_rate ?? 35),
           language: shopData.language || cfg.defaultLanguage,
-          nif: shopData.nif || "", address: shopData.address || "",
+          nif: shopData.nif || "", address: shopData.address || "", state_registration: (shopData as any).state_registration || "", municipal_registration: (shopData as any).municipal_registration || "", tax_regime: (shopData as any).tax_regime || "",
           timezone: shopData.timezone || getDefaultTimezone(cc),
         });
         setLogoPreview(shopData.logo_url || null);
@@ -145,7 +145,7 @@ export default function SettingsPage() {
       name: form.name, email: form.email, phone: form.phone,
       vat_rate: parseFloat(form.vat_rate),
       labor_rate: parseFloat(form.labor_rate), language: form.language,
-      nif: form.nif, address: form.address, timezone: form.timezone,
+      nif: form.nif, address: form.address, timezone: form.timezone, ...(countryCode === "BR" ? { state_registration: form.state_registration || null, municipal_registration: form.municipal_registration || null, tax_regime: form.tax_regime || null } : {}),
       opening_hours: openingHours,
     };
     if (logoUrl) payload.logo_url = logoUrl;
@@ -362,6 +362,19 @@ export default function SettingsPage() {
                 <Label>{getTaxIdLabel(countryCode)}</Label>
                 <Input value={form.nif} onChange={e => setForm({...form, nif: e.target.value})} placeholder={fiscalCfg.fields.find(f => f.key === "taxId")?.placeholder || ""} />
               </div>
+              {countryCode === "BR" && (<>
+                <div className="space-y-1.5"><Label>Inscrição Estadual</Label><Input value={form.state_registration} onChange={e => setForm({...form, state_registration: e.target.value})} placeholder="Isento ou número" /></div>
+                <div className="space-y-1.5"><Label>Inscrição Municipal</Label><Input value={form.municipal_registration} onChange={e => setForm({...form, municipal_registration: e.target.value})} /></div>
+                <div className="space-y-1.5"><Label>Regime tributário</Label>
+                  <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.tax_regime} onChange={e => setForm({...form, tax_regime: e.target.value})}>
+                    <option value="">Selecionar</option>
+                    <option value="mei">MEI</option>
+                    <option value="simples_nacional">Simples Nacional</option>
+                    <option value="lucro_presumido">Lucro Presumido</option>
+                    <option value="lucro_real">Lucro Real</option>
+                  </select>
+                </div>
+              </>)}
               <div className="space-y-1.5">
                 <Label>{t('settings.country')}</Label>
                 <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-border bg-muted/40 text-sm">

@@ -5740,6 +5740,7 @@ export type Database = {
         Row: {
           active: boolean
           code: string | null
+          country_code: string
           created_at: string
           id: string
           legal_name: string | null
@@ -5751,6 +5752,7 @@ export type Database = {
         Insert: {
           active?: boolean
           code?: string | null
+          country_code?: string
           created_at?: string
           id?: string
           legal_name?: string | null
@@ -5762,6 +5764,7 @@ export type Database = {
         Update: {
           active?: boolean
           code?: string | null
+          country_code?: string
           created_at?: string
           id?: string
           legal_name?: string | null
@@ -10306,6 +10309,7 @@ export type Database = {
           latitude: number | null
           logo_url: string | null
           longitude: number | null
+          municipal_registration: string | null
           name: string
           nif: string | null
           onboarding_completed_at: string | null
@@ -10313,12 +10317,14 @@ export type Database = {
           phone: string
           primary_color: string | null
           slug: string | null
+          state_registration: string | null
           status: string
           stripe_connect_account_id: string | null
           stripe_connect_charges_enabled: boolean
           stripe_connect_onboarded: boolean
           stripe_connect_payouts_enabled: boolean
           suspended_at: string | null
+          tax_regime: string | null
           timezone: string
           user_id: string
           vat_rate: number
@@ -10347,6 +10353,7 @@ export type Database = {
           latitude?: number | null
           logo_url?: string | null
           longitude?: number | null
+          municipal_registration?: string | null
           name?: string
           nif?: string | null
           onboarding_completed_at?: string | null
@@ -10354,12 +10361,14 @@ export type Database = {
           phone?: string
           primary_color?: string | null
           slug?: string | null
+          state_registration?: string | null
           status?: string
           stripe_connect_account_id?: string | null
           stripe_connect_charges_enabled?: boolean
           stripe_connect_onboarded?: boolean
           stripe_connect_payouts_enabled?: boolean
           suspended_at?: string | null
+          tax_regime?: string | null
           timezone?: string
           user_id: string
           vat_rate?: number
@@ -10388,6 +10397,7 @@ export type Database = {
           latitude?: number | null
           logo_url?: string | null
           longitude?: number | null
+          municipal_registration?: string | null
           name?: string
           nif?: string | null
           onboarding_completed_at?: string | null
@@ -10395,12 +10405,14 @@ export type Database = {
           phone?: string
           primary_color?: string | null
           slug?: string | null
+          state_registration?: string | null
           status?: string
           stripe_connect_account_id?: string | null
           stripe_connect_charges_enabled?: boolean
           stripe_connect_onboarded?: boolean
           stripe_connect_payouts_enabled?: boolean
           suspended_at?: string | null
+          tax_regime?: string | null
           timezone?: string
           user_id?: string
           vat_rate?: number
@@ -11524,6 +11536,7 @@ export type Database = {
           model: string
           notes: string | null
           plate: string
+          renavam: string | null
           shop_id: string
           tech_data: Json | null
           tech_source: string | null
@@ -11543,6 +11556,7 @@ export type Database = {
           model: string
           notes?: string | null
           plate: string
+          renavam?: string | null
           shop_id: string
           tech_data?: Json | null
           tech_source?: string | null
@@ -11562,6 +11576,7 @@ export type Database = {
           model?: string
           notes?: string | null
           plate?: string
+          renavam?: string | null
           shop_id?: string
           tech_data?: Json | null
           tech_source?: string | null

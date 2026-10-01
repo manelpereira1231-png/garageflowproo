@@ -2707,6 +2707,93 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_notes: {
+        Row: {
+          atcud: string | null
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          invoice_id: string
+          issued_at: string | null
+          kind: string
+          lines: Json
+          notes: string | null
+          number: string | null
+          pdf_url: string | null
+          permalink: string | null
+          provider: string | null
+          provider_id: string | null
+          reason: string
+          shop_id: string
+          status: string
+          subtotal: number
+          total: number
+          vat_amount: number
+        }
+        Insert: {
+          atcud?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          invoice_id: string
+          issued_at?: string | null
+          kind?: string
+          lines?: Json
+          notes?: string | null
+          number?: string | null
+          pdf_url?: string | null
+          permalink?: string | null
+          provider?: string | null
+          provider_id?: string | null
+          reason: string
+          shop_id: string
+          status?: string
+          subtotal?: number
+          total?: number
+          vat_amount?: number
+        }
+        Update: {
+          atcud?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          invoice_id?: string
+          issued_at?: string | null
+          kind?: string
+          lines?: Json
+          notes?: string | null
+          number?: string | null
+          pdf_url?: string | null
+          permalink?: string | null
+          provider?: string | null
+          provider_id?: string | null
+          reason?: string
+          shop_id?: string
+          status?: string
+          subtotal?: number
+          total?: number
+          vat_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_notes_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_activity: {
         Row: {
           created_at: string

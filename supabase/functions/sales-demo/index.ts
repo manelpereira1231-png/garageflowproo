@@ -20,6 +20,7 @@ const corsHeaders = {
 };
 
 const DEMO_SHOP_NAME = "AutoPrime Lisboa";
+const DEMO_SHOP_NAME_BR = "AutoPrime São Paulo";
 const DEMO_TTL_HOURS = 4;
 const PLANS = ["free", "pro", "garage"] as const;
 type Plan = typeof PLANS[number];
@@ -47,6 +48,8 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action: string = body.action || "start";
     const plan: Plan = PLANS.includes(body.plan) ? body.plan : "pro";
+    // País da demo: só PT (padrão) ou BR. Nunca altera o comportamento de PT.
+    let country: "PT" | "BR" = body.country === "BR" ? "BR" : "PT";
 
     const authHeader = req.headers.get("Authorization") || "";
     const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
@@ -82,7 +85,7 @@ serve(async (req) => {
         email: demoEmail,
         password,
         email_confirm: true,
-        user_metadata: { full_name: "GarageFlow Demo", is_demo: true },
+        user_metadata: { full_name: "GarageFlow Demo", is_demo: true, country_code: country },
       });
       if (error || !created.user) return json({ error: error?.message || "Não foi possível criar a sessão Demo." }, 400);
       userId = created.user.id;
@@ -96,23 +99,25 @@ serve(async (req) => {
       if (authError || !authData.user) return json({ error: "Sessão Demo inválida." }, 401);
       userId = authData.user.id;
       demoEmail = authData.user.email || "demo@garageflow.invalid";
-      const existing = await admin.from("shops").select("id").eq("user_id", userId).eq("is_demo", true).maybeSingle();
+      const existing = await admin.from("shops").select("id, country_code").eq("user_id", userId).eq("is_demo", true).maybeSingle();
       shop = existing.data;
+      if ((existing.data as any)?.country_code === "BR") country = "BR";
       if (!shop) return json({ error: "Esta ação só está disponível numa conta Demo." }, 403);
     }
 
     /* ---------------------------------------------------------- demo shop */
+    const BR = country === "BR";
     const shopFields = {
-      name: DEMO_SHOP_NAME,
+      name: BR ? DEMO_SHOP_NAME_BR : DEMO_SHOP_NAME,
       email: demoEmail,
-      phone: "+351 210 000 000",
-      address: "Av. da República 120, Lisboa",
-      currency: "EUR",
-      language: "pt",
-      timezone: "Europe/Lisbon",
-      vat_rate: 23,
-      labor_rate: 45,
-      nif: "999999990",
+      phone: BR ? "+55 11 3000-0000" : "+351 210 000 000",
+      address: BR ? "Av. Paulista, 1000 — Bela Vista, São Paulo - SP, 01310-100" : "Av. da República 120, Lisboa",
+      currency: BR ? "BRL" : "EUR",
+      language: BR ? "pt-BR" : "pt",
+      timezone: BR ? "America/Sao_Paulo" : "Europe/Lisbon",
+      vat_rate: BR ? 0 : 23,
+      labor_rate: BR ? 120 : 45,
+      nif: BR ? "11222333000181" : "999999990",
       status: "active",
       onboarding_completed_at: new Date().toISOString(),
       is_demo: true,
@@ -125,8 +130,8 @@ serve(async (req) => {
       const { data: newShop, error } = await admin.from("shops").insert({
         user_id: userId,
         group_owner_id: userId,
-        country: "PT",
-        country_code: "PT",
+        country: BR ? "Brasil" : "PT",
+        country_code: country,
         ...shopFields,
       }).select("id").single();
       if (error) return json({ error: error.message }, 400);
@@ -159,12 +164,12 @@ serve(async (req) => {
 
     if (action === "reset") {
       await wipe();
-      await seed(admin, shopId);
+      await seed(admin, shopId, BR);
     } else {
       const { count: clientCount } = await admin
         .from("clients").select("id", { count: "exact", head: true }).eq("shop_id", shopId);
       // Oficina nova (start) nunca tem dados — evita-se o wipe de 9 tabelas.
-      if (!clientCount) await seed(admin, shopId);
+      if (!clientCount) await seed(admin, shopId, BR);
     }
 
     if (action === "reset") return json({ ok: true, shop_id: shopId, plan });
@@ -192,12 +197,26 @@ serve(async (req) => {
 
 /* ------------------------------------------------------------------ seed */
 
-async function seed(admin: any, shopId: string) {
+async function seed(admin: any, shopId: string, BR = false) {
+  // Variante Brasil: mesmos dados, terminologia/placas/documentos brasileiros.
+  const T: Record<string, string> = BR ? {
+    "Ana Marques": "Ana Marques", "Transportes Belém, Lda.": "Transportes Paulista Ltda.", "Transportes Belém": "Transportes Paulista", "Frota Belém": "Frota Paulista",
+    "AA-11-BB": "BRA2E19", "AB-22-CD": "RIO4B21", "AC-33-DE": "SPX7C33", "AD-44-EF": "MGA1D45", "AE-55-FG": "PRA3F56", "AF-66-GH": "CWB8G67",
+    "Golf 1.6 TDI": "Gol 1.6 MSI", "Trafic 2.0 dCi": "Master 2.3 dCi", "Berlingo 1.5 BlueHDi": "Jumpy 1.6 BlueHDi", "Série 3 320d": "Série 3 320i", "Yaris 1.5 Hybrid": "Corolla 1.8 Hybrid", "Classe A 180d": "Classe A 200",
+    "Pastilhas travão dianteiras": "Pastilhas de freio dianteiras", "Kit distribuição": "Kit correia dentada", "Bateria 70Ah": "Bateria 60Ah",
+    "Ruído na travagem a frio": "Ruído na frenagem a frio", "Substituição do kit de distribuição": "Troca do kit de correia dentada", "Substituição de pastilhas e discos": "Troca de pastilhas e discos", "Revisão de 15.000 km": "Revisão de 15.000 km",
+    "Inspeção periódica próxima": "Vistoria próxima", "BMW Série 3 — inspeção prevista para os próximos 15 dias.": "BMW Série 3 — vistoria prevista para os próximos 15 dias.",
+  } : {};
+  const tr = (x: string) => T[x] ?? x;
+  const VAT = BR ? 0 : 23;
+  const VATF = VAT / 100;
+  const PRICE = BR ? 4 : 1; // valores em R$ aproximados
+  const RATE = BR ? 120 : 45;
   // Contactos de teste da DEMO: TODOS os clientes demo partilham exatamente
   // o mesmo telefone e o mesmo email (legacy_dup_ok ignora a regra de
   // contactos únicos por oficina, que continua ativa em contas reais).
-  const DEMO_PHONE = "+351 934 368 304";
-  const DEMO_EMAIL = "contact@garageflow.pt";
+  const DEMO_PHONE = BR ? "+55 11 99999-0000" : "+351 934 368 304";
+  const DEMO_EMAIL = BR ? "demo@garageflow.com.br" : "contact@garageflow.pt";
 
   const clients = [
     { name: "Ana Marques", nif: "210000001" },
@@ -205,9 +224,11 @@ async function seed(admin: any, shopId: string) {
     { name: "Rui Cardoso", nif: "210000003" },
     { name: "Sofia Almeida", nif: "210000004" },
     { name: "Miguel Tavares", nif: "210000005" },
-  ].map((c) => ({
+  ].map((c: any, i: number) => ({
     is_fleet: false,
     ...c,
+    name: tr(c.name), ...(c.company ? { company: tr(c.company), fleet_name: tr(c.fleet_name) } : {}),
+    nif: BR ? (c.company ? "11444777000161" : ["52998224725", "", "11144477735", "12345678909", "98765432100"][i]) : c.nif,
     phone: DEMO_PHONE,
     email: DEMO_EMAIL,
     legacy_dup_ok: true,
@@ -227,32 +248,32 @@ async function seed(admin: any, shopId: string) {
     { client: "Sofia Almeida", make: "Toyota", model: "Yaris 1.5 Hybrid", year: 2022, plate: "AE-55-FG", fuel: "hybrid", mileage: 34100 },
     { client: "Miguel Tavares", make: "Mercedes-Benz", model: "Classe A 180d", year: 2017, plate: "AF-66-GH", fuel: "diesel", mileage: 163900 },
   ].map((v) => ({
-    shop_id: shopId, client_id: byName(v.client), make: v.make, model: v.model,
-    year: v.year, plate: v.plate, fuel: v.fuel, mileage: v.mileage,
+    shop_id: shopId, client_id: byName(tr(v.client)), make: v.make, model: tr(v.model),
+    year: v.year, plate: tr(v.plate), fuel: v.fuel, mileage: v.mileage,
   }));
 
   const { data: insVehicles, error: vehiclesError } = await admin.from("vehicles").insert(vehicles).select("id, plate, client_id");
   if (vehiclesError) throw new Error("seed vehicles: " + vehiclesError.message);
-  const byPlate = (p: string) => insVehicles?.find((v: any) => v.plate === p);
+  const byPlate = (p: string) => insVehicles?.find((v: any) => v.plate === tr(p));
 
-  const partsPromise = admin.from("parts").insert([
+  const partsPromise = admin.from("parts").insert(([
     { shop_id: shopId, name: "Filtro de óleo", reference: "OF-1042", supplier: "Bosch", internal_cost: 6.4, sale_price: 14.9, vat_rate: 23, stock_quantity: 24, min_stock: 6 },
     { shop_id: shopId, name: "Pastilhas travão dianteiras", reference: "BP-2210", supplier: "Brembo", internal_cost: 28.5, sale_price: 62, vat_rate: 23, stock_quantity: 9, min_stock: 4 },
     { shop_id: shopId, name: "Óleo 5W30 (litro)", reference: "OIL-5W30", supplier: "Castrol", internal_cost: 5.2, sale_price: 11.5, vat_rate: 23, stock_quantity: 60, min_stock: 20 },
     { shop_id: shopId, name: "Bateria 70Ah", reference: "BAT-70", supplier: "Varta", internal_cost: 71, sale_price: 129, vat_rate: 23, stock_quantity: 3, min_stock: 4 },
     { shop_id: shopId, name: "Kit distribuição", reference: "KD-8890", supplier: "Gates", internal_cost: 142, sale_price: 289, vat_rate: 23, stock_quantity: 2, min_stock: 2 },
-  ]);
+  ] as any[]).map((p) => ({ ...p, name: tr(p.name), internal_cost: +(p.internal_cost * PRICE).toFixed(2), sale_price: +(p.sale_price * PRICE).toFixed(2), vat_rate: VAT })));
 
   const line = (desc: string, qty: number, price: number, cost: number) => ({
-    description: desc, quantity: qty, unit_price: price, unit_cost: cost, vat_rate: 23, type: "part",
+    description: tr(desc), quantity: qty, unit_price: +(price * PRICE).toFixed(2), unit_cost: +(cost * PRICE).toFixed(2), vat_rate: VAT, type: "part",
   });
-  const labor = (hours: number, rate = 45) => ({
-    description: "Mão de obra", quantity: hours, unit_price: rate, unit_cost: rate * 0.45, vat_rate: 23, type: "labor",
+  const labor = (hours: number, rate = RATE) => ({
+    description: "Mão de obra", quantity: hours, unit_price: rate, unit_cost: rate * 0.45, vat_rate: VAT, type: "labor",
   });
   const totals = (lines: any[]) => {
     const subtotal = lines.reduce((s, l) => s + l.quantity * l.unit_price, 0);
     const cost = lines.reduce((s, l) => s + l.quantity * l.unit_cost, 0);
-    const vat = subtotal * 0.23;
+    const vat = subtotal * VATF;
     return { subtotal: +subtotal.toFixed(2), vat_total: +vat.toFixed(2), total: +(subtotal + vat).toFixed(2), cost_total: +cost.toFixed(2), profit: +(subtotal - cost).toFixed(2) };
   };
 
@@ -287,7 +308,7 @@ async function seed(admin: any, shopId: string) {
     const v = byPlate(w.plate)!;
     return {
       shop_id: shopId, number: w.n, client_id: v.client_id, vehicle_id: v.id,
-      client_description: w.desc, technician: w.tech, status: w.status, lines: w.lines,
+      client_description: tr(w.desc), technician: w.tech, status: w.status, lines: w.lines,
       labor_hours: w.lines.filter((l: any) => l.type === "labor").reduce((s: number, l: any) => s + l.quantity, 0),
       created_at: daysAgo(w.days),
       completed_at: ["completed", "delivered"].includes(w.status) ? daysAgo(Math.max(w.days - 1, 0)) : null,
@@ -321,10 +342,10 @@ async function seed(admin: any, shopId: string) {
       work_order_id: order.id,
       number,
       status,
-      subtotal: +(Number(order.total) / 1.23).toFixed(2),
-      vat_total: +(Number(order.total) - Number(order.total) / 1.23).toFixed(2),
+      subtotal: +(Number(order.total) / (1 + VATF)).toFixed(2),
+      vat_total: +(Number(order.total) - Number(order.total) / (1 + VATF)).toFixed(2),
       total: order.total,
-      currency: "EUR",
+      currency: BR ? "BRL" : "EUR",
       due_date: daysAgo(days - 30).slice(0, 10),
       notes: "Documento fictício de demonstração — sem validade fiscal.",
       created_at: daysAgo(days),
@@ -339,7 +360,7 @@ async function seed(admin: any, shopId: string) {
   const sofiaVehicle = byPlate("AE-55-FG");
   const appointments = [
     { vehicle: anaVehicle, date: dateFromNow(1), time: "09:00", service_type: "Revisão periódica", duration_minutes: 90, status: "confirmed", client_name: "Ana Marques", client_phone: DEMO_PHONE, client_email: DEMO_EMAIL },
-    { vehicle: fleetVehicle, date: dateFromNow(1), time: "11:00", service_type: "Diagnóstico de ruído", duration_minutes: 60, status: "scheduled", client_name: "Transportes Belém, Lda.", client_phone: DEMO_PHONE, client_email: DEMO_EMAIL },
+    { vehicle: fleetVehicle, date: dateFromNow(1), time: "11:00", service_type: "Diagnóstico de ruído", duration_minutes: 60, status: "scheduled", client_name: tr("Transportes Belém, Lda."), client_phone: DEMO_PHONE, client_email: DEMO_EMAIL },
     { vehicle: sofiaVehicle, date: dateFromNow(2), time: "15:30", service_type: "Teste de bateria", duration_minutes: 45, status: "pending", client_name: "Sofia Almeida", client_phone: DEMO_PHONE, client_email: DEMO_EMAIL, source: "portal" },
   ].map(({ vehicle, ...appointment }) => ({
 
@@ -376,7 +397,7 @@ async function seed(admin: any, shopId: string) {
   const notificationsPromise = admin.from("notifications").insert(notifications);
 
   const alertsPromise = admin.from("alerts").insert([
-    { shop_id: shopId, client_id: byName("Rui Cardoso"), vehicle_id: byPlate("AD-44-EF")?.id, type: "inspection", title: "Inspeção periódica próxima", message: "BMW Série 3 — inspeção prevista para os próximos 15 dias.", due_date: dateFromNow(15), priority: "high" },
+    { shop_id: shopId, client_id: byName(tr("Rui Cardoso")), vehicle_id: byPlate("AD-44-EF")?.id, type: "inspection", title: tr("Inspeção periódica próxima"), message: tr("BMW Série 3 — inspeção prevista para os próximos 15 dias."), due_date: dateFromNow(15), priority: "high" },
     { shop_id: shopId, client_id: byName("Miguel Tavares"), vehicle_id: byPlate("AF-66-GH")?.id, type: "maintenance", title: "Revisão recomendada", message: "Mercedes-Benz Classe A atingiu o intervalo recomendado de manutenção.", due_date: dateFromNow(7), priority: "medium" },
   ]);
 

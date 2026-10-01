@@ -108,7 +108,9 @@ export function currentDemoPlan(): DemoPlan {
 }
 
 async function callDemo(action: "start" | "plan" | "reset" | "end", plan: DemoPlan) {
-  const { data, error } = await supabase.functions.invoke("sales-demo", { body: { action, plan } });
+  let country: string | undefined;
+  try { const { getCountryCode } = await import("@/lib/regionConfig"); country = getCountryCode() === "BR" ? "BR" : "PT"; } catch { /* PT */ }
+  const { data, error } = await supabase.functions.invoke("sales-demo", { body: { action, plan, country } });
   if (error) throw new Error(error.message);
   if ((data as any)?.error) throw new Error((data as any).error);
   return data as { shop_id: string; plan: DemoPlan; session?: { access_token: string; refresh_token: string } };

@@ -32,6 +32,12 @@ export function PartApplicationsDialog({ part, shopId, canEdit, open, onOpenChan
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [catalog, setCatalog] = useState<{ make: string; model: string }[]>([]);
+
+  const makes = [...new Set(catalog.map(c => c.make))].sort((a, b) => a.localeCompare(b, "pt"));
+  const makeKey = form.make.trim().toLowerCase();
+  const models = [...new Set(catalog.filter(c => c.make.toLowerCase() === makeKey).map(c => c.model))].sort((a, b) => a.localeCompare(b, "pt"));
+  const versions = [...new Set(rows.filter(r => r.make?.toLowerCase() === makeKey && (!form.model || r.model?.toLowerCase() === form.model.trim().toLowerCase())).map(r => r.version).filter(Boolean) as string[])].sort();
 
   const load = async () => {
     if (!part) return;
@@ -42,6 +48,12 @@ export function PartApplicationsDialog({ part, shopId, canEdit, open, onOpenChan
     setLoading(false);
   };
   useEffect(() => { if (open) { load(); setForm(empty); setEditId(null); } /* eslint-disable-next-line */ }, [open, part?.id]);
+  useEffect(() => {
+    if (!open) return;
+    db.from("vehicle_catalog").select("make, model").order("make").order("model").limit(5000)
+      .then(({ data }: any) => setCatalog(data || []));
+    /* eslint-disable-next-line */
+  }, [open]);
 
   const save = async () => {
     if (!part || !shopId) return;
@@ -86,6 +98,14 @@ export function PartApplicationsDialog({ part, shopId, canEdit, open, onOpenChan
       <Input className="h-11" inputMode={numeric ? "numeric" : undefined} value={form[k]} onChange={e => setForm({ ...form, [k]: e.target.value })} /></div>
   );
 
+  const combo = (k: keyof typeof empty, label: string, listId: string, options: string[], placeholder?: string, onPick?: (v: string) => void) => (
+    <div><Label className="text-xs">{label}</Label>
+      <Input className="h-11" list={listId} placeholder={placeholder} value={form[k]}
+        onChange={e => { const v = e.target.value; setForm({ ...form, [k]: v }); onPick?.(v); }} />
+      <datalist id={listId}>{options.map(o => <option key={o} value={o} />)}</datalist>
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -122,8 +142,9 @@ export function PartApplicationsDialog({ part, shopId, canEdit, open, onOpenChan
             <p className="text-sm font-semibold">{editId ? "Editar compatibilidade" : "Adicionar compatibilidade"}</p>
             <p className="text-xs font-semibold text-muted-foreground">Detalhes do Veículo</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {f("make", "Marca (ex.: Land Rover)")}{f("model", "Modelo (ex.: Range Rover Sport II (L494))")}
-              {f("version", "Versão / motorização (ex.: 3.0 SDV6 4x4, 5 portas)")}
+              {combo("make", "Marca", "pa-makes", makes, "Escolha ou escreva", v => { const m = makes.find(x => x.toLowerCase() === v.trim().toLowerCase()); if (m && m !== form.make) setForm(fm => ({ ...fm, make: m, model: "", version: "" })); })}
+              {combo("model", "Modelo", "pa-models", models, makeKey ? "Escolha ou escreva" : "Escolha primeiro a marca")}
+              {combo("version", "Versão / motorização (ex.: 3.0 SDV6 4x4, 5 portas)", "pa-versions", versions)}
               <div className="grid grid-cols-2 gap-3">{f("year_from", "Ano de", true)}{f("year_to", "Ano até", true)}</div>
               {f("oem_reference", "Referência")}{f("vin", "Nº Chassis")}
               {f("engine_code", "Código do Motor")}{f("mileage_km", "Quilómetros", true)}

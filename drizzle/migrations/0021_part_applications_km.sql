@@ -1,0 +1,1 @@
+ALTER TABLE public.part_applications ADD COLUMN IF NOT EXISTS mileage_km integer;

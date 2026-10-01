@@ -7185,6 +7185,7 @@ export type Database = {
           engine_code: string | null
           id: string
           make: string | null
+          mileage_km: number | null
           model: string | null
           notes: string | null
           oem_reference: string | null
@@ -7203,6 +7204,7 @@ export type Database = {
           engine_code?: string | null
           id?: string
           make?: string | null
+          mileage_km?: number | null
           model?: string | null
           notes?: string | null
           oem_reference?: string | null
@@ -7221,6 +7223,7 @@ export type Database = {
           engine_code?: string | null
           id?: string
           make?: string | null
+          mileage_km?: number | null
           model?: string | null
           notes?: string | null
           oem_reference?: string | null

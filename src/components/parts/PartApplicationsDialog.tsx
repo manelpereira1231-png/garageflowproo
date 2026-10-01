@@ -12,9 +12,10 @@ export interface PartApplication {
   make: string | null; model: string | null; engine: string | null; version: string | null;
   year_from: number | null; year_to: number | null; oem_reference: string | null;
   part_brand: string | null; engine_code: string | null; vin: string | null; notes: string | null;
+  mileage_km?: number | null;
 }
 
-const empty = { make: "", model: "", engine: "", version: "", year_from: "", year_to: "", oem_reference: "", part_brand: "", engine_code: "", vin: "", notes: "" };
+const empty = { make: "", model: "", engine: "", version: "", year_from: "", year_to: "", oem_reference: "", part_brand: "", engine_code: "", vin: "", notes: "", mileage_km: "" };
 const db = supabase as any;
 
 export function describeApplication(a: PartApplication) {
@@ -49,7 +50,7 @@ export function PartApplicationsDialog({ part, shopId, canEdit, open, onOpenChan
     const payload = {
       make: t(form.make), model: t(form.model), engine: t(form.engine), version: t(form.version),
       year_from: n(form.year_from), year_to: n(form.year_to), oem_reference: t(form.oem_reference),
-      part_brand: t(form.part_brand), engine_code: t(form.engine_code), vin: t(form.vin), notes: t(form.notes),
+      part_brand: t(form.part_brand), engine_code: t(form.engine_code), vin: t(form.vin), notes: t(form.notes), mileage_km: n(form.mileage_km.replace(/\D/g, "")),
     };
     if (!payload.make && !payload.model && !payload.engine_code && !payload.vin && !payload.oem_reference) {
       toast.error("Indique pelo menos marca, modelo, código de motor, VIN ou referência."); return;
@@ -76,7 +77,7 @@ export function PartApplicationsDialog({ part, shopId, canEdit, open, onOpenChan
     setForm({
       make: a.make ?? "", model: a.model ?? "", engine: a.engine ?? "", version: a.version ?? "",
       year_from: a.year_from?.toString() ?? "", year_to: a.year_to?.toString() ?? "", oem_reference: a.oem_reference ?? "",
-      part_brand: a.part_brand ?? "", engine_code: a.engine_code ?? "", vin: a.vin ?? "", notes: a.notes ?? "",
+      part_brand: a.part_brand ?? "", engine_code: a.engine_code ?? "", vin: a.vin ?? "", notes: a.notes ?? "", mileage_km: a.mileage_km?.toString() ?? "",
     });
   };
 
@@ -95,11 +96,18 @@ export function PartApplicationsDialog({ part, shopId, canEdit, open, onOpenChan
           <ul className="space-y-2">
             {rows.map(a => (
               <li key={a.id} className="flex items-start justify-between gap-2 rounded-lg border border-border p-3">
-                <div className="min-w-0 text-sm">
-                  <div className="font-medium break-words">{describeApplication(a)}</div>
-                  <div className="text-xs text-muted-foreground break-words">
-                    {[a.part_brand && `Marca peça: ${a.part_brand}`, a.oem_reference && `Ref.: ${a.oem_reference}`, a.vin && `VIN: ${a.vin}`, a.notes].filter(Boolean).join(" · ")}
+                <div className="min-w-0 text-sm space-y-1">
+                  <div className="break-words"><span className="font-bold uppercase">{a.make}</span> <span className="uppercase">{[a.model, a.version].filter(Boolean).join(" ")}</span>
+                    {(a.year_from || a.year_to) && <span className="text-muted-foreground"> [{a.year_from ?? "…"}-{a.year_to ?? "…"}]</span>}
+                    {!a.make && !a.model && <span className="text-muted-foreground">Sem viatura</span>}
                   </div>
+                  <dl className="grid grid-cols-[auto,1fr] gap-x-3 text-xs">
+                    {a.oem_reference && <><dt className="font-semibold">Referência</dt><dd className="break-all">{a.oem_reference}</dd></>}
+                    {a.vin && <><dt className="font-semibold">Nº Chassis</dt><dd className="break-all font-mono">{a.vin}</dd></>}
+                    {a.engine_code && <><dt className="font-semibold">Código do Motor</dt><dd>{a.engine_code}</dd></>}
+                    {a.mileage_km != null && <><dt className="font-semibold">Quilómetros</dt><dd>{a.mileage_km.toLocaleString("pt-PT")} km</dd></>}
+                    {(a.part_brand || a.engine || a.notes) && <><dt className="font-semibold">Outros</dt><dd className="break-words">{[a.engine, a.part_brand && `Marca peça: ${a.part_brand}`, a.notes].filter(Boolean).join(" · ")}</dd></>}
+                  </dl>
                 </div>
                 {canEdit && <div className="flex shrink-0">
                   <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => edit(a)} aria-label="Editar"><Pencil className="w-4 h-4" /></Button>
@@ -112,12 +120,21 @@ export function PartApplicationsDialog({ part, shopId, canEdit, open, onOpenChan
         {canEdit && (
           <div className="space-y-3 border-t border-border pt-3">
             <p className="text-sm font-semibold">{editId ? "Editar compatibilidade" : "Adicionar compatibilidade"}</p>
+            <p className="text-xs font-semibold text-muted-foreground">Detalhes do Veículo</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {f("make", "Marca")}{f("model", "Modelo")}{f("version", "Versão")}{f("engine", "Motor")}
-              {f("engine_code", "Código de motor")}{f("year_from", "Ano de", true)}{f("year_to", "Ano até", true)}
-              {f("oem_reference", "Referência")}{f("part_brand", "Marca da peça")}{f("vin", "VIN / chassis")}
+              {f("make", "Marca (ex.: Land Rover)")}{f("model", "Modelo (ex.: Range Rover Sport II (L494))")}
+              {f("version", "Versão / motorização (ex.: 3.0 SDV6 4x4, 5 portas)")}
+              <div className="grid grid-cols-2 gap-3">{f("year_from", "Ano de", true)}{f("year_to", "Ano até", true)}</div>
+              {f("oem_reference", "Referência")}{f("vin", "Nº Chassis")}
+              {f("engine_code", "Código do Motor")}{f("mileage_km", "Quilómetros", true)}
             </div>
-            {f("notes", "Observações")}
+            <details className="rounded-lg border border-border p-3">
+              <summary className="text-sm cursor-pointer min-h-[44px] flex items-center">Mais campos (opcional)</summary>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                {f("engine", "Motor")}{f("part_brand", "Marca da peça")}
+              </div>
+              <div className="mt-3">{f("notes", "Observações")}</div>
+            </details>
             <div className="flex gap-2 justify-end">
               {editId && <Button variant="outline" className="h-11" onClick={() => { setEditId(null); setForm(empty); }}>Cancelar</Button>}
               <Button className="h-11" onClick={save} disabled={saving}>{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}{editId ? "Guardar" : "Adicionar"}</Button>

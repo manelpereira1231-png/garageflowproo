@@ -375,18 +375,16 @@ export default function ClaimDetail() {
       </Card>
 
       <Tabs defaultValue="summary">
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="summary">Resumo</TabsTrigger>
-          <TabsTrigger value="data">Sinistro</TabsTrigger>
-          <TabsTrigger value="contacts">Contactos</TabsTrigger>
-          <TabsTrigger value="expert">Peritagem</TabsTrigger>
-          <TabsTrigger value="quote">Orçamento</TabsTrigger>
-          <TabsTrigger value="repair">Reparação</TabsTrigger>
-          <TabsTrigger value="values">Valores</TabsTrigger>
-          <TabsTrigger value="comms">Comunicações</TabsTrigger>
-          <TabsTrigger value="docs">Documentos</TabsTrigger>
-          <TabsTrigger value="timeline">Histórico</TabsTrigger>
+        <div className="-mx-1 overflow-x-auto px-1">
+        <TabsList className="h-auto w-max sm:w-auto sm:flex-wrap">
+          <TabsTrigger value="summary" className="min-h-[40px]">Resumo</TabsTrigger>
+          <TabsTrigger value="process" className="min-h-[40px]">Processo e peritagem</TabsTrigger>
+          <TabsTrigger value="work" className="min-h-[40px]">Orçamento e reparação</TabsTrigger>
+          <TabsTrigger value="values" className="min-h-[40px]">Valores e faturação</TabsTrigger>
+          <TabsTrigger value="docs" className="min-h-[40px]">Documentos e comunicações</TabsTrigger>
+          <TabsTrigger value="timeline" className="min-h-[40px]">Histórico</TabsTrigger>
         </TabsList>
+        </div>
 
         {/* Resumo */}
         <TabsContent value="summary" className="space-y-4">
@@ -429,6 +427,33 @@ export default function ClaimDetail() {
               </CardContent></Card>
             );
           })()}
+          {(() => {
+            const qn = quotes.find((q) => q.id === claim.quote_id)?.number;
+            const inv = invs.find((i) => i.id === claim.invoice_id);
+            const ap = claim.approval_status;
+            const steps = [
+              { l: "Sinistro", done: true, sub: claim.ref || "" },
+              { l: "Orçamento", done: !!claim.quote_id, sub: qn || "Por associar", go: claim.quote_id ? `/quotes/${claim.quote_id}` : null },
+              { l: "Autorização", done: ap === "approved" || ap === "partial", sub: APPROVAL_STATUS_LABELS[ap || "waiting"] },
+              { l: "Reparação", done: !!claim.work_order_id, sub: claim.work_orders?.number || "Por iniciar", go: claim.work_order_id ? `/services/${claim.work_order_id}` : null },
+              { l: "Fatura", done: !!claim.invoice_id, sub: inv?.number || "Por emitir", go: claim.invoice_id ? `/invoices/${claim.invoice_id}` : null },
+            ];
+            return (
+              <Card><CardContent className="p-3">
+                <ol className="grid grid-cols-5 gap-1">
+                  {steps.map((st, i) => (
+                    <li key={i}>
+                      <button type="button" disabled={!st.go} onClick={() => st.go && navigate(st.go)}
+                        className={`w-full min-h-[56px] rounded-md border px-1 py-1.5 text-center ${st.done ? "border-primary/40 bg-primary/10" : "border-border"} ${st.go ? "hover:bg-primary/15" : ""}`}>
+                        <span className="block text-[11px] sm:text-xs font-semibold">{st.l}</span>
+                        <span className="block text-[10px] sm:text-xs text-muted-foreground truncate">{st.sub}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </CardContent></Card>
+            );
+          })()}
           <Card><CardContent className="p-4 grid gap-2 sm:grid-cols-3 text-sm">
             <div><p className="text-xs text-muted-foreground">Orçamento</p><p className="font-medium">{quotes.find((q) => q.id === claim.quote_id)?.number || "Não associado"}</p></div>
             <div><p className="text-xs text-muted-foreground">Ordem de serviço</p><p className="font-medium">{claim.work_orders?.number || "Não associada"}</p></div>
@@ -438,7 +463,7 @@ export default function ClaimDetail() {
         </TabsContent>
 
         {/* Reparação */}
-        <TabsContent value="repair" className="space-y-4">
+        <TabsContent value="work" className="space-y-4">
           <Card>
             <CardHeader><CardTitle className="text-base">Ordem de serviço</CardTitle></CardHeader>
             <CardContent className="space-y-3">
@@ -509,7 +534,7 @@ export default function ClaimDetail() {
         </TabsContent>
 
         {/* Dados */}
-        <TabsContent value="data" className="space-y-4">
+        <TabsContent value="process" className="space-y-4">
           <Card>
             <CardHeader><CardTitle className="text-base">Dados do sinistro</CardTitle></CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2">
@@ -563,7 +588,7 @@ export default function ClaimDetail() {
         </TabsContent>
 
         {/* Contactos */}
-        <TabsContent value="contacts" className="space-y-3">
+        <TabsContent value="process" className="space-y-3">
           <div className="flex justify-end">
             <Button variant="outline" className="min-h-[44px]" onClick={() => setContactOpen(true)}>
               <Plus className="w-4 h-4 mr-2" /> Adicionar contacto
@@ -592,7 +617,7 @@ export default function ClaimDetail() {
         </TabsContent>
 
         {/* Peritagem */}
-        <TabsContent value="expert">
+        <TabsContent value="process">
           <Card>
             <CardHeader><CardTitle className="text-base">Peritagem</CardTitle></CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2">
@@ -623,7 +648,7 @@ export default function ClaimDetail() {
         </TabsContent>
 
         {/* Orçamento + aprovação */}
-        <TabsContent value="quote" className="space-y-4">
+        <TabsContent value="work" className="space-y-4">
           <Card>
             <CardHeader><CardTitle className="text-base">Orçamento</CardTitle></CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2">
@@ -674,7 +699,7 @@ export default function ClaimDetail() {
         </TabsContent>
 
         {/* Comunicações */}
-        <TabsContent value="comms" className="space-y-3">
+        <TabsContent value="docs" className="space-y-3">
           <div className="flex flex-wrap gap-2 justify-end">
             <Button variant="outline" className="min-h-[44px]" onClick={() => openComm("email")}><Mail className="w-4 h-4 mr-2" />Enviar email</Button>
             <Button variant="outline" className="min-h-[44px]" onClick={() => openComm("phone")}><Phone className="w-4 h-4 mr-2" />Registar chamada</Button>

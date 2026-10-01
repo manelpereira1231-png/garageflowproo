@@ -433,9 +433,9 @@ export default function ClaimDetail() {
             const ap = claim.approval_status;
             const steps = [
               { l: "Sinistro", done: true, sub: claim.ref || "" },
-              { l: "Orçamento", done: !!claim.quote_id, sub: qn || "Por associar", go: claim.quote_id ? `/quotes/${claim.quote_id}` : null },
+              { l: "Orçamento", done: !!claim.quote_id, sub: qn || "Por associar", go: claim.quote_id ? `/quotes/edit/${claim.quote_id}` : null },
               { l: "Autorização", done: ap === "approved" || ap === "partial", sub: APPROVAL_STATUS_LABELS[ap || "waiting"] },
-              { l: "Reparação", done: !!claim.work_order_id, sub: claim.work_orders?.number || "Por iniciar", go: claim.work_order_id ? `/services/${claim.work_order_id}` : null },
+              { l: "Reparação", done: !!claim.work_order_id, sub: claim.work_orders?.number || "Por iniciar", go: claim.work_order_id ? `/services/edit/${claim.work_order_id}` : null },
               { l: "Fatura", done: !!claim.invoice_id, sub: inv?.number || "Por emitir", go: claim.invoice_id ? `/invoices/${claim.invoice_id}` : null },
             ];
             return (

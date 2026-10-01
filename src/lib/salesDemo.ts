@@ -135,6 +135,8 @@ export async function startDemo(plan: DemoPlan, mode: "self" | "sales" = "self")
   authUid = uid;
   if (uid) localStorage.setItem(DEMO_UID_KEY, uid);
   localStorage.setItem(ACTIVE_SHOP_KEY, res.shop_id);
+  // O país da oficina demo passa a ser a referência imediatamente (BR → R$, CPF/CNPJ, placa).
+  try { const { setCountryCode } = await import("@/lib/regionConfig"); setCountryCode((res as any).country === "BR" ? "BR" : "PT"); } catch { /* ignore */ }
   // Demonstração: ERP completo em português, sem ecrãs de onboarding.
   localStorage.setItem("garageflow_app_mode", "pro");
   localStorage.setItem("garageflow_onboarding_status", "completed");

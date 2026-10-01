@@ -185,6 +185,7 @@ serve(async (req) => {
       ok: true,
       shop_id: shopId,
       plan,
+      country,
       session: {
         access_token: signIn.session!.access_token,
         refresh_token: signIn.session!.refresh_token,

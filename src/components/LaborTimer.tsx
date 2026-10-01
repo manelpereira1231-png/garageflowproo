@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { Play, Pause, Square, Timer, Clock, DollarSign, Plus } from "lucide-react";
+import { Play, Pause, Square, Timer, Clock, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -43,7 +43,7 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
   const [elapsed, setElapsed] = useState<Record<string, number>>({});
   const [showAddNew, setShowAddNew] = useState(false);
   const [rate, setRate] = useState(laborRate);
-  const [currencySym, setCurrencySym] = useState<string>('€');
+  const [shopCurrency, setShopCurrency] = useState('EUR');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const runningTimers = timers.filter(t => t.status === 'running');
@@ -67,10 +67,8 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
   useEffect(() => {
     supabase.from("shops").select("labor_rate, currency").eq("id", shopId).maybeSingle().then(({ data }) => {
       if (data?.labor_rate && laborRate <= 0) setRate(Number(data.labor_rate));
-      // Resolve currency symbol from shop
-      import("@/lib/marketPrice").then(({ getCurrencySymbol }) => {
-        setCurrencySym(getCurrencySymbol((data as any)?.currency));
-      });
+       // Operational amounts belong to the shop, never the visitor's browser country.
+       setShopCurrency((data as any)?.currency || 'EUR');
     });
     if (laborRate > 0) setRate(laborRate);
   }, [shopId, laborRate]);
@@ -183,9 +181,8 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
         <div className="flex items-center gap-3">
           {rate > 0 && totalSeconds > 0 && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <DollarSign className="w-3 h-3" />
-              <span className="font-medium">{formatMoney(totalCost)}</span>
-              <span>({formatHours(totalSeconds / 3600)} × {formatHourlyRate(rate)})</span>
+              <span className="font-medium">{formatMoney(totalCost, shopCurrency)}</span>
+              <span>({formatHours(totalSeconds / 3600)} × {formatHourlyRate(rate, shopCurrency)})</span>
             </div>
           )}
           {rate <= 0 && totalSeconds > 0 && (
@@ -319,7 +316,7 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
               <span className="text-xs font-medium">{name}</span>
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs text-muted-foreground">{formatDuration(secs)}</span>
-                {rate > 0 && <span className="text-xs text-primary font-medium">{formatMoney((secs / 3600) * rate)}</span>}
+                 {rate > 0 && <span className="text-xs text-primary font-medium">{formatMoney((secs / 3600) * rate, shopCurrency)}</span>}
               </div>
             </div>
           ))}
@@ -344,7 +341,7 @@ export default function LaborTimer({ workOrderId, shopId, technicianName = '', l
                 </span>
                 {rate > 0 && (
                   <span className="text-xs text-primary font-medium">
-                    {formatMoney((timer.duration_seconds / 3600) * rate)}
+                     {formatMoney((timer.duration_seconds / 3600) * rate, shopCurrency)}
                   </span>
                 )}
               </div>

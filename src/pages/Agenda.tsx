@@ -537,6 +537,39 @@ export default function Agenda() {
     loadData();
   };
 
+  // Drag & drop: move an appointment to another day/hour (keeps minutes).
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dropKey, setDropKey] = useState<string | null>(null);
+  const moveAppointment = async (id: string, day: Date, hour: number) => {
+    const app = appointments.find(a => a.id === id);
+    if (!app) return;
+    const mins = String(app.time).slice(3, 5) || "00";
+    const newDate = format(day, "yyyy-MM-dd");
+    const newTime = `${String(hour).padStart(2, "0")}:${mins}`;
+    if (app.date === newDate && String(app.time).slice(0, 5) === newTime) return;
+    if (app.status === "completed" || app.status === "cancelled") {
+      toast({ title: "Marcação concluída ou cancelada não pode ser movida", variant: "destructive" });
+      return;
+    }
+    // Online bookings: open the reschedule dialog pre-filled so the client is notified.
+    if (app.source === "portal" || app.source === "public") {
+      await openReschedule(app);
+      setRescheduleData({ date: newDate, time: newTime });
+      return;
+    }
+    // Optimistic update
+    setAppointments(prev => prev.map(a => a.id === id ? { ...a, date: newDate, time: newTime } : a));
+    const { error } = await supabase.from("appointments")
+      .update({ date: newDate, time: newTime } as any)
+      .eq("id", id).eq("shop_id", activeShopId);
+    if (error) {
+      toast({ title: "Não foi possível mover a marcação", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Marcação movida", description: `${format(day, "EEE d", { locale })} às ${newTime}` });
+    }
+    loadData();
+  };
+
   const getAppsForDayHour = (day: Date, hour: number) =>
     appointments.filter(a => isSameDay(new Date(a.date), day) && parseInt(a.time.split(":")[0]) === hour);
 
@@ -925,10 +958,18 @@ export default function Agenda() {
                   const apps = getFilteredAppsForDayHour(day, hour);
                   const isToday = isSameDay(day, new Date());
                   return (
-                    <div key={di} className={`border-l border-border/50 p-0.5 ${isToday ? 'bg-primary/[0.02]' : ''}`}>
+                    <div key={di}
+                      onDragOver={(e) => { if (dragId) { e.preventDefault(); setDropKey(`${di}-${hour}`); } }}
+                      onDragLeave={() => setDropKey(k => (k === `${di}-${hour}` ? null : k))}
+                      onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/plain") || dragId; setDropKey(null); setDragId(null); if (id) moveAppointment(id, day, hour); }}
+                      className={`border-l border-border/50 p-0.5 transition-colors ${isToday ? 'bg-primary/[0.02]' : ''} ${dropKey === `${di}-${hour}` ? 'bg-primary/15 ring-1 ring-inset ring-primary' : ''}`}>
                       {apps.map(app => (
                         <div key={app.id}
-                          className={`text-[11px] rounded px-1.5 py-1 mb-0.5 border cursor-pointer hover:opacity-80 transition-opacity ${STATUS_COLORS[app.status] || STATUS_COLORS.scheduled}`}>
+                          draggable={app.status !== "completed" && app.status !== "cancelled"}
+                          onDragStart={(e) => { e.dataTransfer.setData("text/plain", app.id); e.dataTransfer.effectAllowed = "move"; setDragId(app.id); }}
+                          onDragEnd={() => { setDragId(null); setDropKey(null); }}
+                          title="Arraste para outro dia ou hora"
+                          className={`text-[11px] rounded px-1.5 py-1 mb-0.5 border cursor-grab active:cursor-grabbing hover:opacity-80 transition-opacity ${dragId === app.id ? 'opacity-40' : ''} ${STATUS_COLORS[app.status] || STATUS_COLORS.scheduled}`}>
                           <div className="font-medium truncate">{app.service_type}</div>
                           <div className="flex items-center gap-1 text-[10px] opacity-75 min-w-0">
                             <Clock className="w-3 h-3 shrink-0" />

@@ -1,8 +1,8 @@
 # Roadmap
 
-- [ ] Auditar e concluir Agenda mobile com persistência e ligações existentes
-- [ ] Reorganizar ficha de Sinistros sem perder informação
-- [ ] Concluir Notas de Crédito reutilizando faturação existente
+- [x] Agenda mobile (lista por dia; falta testar gravação no ecrã)
+- [x] Reorganizar ficha de Sinistros
+- [ ] Notas de crédito parciais: feitas, falta teste numa oficina Pro
 - [ ] Registar compatibilidade real de peças e pesquisar por veículo/referência
 - [ ] Corrigir abertura única de WhatsApp em PC/mobile sem PDF obrigatório
 - [ ] Corrigir moeda do temporizador conforme oficina ativa

@@ -32,6 +32,12 @@ export function PartApplicationsDialog({ part, shopId, canEdit, open, onOpenChan
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [catalog, setCatalog] = useState<{ make: string; model: string }[]>([]);
+
+  const makes = [...new Set(catalog.map(c => c.make))].sort((a, b) => a.localeCompare(b, "pt"));
+  const makeKey = form.make.trim().toLowerCase();
+  const models = [...new Set(catalog.filter(c => c.make.toLowerCase() === makeKey).map(c => c.model))].sort((a, b) => a.localeCompare(b, "pt"));
+  const versions = [...new Set(rows.filter(r => r.make?.toLowerCase() === makeKey && (!form.model || r.model?.toLowerCase() === form.model.trim().toLowerCase())).map(r => r.version).filter(Boolean) as string[])].sort();
 
   const load = async () => {
     if (!part) return;

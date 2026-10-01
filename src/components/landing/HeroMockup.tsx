@@ -62,9 +62,9 @@ const KPIS = [
 
 const ORDERS = [
   { c: "Maria Silva", v: IS_BR ? "BMW 320d · BRA2E19" : "BMW 320d · 02-AB-12", s: "Em curso", color: "bg-primary/15 text-primary", time: "2h" },
-  { c: "João Pereira", v: "VW Golf · 45-CD-67", s: "Aprovação", color: "bg-amber-400/15 text-amber-600", time: "30m" },
-  { c: "Ana Costa", v: "Renault Clio · 88-EF-90", s: "Pronto", color: "bg-green-400/15 text-green-600", time: "1h" },
-  { c: "Pedro Sousa", v: "Audi A4 · 12-GH-34", s: "Em curso", color: "bg-primary/15 text-primary", time: "4h" },
+  { c: "João Pereira", v: IS_BR ? "VW Gol · RIO4B21" : "VW Golf · 45-CD-67", s: "Aprovação", color: "bg-amber-400/15 text-amber-600", time: "30m" },
+  { c: "Ana Costa", v: IS_BR ? "Renault Kwid · SPX7C33" : "Renault Clio · 88-EF-90", s: "Pronto", color: "bg-green-400/15 text-green-600", time: "1h" },
+  { c: "Pedro Sousa", v: IS_BR ? "Audi A4 · MGA1D45" : "Audi A4 · 12-GH-34", s: "Em curso", color: "bg-primary/15 text-primary", time: "4h" },
 ];
 
 /**

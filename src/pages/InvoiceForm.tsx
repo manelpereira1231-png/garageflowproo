@@ -133,7 +133,6 @@ export default function InvoiceForm() {
           if (mapped.length > 0) setItems(mapped);
         }
       }
-    };
       // Pre-fill from claim: insurer as recipient (reuses an existing client with
       // the same tax id/name, otherwise registers it once). User can still change it.
       if (fromClaim) {

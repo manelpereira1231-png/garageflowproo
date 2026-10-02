@@ -22,6 +22,14 @@ import { pageCache } from "@/lib/pageCache";
 import { getTaxLabel } from "@/lib/regionConfig";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { formatMoney } from "@/lib/money";
+import { getCountryConfig } from "@/lib/regionConfig";
+
+const BR_PART_NAMES: Record<string, string> = {
+  "OIL-5W30-5L": "Óleo de motor 5W30 (5L)", "FILT-CAB": "Filtro de cabine",
+  "BRK-PAD-F": "Pastilhas de freio dianteiras", "BRK-PAD-R": "Pastilhas de freio traseiras",
+  "BRK-DISC-F": "Discos de freio dianteiros (par)", "SPARK-4": "Velas de ignição (jogo)",
+  "LAMP-H7": "Lâmpada H7", "WIPE-24-16": 'Palhetas do limpador 24"/16"',
+};
 import { useShopRole } from "@/hooks/useShopRole";
 import { GsnPartPickerButton } from "@/components/parts/GsnPartPickerButton";
 import { PartApplicationsDialog, describeApplication, type PartApplication } from "@/components/parts/PartApplicationsDialog";
@@ -264,7 +272,10 @@ export default function Stock() {
       { name: "Bateria 60Ah", reference: "BAT-60", internal_cost: 55, sale_price: 110, vat_rate: 23, stock_quantity: 2, min_stock: 1 },
       { name: "Lâmpada H7", reference: "LAMP-H7", internal_cost: 4, sale_price: 12, vat_rate: 23, stock_quantity: 12, min_stock: 4 },
       { name: 'Palhetas limpa para-brisas 24"/16"', reference: "WIPE-24-16", internal_cost: 9, sale_price: 24, vat_rate: 23, stock_quantity: 6, min_stock: 2 },
-    ].map(p => ({ ...p, shop_id: activeShopId, supplier: null, active: true }));
+    ].map(p => (getCountryConfig().code === "BR"
+      // Brasil: sem preços nem IVA portugueses — a oficina define os seus preços em R$.
+      ? { ...p, name: BR_PART_NAMES[p.reference] || p.name, internal_cost: 0, sale_price: 0, vat_rate: 0 }
+      : p)).map(p => ({ ...p, shop_id: activeShopId, supplier: null, active: true }));
     const { error } = await supabase.from("parts").insert(pack as any);
     if (error) { toast.error(error.message); return; }
     toast.success("Pack inicial de peças criado (12 SKUs)");
@@ -403,8 +414,8 @@ export default function Stock() {
                 <div><Label>{t('stock.supplier')}</Label><Input value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} /></div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div><Label>{t('stock.costPrice')} (€)</Label><Input type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={form.internal_cost === 0 ? "" : form.internal_cost} onChange={e => setForm({ ...form, internal_cost: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
-                <div><Label>{t('stock.salePrice')} (€)</Label><Input type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={form.sale_price === 0 ? "" : form.sale_price} onChange={e => setForm({ ...form, sale_price: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
+                <div><Label>{t('stock.costPrice')} ({getCountryConfig().currencySymbol})</Label><Input type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={form.internal_cost === 0 ? "" : form.internal_cost} onChange={e => setForm({ ...form, internal_cost: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
+                <div><Label>{t('stock.salePrice')} ({getCountryConfig().currencySymbol})</Label><Input type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={form.sale_price === 0 ? "" : form.sale_price} onChange={e => setForm({ ...form, sale_price: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
                 <div><Label>{t('catalog.vatRate')} (%)</Label><Input type="number" inputMode="decimal" placeholder="23" value={form.vat_rate === 0 ? "" : form.vat_rate} onChange={e => setForm({ ...form, vat_rate: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">

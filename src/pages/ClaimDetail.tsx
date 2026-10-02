@@ -44,6 +44,8 @@ function eventText(e: any): string {
 const dt = (v: string | null) => (v ? new Date(v).toLocaleString("pt-PT") : "—");
 
 export default function ClaimDetail() {
+  const IS_BR = (() => { try { return localStorage.getItem("garageflow_country") === "BR"; } catch { return false; } })();
+  const DOC = IS_BR ? "Nota fiscal" : "Fatura";
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const activeShopId = useActiveShopId();
@@ -380,7 +382,7 @@ export default function ClaimDetail() {
           <TabsTrigger value="summary" className="min-h-[40px]">Resumo</TabsTrigger>
           <TabsTrigger value="process" className="min-h-[40px]">Processo e peritagem</TabsTrigger>
           <TabsTrigger value="work" className="min-h-[40px]">Orçamento e reparação</TabsTrigger>
-          <TabsTrigger value="values" className="min-h-[40px]">Valores e faturação</TabsTrigger>
+          <TabsTrigger value="values" className="min-h-[40px]">{IS_BR ? "Valores e nota fiscal" : "Valores e faturação"}</TabsTrigger>
           <TabsTrigger value="docs" className="min-h-[40px]">Documentos e comunicações</TabsTrigger>
           <TabsTrigger value="timeline" className="min-h-[40px]">Histórico</TabsTrigger>
         </TabsList>
@@ -436,7 +438,7 @@ export default function ClaimDetail() {
               { l: "Orçamento", done: !!claim.quote_id, sub: qn || "Por associar", go: claim.quote_id ? `/quotes/edit/${claim.quote_id}` : null },
               { l: "Autorização", done: ap === "approved" || ap === "partial", sub: APPROVAL_STATUS_LABELS[ap || "waiting"] },
               { l: "Reparação", done: !!claim.work_order_id, sub: claim.work_orders?.number || "Por iniciar", go: claim.work_order_id ? `/services/edit/${claim.work_order_id}` : null },
-              { l: "Fatura", done: !!claim.invoice_id, sub: inv?.number || "Por emitir", go: claim.invoice_id ? `/invoices/${claim.invoice_id}` : null },
+              { l: DOC, done: !!claim.invoice_id, sub: inv?.number || "Por emitir", go: claim.invoice_id ? `/invoices/${claim.invoice_id}` : null },
             ];
             return (
               <Card><CardContent className="p-3">
@@ -457,7 +459,7 @@ export default function ClaimDetail() {
           <Card><CardContent className="p-4 grid gap-2 sm:grid-cols-3 text-sm">
             <div><p className="text-xs text-muted-foreground">Orçamento</p><p className="font-medium">{quotes.find((q) => q.id === claim.quote_id)?.number || "Não associado"}</p></div>
             <div><p className="text-xs text-muted-foreground">Ordem de serviço</p><p className="font-medium">{claim.work_orders?.number || "Não associada"}</p></div>
-            <div><p className="text-xs text-muted-foreground">Fatura</p><p className="font-medium">{invs.find((i) => i.id === claim.invoice_id)?.number || "Não associada"}</p></div>
+            <div><p className="text-xs text-muted-foreground">{DOC}</p><p className="font-medium">{invs.find((i) => i.id === claim.invoice_id)?.number || "Não associada"}</p></div>
           </CardContent></Card>
           <p className="text-xs text-muted-foreground">Sem ligação direta à seguradora: o GarageFlow regista o que a oficina recebe e envia por email, telefone ou portal.</p>
         </TabsContent>
@@ -492,7 +494,7 @@ export default function ClaimDetail() {
               {([
                 ["amount_initial_quote", "Orçamento inicial"], ["amount_expert", "Valor peritado"],
                 ["amount_approved", "Valor autorizado"], ["deductible", "Franquia"],
-                ["amount_invoiced", "Valor faturado"], ["amount_paid_insurer", "Pago pela seguradora"],
+                ["amount_invoiced", IS_BR ? "Valor da nota fiscal" : "Valor faturado"], ["amount_paid_insurer", "Pago pela seguradora"],
                 ["amount_client", "A cargo do cliente"], ["amount_pending", "Pendente"],
               ] as const).map(([k, l]) => (
                 <div key={k}><Label>{l} (€)</Label><Input type="number" step="0.01" inputMode="decimal" value={claim[k] ?? ""} onChange={(e) => set({ [k]: e.target.value })} /></div>
@@ -508,10 +510,10 @@ export default function ClaimDetail() {
                   const inv = invs.find((i) => i.id === v);
                   link({ invoice_id: v, ...(inv && claim.amount_invoiced == null ? { amount_invoiced: inv.total } : {}) });
                 }}>
-                  <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Associar fatura existente" /></SelectTrigger>
+                  <SelectTrigger className="min-h-[44px]"><SelectValue placeholder={IS_BR ? "Associar nota fiscal existente" : "Associar fatura existente"} /></SelectTrigger>
                   <SelectContent>{invs.map((i) => <SelectItem key={i.id} value={i.id}>{i.number} — {formatMoney(Number(i.total))}</SelectItem>)}</SelectContent>
                 </Select>
-                <Button variant="outline" className="min-h-[44px]" onClick={() => navigate("/invoices")}>Ir para Faturação</Button>
+                <Button variant="outline" className="min-h-[44px]" onClick={() => navigate(IS_BR ? "/invoices/new" : "/invoices")}>{IS_BR ? "Emitir nota fiscal (eNotas)" : "Ir para Faturação"}</Button>
               </div>
               {(() => { const inv = invs.find((i) => i.id === claim.invoice_id); return inv ? (
                 <div className="rounded-lg border border-border p-3 text-sm grid grid-cols-2 gap-1">
@@ -522,7 +524,7 @@ export default function ClaimDetail() {
                   <span className="text-muted-foreground">Estado</span><span>{inv.status}</span>
                 </div>) : null; })()}
               <div className="flex flex-wrap gap-2">
-                {[["waiting_invoice", "A aguardar faturação"], ["invoiced", "Faturado"], ["waiting_payment", "A aguardar pagamento"], ["paid", "Pago"], ["done", "Encerrar"]].map(([k, l]) => (
+                {[["waiting_invoice", IS_BR ? "Aguardando nota fiscal" : "A aguardar faturação"], ["invoiced", IS_BR ? "Nota fiscal emitida" : "Faturado"], ["waiting_payment", "A aguardar pagamento"], ["paid", "Pago"], ["done", "Encerrar"]].map(([k, l]) => (
                   <Button key={k} size="sm" variant={claim.status === k ? "default" : "outline"} onClick={() => { set({ status: k }); persist({ status: k }); }}>{l}</Button>
                 ))}
                 {["done", "cancelled"].includes(claim.status) && (

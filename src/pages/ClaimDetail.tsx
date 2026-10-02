@@ -513,7 +513,7 @@ export default function ClaimDetail() {
                   <SelectTrigger className="min-h-[44px]"><SelectValue placeholder={IS_BR ? "Associar nota fiscal existente" : "Associar fatura existente"} /></SelectTrigger>
                   <SelectContent>{invs.map((i) => <SelectItem key={i.id} value={i.id}>{i.number} — {formatMoney(Number(i.total))}</SelectItem>)}</SelectContent>
                 </Select>
-                <Button variant="outline" className="min-h-[44px]" onClick={() => navigate(IS_BR ? "/invoices/new" : "/invoices")}>{IS_BR ? "Emitir nota fiscal (eNotas)" : "Ir para Faturação"}</Button>
+                <Button variant="outline" className="min-h-[44px]" onClick={() => navigate(`/invoices/new?from_claim=${claim.id}`)}>{IS_BR ? "Emitir nota fiscal (eNotas)" : "Emitir fatura"}</Button>
               </div>
               {(() => { const inv = invs.find((i) => i.id === claim.invoice_id); return inv ? (
                 <div className="rounded-lg border border-border p-3 text-sm grid grid-cols-2 gap-1">

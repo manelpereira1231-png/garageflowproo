@@ -31,6 +31,9 @@ export default function InvoiceForm() {
   const [searchParams] = useSearchParams();
   const fromQuote = searchParams.get("from_quote");
   const fromWorkOrder = searchParams.get("from_wo");
+  // Sinistro: mesmo fluxo nos dois países; o documento local (Fatura PT / Nota fiscal BR)
+  // é decidido pelo provider da oficina. A seguradora do sinistro vem pré-selecionada.
+  const fromClaim = searchParams.get("from_claim");
 
   const [clients, setClients] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -130,9 +133,38 @@ export default function InvoiceForm() {
           if (mapped.length > 0) setItems(mapped);
         }
       }
+      // Pre-fill from claim: insurer as recipient (reuses an existing client with
+      // the same tax id/name, otherwise registers it once). User can still change it.
+      if (fromClaim) {
+        const { data: claim } = await (supabase as any).from("claims")
+          .select("client_id, vehicle_id, work_order_id, quote_id, claim_number, insurers(name, nif, email, phone)")
+          .eq("id", fromClaim).eq("shop_id", activeId).maybeSingle();
+        if (claim) {
+          setVehicleId(claim.vehicle_id || "");
+          if (claim.work_order_id) setWorkOrderId(claim.work_order_id);
+          if (claim.quote_id) setQuoteId(claim.quote_id);
+          if (claim.claim_number) setNotes((n) => n || `Sinistro / processo ${claim.claim_number}`);
+          const ins = claim.insurers;
+          let recipient: string | null = claim.client_id || null;
+          if (ins?.name) {
+            const list = (clientsRes.data || []) as any[];
+            const nif = (ins.nif || "").replace(/\D/g, "");
+            const nm = ins.name.trim().toLowerCase();
+            const found = list.find((c) => (nif && (c.nif || "").replace(/\D/g, "") === nif) || (c.company || "").trim().toLowerCase() === nm || (c.name || "").trim().toLowerCase() === nm);
+            if (found) recipient = found.id;
+            else {
+              const { data: created } = await supabase.from("clients").insert({
+                shop_id: activeId, name: ins.name, company: ins.name, nif: ins.nif || null, email: ins.email || null, phone: ins.phone || null,
+              } as any).select("id, name, company, nif, email, phone").single();
+              if (created) { setClients((cs) => [...cs, created]); recipient = created.id; }
+            }
+          }
+          if (recipient) setClientId(recipient);
+        }
+      }
     };
     load();
-  }, [fromQuote, fromWorkOrder]);
+  }, [fromQuote, fromWorkOrder, fromClaim]);
 
   const clientVehicles = vehicles.filter(v => v.client_id === clientId);
 
@@ -225,6 +257,9 @@ export default function InvoiceForm() {
       // O email ao cliente é enviado na página de detalhe (uma única vez), com
       // o PDF anexado e o link de pagamento — em vez de um aviso sem documento.
       autoSend = !!client?.email;
+    }
+    if (fromClaim) {
+      await (supabase as any).from("claims").update({ invoice_id: invoice.id, status: "invoiced" }).eq("id", fromClaim);
     }
     navigate(`/invoices/${invoice.id}${autoSend ? '?autosend=1' : ''}`);
     setSaving(false);

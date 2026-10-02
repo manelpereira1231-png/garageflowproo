@@ -503,7 +503,7 @@ export default function ClaimDetail() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle className="text-base">Faturação e pagamento</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">{IS_BR ? "Nota fiscal e pagamento" : "Faturação e pagamento"}</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={claim.invoice_id || ""} onValueChange={(v) => {

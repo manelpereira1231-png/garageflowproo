@@ -377,7 +377,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
               </h2>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>NIF / VAT *</Label>
+                  <Label>{localStorage.getItem("garageflow_country") === "BR" ? "CPF/CNPJ" : "NIF / VAT"} *</Label>
                   <Input value={form.nif} onChange={e => setForm({...form, nif: e.target.value})} placeholder="123456789" />
                 </div>
                 <div className="space-y-1.5">

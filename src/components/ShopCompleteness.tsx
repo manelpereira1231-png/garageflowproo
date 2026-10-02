@@ -34,7 +34,7 @@ export default function ShopCompleteness() {
         { key: "email", label: t("settings.email"), done: !!shop.email?.trim() },
         { key: "phone", label: t("settings.phone"), done: !!shop.phone?.trim() },
         { key: "address", label: t("settings.address") || "Morada", done: !!shop.address?.trim() },
-        { key: "nif", label: "NIF / VAT", done: !!shop.nif?.trim() },
+        { key: "nif", label: (localStorage.getItem("garageflow_country") === "BR" ? "CPF/CNPJ" : "NIF / VAT"), done: !!shop.nif?.trim() },
         { key: "logo", label: "Logo", done: !!shop.logo_url },
       ]);
       setLoading(false);

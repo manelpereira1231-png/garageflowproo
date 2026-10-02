@@ -69,10 +69,10 @@ export default function ProgressiveSetup({ trigger, onComplete, children }: Prog
   const config: Record<PromptType, { icon: any; title: string; desc: string; label: string; placeholder: string; field: string }> = {
     nif: {
       icon: Receipt,
-      title: "Adiciona o teu NIF",
-      desc: "Para emitir faturas corretamente, adiciona o teu NIF e dados fiscais.",
-      label: "NIF / VAT",
-      placeholder: "123456789",
+      title: getCountryConfig().code === "BR" ? "Adicione seu CPF/CNPJ" : "Adiciona o teu NIF",
+      desc: getCountryConfig().code === "BR" ? "Para emitir notas fiscais corretamente, adicione seu CPF/CNPJ e dados fiscais." : "Para emitir faturas corretamente, adiciona o teu NIF e dados fiscais.",
+      label: getCountryConfig().code === "BR" ? "CPF/CNPJ" : "NIF / VAT",
+      placeholder: getCountryConfig().code === "BR" ? "00.000.000/0000-00" : "123456789",
       field: "nif",
     },
     logo: {

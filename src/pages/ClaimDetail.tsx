@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useParams, useNavigate } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
+import { useShopCountry } from "@/hooks/useShopCountry";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { InsurerPicker, resolveInsurerId, type InsurerSelection } from "@/components/InsurerPicker";
@@ -44,7 +45,7 @@ function eventText(e: any): string {
 const dt = (v: string | null) => (v ? new Date(v).toLocaleString("pt-PT") : "—");
 
 export default function ClaimDetail() {
-  const IS_BR = (() => { try { return localStorage.getItem("garageflow_country") === "BR"; } catch { return false; } })();
+  const IS_BR = useShopCountry().code === "BR";
   const DOC = IS_BR ? "Nota fiscal" : "Fatura";
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();

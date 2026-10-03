@@ -728,7 +728,7 @@ const { id } = useParams<{ id: string }>();
           {invoice.credit_note_pdf_url && (
             <Button variant="outline" size="sm" asChild>
               <a href={invoice.credit_note_pdf_url} target="_blank" rel="noreferrer">
-                <ShieldCheck className="w-4 h-4 mr-1" />Nota de crédito
+                <ShieldCheck className="w-4 h-4 mr-1" />{billingProvider === "enotas" ? "Cancelamento" : "Nota de crédito"}
                 <ExternalLink className="w-3 h-3 ml-1" />
               </a>
             </Button>
@@ -766,7 +766,7 @@ const { id } = useParams<{ id: string }>();
           <div className="flex-1 text-sm">
             <p className="font-semibold text-destructive">Fatura anulada por Nota de Crédito</p>
             <p className="text-muted-foreground text-xs mt-1">
-              {invoice.credit_note_number ? `NC ${invoice.credit_note_number}` : 'Nota de crédito emitida'}{invoice.cancelled_at ? ` em ${formatLocalDate(invoice.cancelled_at)}` : ''}.
+              {billingProvider === "enotas" ? 'Nota fiscal cancelada' : (invoice.credit_note_number ? `NC ${invoice.credit_note_number}` : 'Nota de crédito emitida')}{invoice.cancelled_at ? ` em ${formatLocalDate(invoice.cancelled_at)}` : ''}.
             </p>
           </div>
         </div>
@@ -889,13 +889,13 @@ const { id } = useParams<{ id: string }>();
         </Card>
       )}
 
-      <PartialCreditNotes
+      {billingProvider !== "enotas" && <PartialCreditNotes
         invoice={invoice}
         items={items}
         currency={shop?.currency || "EUR"}
         canCreate={can("invoices.cancel")}
         billingProvider={billingProvider}
-      />
+      />}
 
       {/* Payment Dialog */}
       <Dialog open={showPayment} onOpenChange={setShowPayment}>

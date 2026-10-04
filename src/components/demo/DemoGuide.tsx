@@ -96,6 +96,9 @@ export default function DemoGuide() {
   const location = useLocation();
   const active = useIsDemoSession();
   const isMobile = useIsMobile();
+  const br = isBR();
+  const STEPS = br ? STEPS_BR : STEPS_PT;
+  const CHECKLIST = br ? CHECKLIST_BR : CHECKLIST_PT;
 
   const [welcome, setWelcome] = useState(false);
   const [tourStep, setTourStep] = useState<number | null>(null);
@@ -202,8 +205,9 @@ export default function DemoGuide() {
               <h2 className="text-lg font-bold leading-tight">Bem-vindo à demonstração do GarageFlow</h2>
             </div>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Esta é uma conta de demonstração com dados fictícios. Explore livremente para perceber como o
-              GarageFlow pode ajudar a gerir uma oficina de forma mais simples e organizada.
+              {br
+                ? "Esta é uma conta de demonstração com dados fictícios. Explore livremente para ver como o GarageFlow pode ajudar a gerenciar uma oficina de forma mais simples e organizada."
+                : "Esta é uma conta de demonstração com dados fictícios. Explore livremente para perceber como o GarageFlow pode ajudar a gerir uma oficina de forma mais simples e organizada."}
             </p>
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
               <Button
@@ -211,7 +215,7 @@ export default function DemoGuide() {
                 onPointerUp={startTour}
                 onClick={startTour}
               >
-                <Sparkles className="mr-2 h-4 w-4" />Começar visita guiada
+                <Sparkles className="mr-2 h-4 w-4" />{br ? "Começar tour guiado" : "Começar visita guiada"}
               </Button>
               <Button
                 variant="outline" className="min-h-12 flex-1 touch-manipulation"

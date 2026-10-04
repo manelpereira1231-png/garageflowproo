@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingBag, CheckCircle2, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useShopCountry } from "@/hooks/useShopCountry";
 
 /**
  * Lets an existing workshop (ERP) enable the Marketplace on the SAME account.
@@ -18,6 +19,8 @@ export function ActivateMarketplace({ shopId }: { shopId: string | null }) {
   const [status, setStatus] = useState<Status>("none");
   const [rejectNotes, setRejectNotes] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
+  const { code: shopCountry } = useShopCountry();
+  const br = shopCountry === "BR";
 
   const refresh = async () => {
     setChecking(true);

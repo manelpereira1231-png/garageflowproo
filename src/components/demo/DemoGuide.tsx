@@ -288,18 +288,19 @@ export default function DemoGuide() {
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-background/85 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Passo {STEPS.length + 1} de {STEPS.length + 1}</span>
-            <h2 className="mt-2 text-lg font-bold leading-tight">Pronto para utilizar o GarageFlow na sua oficina?</h2>
+            <h2 className="mt-2 text-lg font-bold leading-tight">{br ? "Pronto para usar o GarageFlow na sua oficina?" : "Pronto para utilizar o GarageFlow na sua oficina?"}</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Esta demonstração utiliza dados fictícios. Se quiser começar a utilizar o GarageFlow com a sua oficina,
-              podemos criar a sua conta e ajudá-lo a configurar tudo.
+              {br
+                ? "Esta demonstração usa dados fictícios. Se quiser começar a usar o GarageFlow com a sua oficina, podemos criar a sua conta e ajudar você a configurar tudo."
+                : "Esta demonstração utiliza dados fictícios. Se quiser começar a utilizar o GarageFlow com a sua oficina, podemos criar a sua conta e ajudá-lo a configurar tudo."}
             </p>
-            <p className="mt-2 text-xs font-medium text-primary">Comece gratuitamente. Sem cartão.</p>
+            <p className="mt-2 text-xs font-medium text-primary">{br ? "Comece gratuitamente. Sem cartão." : "Comece gratuitamente. Sem cartão."}</p>
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
               <Button className="min-h-11 flex-1 font-semibold" disabled={busy} onClick={signup}>
-                <Rocket className="mr-2 h-4 w-4" />Criar a minha conta
+                <Rocket className="mr-2 h-4 w-4" />{br ? "Criar minha conta" : "Criar a minha conta"}
               </Button>
               <Button variant="outline" className="min-h-11 flex-1" onClick={() => closeTour("continue")}>
-                Continuar a explorar
+                {br ? "Continuar explorando" : "Continuar a explorar"}
               </Button>
             </div>
           </div>
@@ -323,7 +324,7 @@ export default function DemoGuide() {
           {allDone && celebrated ? (
             <p className="mb-3 flex items-start gap-1.5 text-xs leading-relaxed text-muted-foreground">
               <PartyPopper className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-              Já viu as principais funcionalidades do GarageFlow.
+              {br ? "Você já viu as principais funcionalidades do GarageFlow." : "Já viu as principais funcionalidades do GarageFlow."}
             </p>
           ) : (
             <ul className="mb-3 space-y-1.5">
@@ -345,9 +346,9 @@ export default function DemoGuide() {
               })}
             </ul>
           )}
-          <p className="mb-2 text-[11px] leading-snug text-muted-foreground">Está a gostar do GarageFlow? Crie a conta da sua oficina.</p>
+          <p className="mb-2 text-[11px] leading-snug text-muted-foreground">{br ? "Está gostando do GarageFlow? Crie a conta da sua oficina." : "Está a gostar do GarageFlow? Crie a conta da sua oficina."}</p>
           <Button size="sm" className="min-h-10 w-full font-semibold" disabled={busy} onClick={signup}>
-            <Rocket className="mr-1.5 h-3.5 w-3.5" />Criar a minha conta
+            <Rocket className="mr-1.5 h-3.5 w-3.5" />{br ? "Criar minha conta" : "Criar a minha conta"}
           </Button>
         </div>
       )}

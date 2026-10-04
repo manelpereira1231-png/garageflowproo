@@ -24,7 +24,7 @@ const K_CHECK_HIDDEN = "gf_demo_checklist_hidden";
 
 type Step = { path: string; title: string; body: string };
 
-const STEPS: Step[] = [
+const STEPS_PT: Step[] = [
   { path: "/dashboard", title: "Comece aqui", body: "Acompanhe num único local o estado da sua oficina, serviços, orçamentos e atividade recente." },
   { path: "/clients", title: "Clientes organizados", body: "Tenha os dados dos seus clientes organizados e associados às respetivas viaturas." },
   { path: "/vehicles", title: "Histórico de cada viatura", body: "Consulte rapidamente as viaturas, histórico e informação associada a cada cliente." },
@@ -33,13 +33,32 @@ const STEPS: Step[] = [
   { path: "/notifications", title: "Comunique com os clientes", body: "Centralize as comunicações e acompanhe as notificações relacionadas com os trabalhos." },
 ];
 
-const CHECKLIST: { path: string; label: string }[] = [
+const STEPS_BR: Step[] = [
+  { path: "/dashboard", title: "Comece aqui", body: "Acompanhe em um único lugar o estado da sua oficina, serviços, orçamentos e atividade recente." },
+  { path: "/clients", title: "Clientes organizados", body: "Tenha os dados dos seus clientes organizados e associados aos respectivos veículos." },
+  { path: "/vehicles", title: "Histórico de cada veículo", body: "Consulte rapidamente os veículos, o histórico e as informações associadas a cada cliente." },
+  { path: "/quotes", title: "Crie e envie orçamentos", body: "Crie orçamentos profissionais e acompanhe o estado de cada orçamento." },
+  { path: "/services", title: "Controle cada reparação", body: "Acompanhe o trabalho desde a entrada do veículo até a conclusão do reparo." },
+  { path: "/notifications", title: "Comunique-se com os clientes", body: "Centralize as comunicações e acompanhe as notificações relacionadas aos trabalhos." },
+];
+
+const CHECKLIST_PT: { path: string; label: string }[] = [
   { path: "/clients", label: "Consultar um cliente" },
   { path: "/vehicles", label: "Abrir uma viatura" },
   { path: "/quotes", label: "Ver um orçamento" },
   { path: "/services", label: "Consultar uma ordem de reparação" },
   { path: "/notifications", label: "Ver as notificações" },
 ];
+
+const CHECKLIST_BR: { path: string; label: string }[] = [
+  { path: "/clients", label: "Consultar um cliente" },
+  { path: "/vehicles", label: "Abrir um veículo" },
+  { path: "/quotes", label: "Ver um orçamento" },
+  { path: "/services", label: "Consultar uma ordem de serviço" },
+  { path: "/notifications", label: "Ver as notificações" },
+];
+
+const isBR = () => { try { return localStorage.getItem("garageflow_country") === "BR"; } catch { return false; } };
 
 const read = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
 const write = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* noop */ } };

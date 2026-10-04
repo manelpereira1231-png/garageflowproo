@@ -29,6 +29,7 @@ import { MAX_MILEAGE } from "@/lib/sanityLimits";
 import { useTableState } from "@/hooks/useTableState";
 import { SortableHeader } from "@/components/table/SortableHeader";
 import { TablePagination } from "@/components/table/TablePagination";
+import { useShopCountry } from "@/hooks/useShopCountry";
 
 const FUEL_KEYS = ['fuel.gasoline', 'fuel.diesel', 'fuel.hybrid', 'fuel.electric', 'fuel.lpg'] as const;
 const FUEL_VALUES = ['Gasolina', 'Gasóleo', 'Híbrido', 'Elétrico', 'GPL'];
@@ -39,6 +40,8 @@ const defaultVehiclesFilters: VehiclesFilters = { search: "", make: "", clientId
 
 export default function Vehicles() {
   const { t, language } = useLanguage();
+  const { code: shopCountry } = useShopCountry();
+  const isBR = shopCountry === "BR";
   const [clients, setClients] = useState<any[]>([]);
   const [makeOptions, setMakeOptions] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
@@ -443,9 +446,9 @@ export default function Vehicles() {
       {!dataLoading && totalCount === 0 && !hasActiveFilters && (
         <div className="text-center py-10 sm:py-14 bg-card border-2 border-dashed border-primary/20 rounded-2xl mb-4">
           <span className="text-4xl sm:text-5xl block mb-3">🚗</span>
-          <h3 className="text-lg font-bold mb-1">{t('vehicles.empty') || 'Ainda sem veículos'}</h3>
+          <h3 className="text-lg font-bold mb-1">{t('vehicles.empty') || (isBR ? 'Ainda sem veículos' : 'Ainda sem viaturas')}</h3>
           <p className="text-sm text-muted-foreground mb-4 max-w-xs mx-auto">
-            {'Adicione o primeiro veículo de um cliente'}
+            {isBR ? 'Adicione o primeiro veículo de um cliente' : 'Adicione a primeira viatura de um cliente'}
           </p>
           <Button size="lg" onClick={() => setOpen(true)} className="px-6">
             <Plus className="w-4 h-4 mr-2" />{t('vehicles.new')}

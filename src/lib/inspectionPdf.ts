@@ -115,7 +115,7 @@ export function generateInspectionPDF({ listing, report, shop, seller }: ReportD
     doc.text(shop.name || "Oficina parceira", margin + 4, y + 12);
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
-    doc.text(`ID oficina: ${shop.id?.slice(0, 8).toUpperCase() || "—"}${shop.nif ? `  ·  NIF ${shop.nif}` : ""}`, margin + 4, y + 17);
+    doc.text(`ID oficina: ${shop.id?.slice(0, 8).toUpperCase() || "—"}${shop.nif ? `  ·  ${(((shop as any).country_code || report.inspection_country || "") + "").toUpperCase().startsWith("BR") || /bra[sz]il/i.test(report.inspection_country || "") ? "CNPJ" : "NIF"} ${shop.nif}` : ""}`, margin + 4, y + 17);
     if (report.technician_name) {
       doc.text(`Técnico responsável: ${report.technician_name}`, margin + 4, y + 21);
     }

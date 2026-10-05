@@ -59,9 +59,9 @@ export function ActivateMarketplace({ shopId }: { shopId: string | null }) {
       if (error) throw error;
       const s = (data as any)?.status;
       if (s === "pending") {
-        toast.success("Pedido enviado! A sua adesão está a aguardar aprovação da equipa GarageFlow.");
+        toast.success(br ? "Pedido enviado! Sua adesão está aguardando aprovação da equipe GarageFlow." : "Pedido enviado! A sua adesão está a aguardar aprovação da equipa GarageFlow.");
       } else if (s === "approved") {
-        toast.success("Marketplace já está activo para a sua oficina.");
+        toast.success(br ? "O Marketplace já está ativo para a sua oficina." : "Marketplace já está activo para a sua oficina.");
       }
       await refresh();
     } catch (e: any) {
@@ -83,7 +83,7 @@ export function ActivateMarketplace({ shopId }: { shopId: string | null }) {
         <CardTitle className="text-sm flex items-center gap-2">
           <ShoppingBag className="w-4 h-4" />
           GarageFlow Market
-          {active && <Badge variant="outline" className="ml-auto gap-1 border-primary/40 text-primary"><CheckCircle2 className="w-3 h-3" /> Activo</Badge>}
+          {active && <Badge variant="outline" className="ml-auto gap-1 border-primary/40 text-primary"><CheckCircle2 className="w-3 h-3" /> {br ? "Ativo" : "Activo"}</Badge>}
           {pending && <Badge variant="outline" className="ml-auto gap-1 border-amber-500/50 text-amber-600 dark:text-amber-400"><Loader2 className="w-3 h-3 animate-spin" /> Em análise</Badge>}
           {rejected && <Badge variant="outline" className="ml-auto border-destructive/40 text-destructive">Recusado</Badge>}
         </CardTitle>
@@ -92,7 +92,7 @@ export function ActivateMarketplace({ shopId }: { shopId: string | null }) {
         {active ? (
           <>
             <p className="text-sm text-muted-foreground">
-              A sua oficina está inscrita no Marketplace com <strong>a mesma conta do ERP</strong>. Pode receber pedidos de inspeção e vender viaturas ou serviços.
+              {br ? <>Sua oficina está inscrita no Marketplace com <strong>a mesma conta do ERP</strong>. Você pode receber pedidos de inspeção e vender veículos ou serviços.</> : <>A sua oficina está inscrita no Marketplace com <strong>a mesma conta do ERP</strong>. Pode receber pedidos de inspeção e vender viaturas ou serviços.</>}
             </p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => window.open("/market/dashboard", "_blank")}>
@@ -105,25 +105,25 @@ export function ActivateMarketplace({ shopId }: { shopId: string | null }) {
           </>
         ) : pending ? (
           <p className="text-sm text-muted-foreground">
-            O seu pedido de adesão ao Marketplace está a aguardar aprovação da equipa GarageFlow. Iremos notificá-lo assim que for revisto.
+            {br ? "Seu pedido de adesão ao Marketplace está aguardando aprovação da equipe GarageFlow. Avisaremos você assim que for analisado." : "O seu pedido de adesão ao Marketplace está a aguardar aprovação da equipa GarageFlow. Iremos notificá-lo assim que for revisto."}
           </p>
         ) : (
           <>
             {rejected && (
               <div className="text-xs rounded-md border border-destructive/30 bg-destructive/5 text-destructive p-2">
-                Pedido anterior recusado{rejectNotes ? `: ${rejectNotes}` : "."} Pode voltar a submeter.
+                Pedido anterior recusado{rejectNotes ? `: ${rejectNotes}` : "."} {br ? "Você pode enviar novamente." : "Pode voltar a submeter."}
               </div>
             )}
             <p className="text-sm text-muted-foreground">
-              Peça adesão ao Marketplace para receber pedidos de inspeção e vender viaturas ou serviços — sem criar nova conta. O pedido é revisto pela equipa GarageFlow antes de ser ativado.
+              {br ? "Peça adesão ao Marketplace para receber pedidos de inspeção e vender veículos ou serviços — sem criar nova conta. O pedido é analisado pela equipe GarageFlow antes de ser ativado." : "Peça adesão ao Marketplace para receber pedidos de inspeção e vender viaturas ou serviços — sem criar nova conta. O pedido é revisto pela equipa GarageFlow antes de ser ativado."}
             </p>
             <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
-              <li>Inspeções pagas por particulares e stands</li>
+              <li>{br ? "Inspeções pagas por particulares e lojas de veículos" : "Inspeções pagas por particulares e stands"}</li>
               <li>Página pública da oficina no Market</li>
               <li>Aprovação manual pelo administrador comercial</li>
             </ul>
             <Button onClick={handleActivate} disabled={working || !shopId} size="sm">
-              {working ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> A submeter…</> : "Pedir adesão ao Marketplace"}
+              {working ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {br ? "Enviando…" : "A submeter…"}</> : "Pedir adesão ao Marketplace"}
             </Button>
           </>
         )}

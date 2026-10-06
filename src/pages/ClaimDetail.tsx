@@ -132,10 +132,10 @@ export default function ClaimDetail() {
     setLinks(lk.data || []);
     if (c.data.client_id) {
       const q = await supabase.from("quotes")
-        .select("id, number, total, status, date")
+        .select("id, number, total, status, date, vehicle_id")
         .eq("shop_id", activeShopId).eq("client_id", c.data.client_id)
         .order("created_at", { ascending: false }).limit(50);
-      setQuotes(q.data || []);
+      setQuotes((q.data || []).filter((quote) => !c.data.vehicle_id || quote.vehicle_id === c.data.vehicle_id || quote.id === c.data.quote_id));
       const [w, iv] = await Promise.all([
         supabase.from("work_orders").select("id, number, status, total, vehicle_id")
           .eq("shop_id", activeShopId).eq("client_id", c.data.client_id).order("created_at", { ascending: false }).limit(50),
@@ -464,7 +464,7 @@ export default function ClaimDetail() {
             </div>
             <p className="text-sm text-muted-foreground mt-1">
               {[
-                claim.vehicles ? [claim.vehicles.make, claim.vehicles.model].filter(Boolean).join(" ") : null,
+                claim.vehicles ? [claim.vehicles.make, claim.vehicles.model, claim.vehicles.version].filter(Boolean).join(" ") : null,
                 claim.vehicles?.plate,
                 clientDisplayName(claim.clients),
                 insurer?.name,

@@ -672,6 +672,7 @@ export type Database = {
         Row: {
           assigned_to: string | null
           auto_kind: string | null
+          claim_id: string | null
           client_email: string | null
           client_id: string | null
           client_name: string | null
@@ -693,6 +694,7 @@ export type Database = {
         Insert: {
           assigned_to?: string | null
           auto_kind?: string | null
+          claim_id?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string | null
@@ -714,6 +716,7 @@ export type Database = {
         Update: {
           assigned_to?: string | null
           auto_kind?: string | null
+          claim_id?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string | null
@@ -733,6 +736,13 @@ export type Database = {
           vehicle_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "appointments_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "appointments_client_id_fkey"
             columns: ["client_id"]

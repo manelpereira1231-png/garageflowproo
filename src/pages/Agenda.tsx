@@ -39,6 +39,7 @@ interface Appointment {
   client_email: string | null;
   created_at: string;
   source?: string | null;
+  claim_id?: string | null;
 }
 
 interface CatalogItem { id: string; name: string; default_time: number; default_price: number }
@@ -900,6 +901,11 @@ export default function Agenda() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-3">
+                    {app.claim_id && (
+                      <Button size="sm" variant="outline" className="h-10" asChild>
+                        <a href={`/claims/${app.claim_id}`}>Abrir sinistro</a>
+                      </Button>
+                    )}
                     {app.status === "scheduled" && (
                       <Button size="sm" variant="outline" className="h-10" onClick={() => updateStatus(app.id, "confirmed")}>
                         <CalendarCheck className="w-4 h-4 mr-1" />{t('agenda.confirmed')}

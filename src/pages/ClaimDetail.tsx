@@ -478,7 +478,7 @@ export default function ClaimDetail() {
               <Button className="w-full min-h-[44px]" onClick={() => persist()} disabled={saving}><Save className="w-4 h-4 mr-2" />{saving ? "A guardar…" : "Guardar"}</Button>
               <Button variant="link" className="px-0 min-h-[44px]" aria-expanded={showMore} aria-controls="claim-more-details" onClick={() => setShowMore((v) => !v)}>
                 {showMore ? "Esconder detalhes" : "Mais detalhes (opcional)"}
-              </button>
+               </Button>
               {!showMore && <p className="text-xs text-muted-foreground">Por defeito ficam escondidos: esta informação já está nos documentos anexados.</p>}
             </CardContent>
           </Card>

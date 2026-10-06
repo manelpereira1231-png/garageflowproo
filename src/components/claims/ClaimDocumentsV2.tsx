@@ -111,7 +111,7 @@ export function ClaimDocumentsV2({ claimId, shopId, docs, isBR, onChanged }: { c
               return (
                 <Button variant="ghost" key={cat} type="button" onClick={() => setViewer(cat)} className="block p-0 h-auto overflow-hidden rounded-[14px] border border-border text-left hover:border-primary/60">
                   <div className="flex aspect-[4/3] items-center justify-center bg-muted">
-                    {img ? <img src={urlOf(img)} alt={docLabel(cat, isBR)} className="h-full w-full object-cover" loading="lazy" /> : <FileText className="h-8 w-8 text-muted-foreground" />}
+                     {img && urlOf(img) ? <img src={urlOf(img)} alt={docLabel(cat, isBR)} className="h-full w-full object-cover" loading="lazy" /> : <FileText className="h-8 w-8 text-muted-foreground" />}
                   </div>
                   <div className="p-2">
                     <p className="text-sm font-medium truncate">{docLabel(cat, isBR)}</p>
@@ -145,13 +145,13 @@ export function ClaimDocumentsV2({ claimId, shopId, docs, isBR, onChanged }: { c
           <div className="space-y-4">
             {viewing.map((d) => (
               <div key={d.id} className="space-y-2">
-                {isImage(d) ? <img src={urlOf(d)} alt={d.file_name} className="w-full rounded-lg object-contain max-h-[75vh] bg-muted" /> : (
+                 {isImage(d) && urlOf(d) ? <img src={urlOf(d)} alt={d.file_name} className="w-full rounded-lg object-contain max-h-[75vh] bg-muted" /> : (
                   <div className="flex items-center gap-2 rounded-lg border border-border p-3"><FileText className="h-5 w-5" /><span className="truncate">{d.file_name}</span></div>
                 )}
                 <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                   <span>{new Date(d.created_at).toLocaleString(loc)}</span>
                   <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" className="min-h-[44px]" asChild><a href={urlOf(d)} target="_blank" rel="noreferrer"><Download className="h-4 w-4 mr-1" />Abrir</a></Button>
+                     {urlOf(d) && <Button size="sm" variant="ghost" className="min-h-[44px]" asChild><a href={urlOf(d)} target="_blank" rel="noreferrer"><Download className="h-4 w-4 mr-1" />Abrir</a></Button>}
                     <Button size="sm" variant="ghost" className="min-h-[44px]" onClick={() => remove(d.id)}><Trash2 className="h-4 w-4 mr-1" />Apagar</Button>
                   </div>
                 </div>

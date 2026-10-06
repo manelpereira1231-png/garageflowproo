@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { generatePdf } from "@/lib/pdfGenerator";
 import { clientDisplayName } from "@/lib/clientDisplayName";
 
-const origin = () => window.location.origin;
+const origin = () => "https://garageflow.pt";
 
 /** Link de acompanhamento do cliente (reutiliza o existente se ainda for válido). */
 export async function getClientLink(claim: any, shopId: string): Promise<string | null> {

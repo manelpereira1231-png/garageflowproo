@@ -61,7 +61,7 @@ export default function ClaimDetail() {
   const [fin, setFin] = useState<{ invoices: any[]; payments: any[] } | null>(null);
   const loadFin = async () => {
     if (!id) return;
-    const { data: iv } = await (supabase as any).from("invoices").select("id, number, total, status, client_id, client_name").eq("claim_id", id).order("created_at");
+    const { data: iv } = await (supabase as any).from("invoices").select("id, number, total, status, client_id, clients(name, company)").eq("claim_id", id).order("created_at");
     const ids = (iv || []).map((i: any) => i.id);
     const { data: py } = ids.length ? await supabase.from("payments").select("amount, invoice_id").in("invoice_id", ids) : { data: [] as any[] };
     setFin({ invoices: iv || [], payments: py || [] });
@@ -524,7 +524,7 @@ export default function ClaimDetail() {
                   <div className="space-y-1">
                     {fin.invoices.map((i: any) => (
                       <button key={i.id} type="button" onClick={() => navigate(`/invoices/${i.id}`)} className="w-full flex justify-between gap-2 rounded-md border border-border px-3 py-2 text-sm min-h-[44px] hover:border-primary/50">
-                        <span>{i.number || "—"} · {i.client_id === claim.client_id ? "Cliente" : (i.client_name || "Outra entidade")}</span>
+                        <span>{i.number || "—"} · {i.client_id === claim.client_id ? "Cliente" : (i.clients?.company || i.clients?.name || "Outra entidade")}</span>
                         <span className={i.status === "cancelled" ? "line-through text-muted-foreground" : ""}>{formatMoney(Number(i.total || 0))}</span>
                       </button>
                     ))}

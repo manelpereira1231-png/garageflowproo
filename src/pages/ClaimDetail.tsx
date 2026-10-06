@@ -485,13 +485,14 @@ export default function ClaimDetail() {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className="min-h-[44px]" onClick={() => setHistoryOpen(true)}><Clock className="w-4 h-4 mr-2" />Ver histórico</Button>
-          <Button variant="outline" className="min-h-[44px]" onClick={sendExpertPackage}><Send className="w-4 h-4 mr-2" />Enviar pacote ao perito</Button>
-          <Button className="min-h-[44px]" onClick={openClientView}><Eye className="w-4 h-4 mr-2" />Ver o que o cliente vê</Button>
+        <div className="grid grid-cols-[1fr_auto] sm:flex sm:flex-wrap gap-2">
+          <Button className="min-h-[44px] col-span-2 sm:order-3" onClick={openClientView}><Eye className="w-4 h-4 mr-2" />Ver o que o cliente vê</Button>
+          <Button variant="outline" className="min-h-[44px] sm:order-2" onClick={sendExpertPackage}><Send className="w-4 h-4 mr-2" />Enviar pacote ao perito</Button>
+          <Button variant="outline" className="min-h-[44px] hidden sm:inline-flex sm:order-1" onClick={() => setHistoryOpen(true)}><Clock className="w-4 h-4 mr-2" />Ver histórico</Button>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px]" aria-label="Mais opções"><MoreHorizontal className="w-5 h-5" /></Button></DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild><Button variant="outline" size="icon" className="min-h-[44px] min-w-[44px] sm:order-4" aria-label="Mais opções"><MoreHorizontal className="w-5 h-5" /></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem className="sm:hidden" onClick={() => setHistoryOpen(true)}>Ver histórico</DropdownMenuItem>
               <DropdownMenuItem onClick={() => { setOverrideStatus(claim.status); setOverrideOpen(true); }}>Corrigir estado manualmente</DropdownMenuItem>
               {claim.phase_override && <DropdownMenuItem onClick={() => applyOverride(null)}>Voltar ao cálculo automático</DropdownMenuItem>}
             </DropdownMenuContent>
@@ -509,6 +510,10 @@ export default function ClaimDetail() {
           {activeShopId && !isLoss && <ClaimSupplements claim={claim} shopId={activeShopId} sups={sups} quotes={quotes} isBR={IS_BR} onChanged={load} />}
           {activeShopId && !isLoss && <ClaimSplitBilling claim={claim} shopId={activeShopId} sups={sups} isBR={IS_BR} onChanged={() => { void loadFin(); }} />}
           {activeShopId && isLoss && <ClaimTotalLoss claim={claim} shopId={activeShopId} isBR={IS_BR} onSaved={load} />}
+          <div className={`grid gap-5 ${IS_BR ? "" : "xl:grid-cols-2"} items-start`}>
+            {!IS_BR && <ClaimDeadlines claim={claim} sups={sups} onSaved={load} />}
+            <ClaimImmobilization claim={claim} isBR={IS_BR} onSaved={load} />
+          </div>
         </div>
         <div className="space-y-5">
           <Card className="rounded-[14px]">
@@ -533,8 +538,6 @@ export default function ClaimDetail() {
               {!showMore && <p className="text-xs text-muted-foreground">Por defeito ficam escondidos: esta informação já está nos documentos anexados.</p>}
             </CardContent>
           </Card>
-          {!IS_BR && <ClaimDeadlines claim={claim} sups={sups} onSaved={load} />}
-          <ClaimImmobilization claim={claim} isBR={IS_BR} onSaved={load} />
           {activeShopId && <ClaimClientInformed claim={claim} shopId={activeShopId} isBR={IS_BR} onSaved={load} />}
         </div>
       </div>

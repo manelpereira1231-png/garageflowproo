@@ -288,11 +288,11 @@ export default function Claims() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+      <div className="flex gap-2 overflow-x-auto snap-x pb-1 sm:grid sm:grid-cols-4 lg:grid-cols-7 sm:gap-3 sm:overflow-visible">
         {counters.map((k) => (
-          <Card key={k.key} className={`cursor-pointer hover:border-primary/50 transition-colors rounded-[14px] ${statusFilter === k.key ? "border-primary" : ""} ${k.danger && k.value > 0 ? "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400" : ""}`}
+          <Card key={k.key} className={`cursor-pointer hover:border-primary/50 transition-colors rounded-[14px] shrink-0 w-[118px] sm:w-auto snap-start ${statusFilter === k.key ? "border-primary" : ""} ${k.danger && k.value > 0 ? "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400" : ""}`}
             onClick={() => setStatusFilter(statusFilter === k.key ? "all" : k.key)}>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <p className="text-2xl font-bold">{k.value}</p>
               <p className="text-xs text-muted-foreground">{k.label}</p>
             </CardContent>
@@ -403,7 +403,7 @@ export default function Claims() {
                       <p className="text-xs flex items-start gap-1">{(info[c.id]?.overdue || info[c.id]?.dueSoon) && <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${info[c.id]?.overdue ? "text-destructive" : "text-amber-500"}`} />}<span>Próximo passo: {info[c.id]?.next}</span></p>
                       <p className="text-sm">{c.insurers?.name || "Sem seguradora"}</p>
                       <p className="text-xs text-muted-foreground">
-                        {clientDisplayName(c.clients)} · {c.vehicles?.plate}
+                        {[clientDisplayName(c.clients), c.vehicles?.plate].filter(Boolean).join(" · ")}
                       </p>
                     </CardContent>
                   </Card>

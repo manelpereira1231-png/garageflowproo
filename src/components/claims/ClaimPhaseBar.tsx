@@ -12,12 +12,12 @@ export function ClaimPhaseBar({ outcome, phase, cancelled, subs, next, onOutcome
   const cur = list.indexOf(phase);
   return (
     <Card className="rounded-[14px]">
-      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 space-y-0 pb-3">
         <CardTitle className="text-base">Onde está o processo</CardTitle>
-        <div className="inline-flex rounded-[12px] border border-border p-1" role="tablist" aria-label="Tipo de processo">
+        <div className="flex sm:inline-flex rounded-[12px] border border-border p-1" role="tablist" aria-label="Tipo de processo">
           {(["reparacao", "perda_total"] as const).map((o) => (
             <button key={o} type="button" role="tab" aria-selected={outcome === o} onClick={() => outcome !== o && onOutcome(o)}
-              className={`px-3 min-h-[40px] rounded-[9px] text-sm font-medium ${outcome === o ? (o === "perda_total" ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground") : "text-muted-foreground"}`}>
+              className={`flex-1 sm:flex-none whitespace-nowrap px-4 min-h-[40px] rounded-[9px] text-sm font-medium ${outcome === o ? (o === "perda_total" ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground") : "text-muted-foreground"}`}>
               {o === "reparacao" ? "Reparar" : "Perda total"}
             </button>
           ))}

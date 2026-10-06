@@ -53,7 +53,7 @@ export async function createExpertLink(claim: any, shopId: string, supplementId:
           clientName: clientDisplayName(q.clients), clientEmail: q.clients?.email, clientPhone: q.clients?.phone, clientNif: q.clients?.nif,
           vehicleMake: claim.vehicles?.make || "", vehicleModel: [claim.vehicles?.model, claim.vehicles?.version].filter(Boolean).join(" "), vehiclePlate: claim.vehicles?.plate || "",
           lines: Array.isArray(q.lines) ? q.lines : [], subtotal: Number(q.subtotal || 0), vatTotal: Number(q.vat_total || 0), total: Number(q.total || 0), profit: Number(q.profit || 0),
-          currency: shop.currency || (shop.country_code === "BR" ? "BRL" : "EUR"), notes: q.notes, laborHours: q.labor_hours, laborRate: Number(shop.labor_rate || 0),
+          currency: shop.currency || (shop.country_code === "BR" ? "BRL" : "EUR"), notes: [q.notes, claim.vehicles?.year ? `Ano: ${claim.vehicles.year}` : null, claim.vehicles?.vin ? `VIN / Chassis: ${claim.vehicles.vin}` : null].filter(Boolean).join("\n"), laborHours: q.labor_hours, laborRate: Number(shop.labor_rate || 0),
         }, false);
         attachments.push({ filename: `${q.number}.pdf`, content: doc.output("datauristring").split(",")[1] });
       }

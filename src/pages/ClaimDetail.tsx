@@ -489,7 +489,7 @@ export default function ClaimDetail() {
       </div>
 
       {/* 2. Onde está o processo */}
-      <ClaimPhaseBar outcome={isLoss ? "perda_total" : "reparacao"} phase={phase} cancelled={claim.status === "cancelled"} subs={subs} next={nextText} onOutcome={changeOutcome} isBR={IS_BR} action={<Button className="min-h-[44px] w-full sm:w-auto" onClick={() => openSection(focusSection)}>{focusLabel}</Button>} />
+      <ClaimPhaseBar outcome={isLoss ? "perda_total" : "reparacao"} phase={phase} cancelled={claim.status === "cancelled"} subs={subs} next={nextText} onOutcome={changeOutcome} isBR={IS_BR} action={<Button className="min-h-[44px] w-full sm:w-auto" onClick={() => !isLoss && phase === "autorizacao" && sups.some(isPendingSup) ? void sendExpertPackage() : openSection(focusSection)}>{!isLoss && phase === "autorizacao" && sups.some(isPendingSup) ? "Preparar pedido ao perito" : focusLabel}</Button>} />
 
       {/* 3. Duas colunas */}
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">

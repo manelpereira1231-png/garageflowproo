@@ -92,7 +92,7 @@ export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged 
     <Card className="rounded-[14px]">
       <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 space-y-0">
         <CardTitle className="text-base">Orçamento e autorizações</CardTitle>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-1 sm:flex gap-2">
           {!hasInitial && <Button variant="outline" className="min-h-[44px]" onClick={() => openNew("inicial")}>Registar orçamento inicial</Button>}
           <Button className="min-h-[44px]" onClick={() => openNew("adicional")}><Plus className="h-4 w-4 mr-1" />Pedir adicional</Button>
         </div>

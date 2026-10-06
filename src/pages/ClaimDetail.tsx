@@ -96,6 +96,7 @@ export default function ClaimDetail() {
   const [members, setMembers] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [persistedProcess, setPersistedProcess] = useState<{ claim: any; sups: Sup[] } | null>(null);
 
   const load = useCallback(async () => {
     if (!id || !activeShopId) return;
@@ -143,6 +144,7 @@ export default function ClaimDetail() {
       for (const r of mem as any[]) if (r.user_id) m[r.user_id] = r.email || "";
       setMembers(m);
     }
+    setPersistedProcess({ claim: c.data, sups: sp.data || [] });
     setLoading(false);
   }, [id, activeShopId, navigate]);
 
@@ -211,7 +213,7 @@ export default function ClaimDetail() {
       amount_invoiced: num(claim.amount_invoiced), amount_paid_insurer: num(claim.amount_paid_insurer),
       amount_client: num(claim.amount_client), amount_pending: num(claim.amount_pending),
     };
-    const { error } = await supabase.from("claims").update(payload).eq("id", claim.id);
+    const { error } = await supabase.from("claims").update(payload).eq("id", claim.id).eq("shop_id", activeShopId);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Sinistro guardado");
@@ -245,12 +247,20 @@ export default function ClaimDetail() {
 
   const observedPhase = useRef<{ id: string; phase: string } | null>(null);
   useEffect(() => {
-    if (!claim || !fin) return;
-    const current = claim.outcome === "perda_total" || claim.total_loss ? computeTotalLossPhase(claim) : repairPhase;
+    if (!persistedProcess || !fin) return;
+    const saved = persistedProcess.claim;
+    const live = fin.invoices.filter((i: any) => !["cancelled", "draft"].includes(i.status));
+    const billed = live.reduce((t: number, i: any) => t + Number(i.total || 0), 0);
+    const paid = fin.payments.filter((p: any) => live.some((i: any) => i.id === p.invoice_id)).reduce((t: number, p: any) => t + Number(p.amount || 0), 0);
+    const current = saved.outcome === "perda_total" || saved.total_loss ? computeTotalLossPhase(saved) : computeRepairPhase(saved, {
+      sups: persistedProcess.sups,
+      woDone: ["completed", "done", "delivered", "ready", "invoiced"].includes(String(saved.work_orders?.status || "")),
+      billedAndPaid: billed > 0 && paid >= billed - 0.01,
+    });
     const prev = observedPhase.current;
-    observedPhase.current = { id: claim.id, phase: current };
-    if (prev?.id === claim.id && prev.phase !== current) void notifyClient(current, sups.some(isPendingSup));
-  }, [claim?.id, claim?.outcome, claim?.client_decision, repairPhase, fin, sups]);
+    observedPhase.current = { id: saved.id, phase: current };
+    if (prev?.id === saved.id && prev.phase !== current && saved.auto_notify_client) void notifyClient(current, persistedProcess.sups.some(isPendingSup));
+  }, [persistedProcess, fin]);
 
   const notifyClient = async (ph: string, pendingSup: boolean) => {
     if (!claim?.auto_notify_client || !activeShopId) return;

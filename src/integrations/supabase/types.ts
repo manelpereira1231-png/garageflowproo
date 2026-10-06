@@ -1943,6 +1943,60 @@ export type Database = {
         }
         Relationships: []
       }
+      claim_billing_lines: {
+        Row: {
+          claim_id: string
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string | null
+          payer: string
+          quantity: number
+          shop_id: string
+          unit_price: number
+          vat_rate: number | null
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id?: string | null
+          payer?: string
+          quantity?: number
+          shop_id: string
+          unit_price?: number
+          vat_rate?: number | null
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string | null
+          payer?: string
+          quantity?: number
+          shop_id?: string
+          unit_price?: number
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_billing_lines_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_billing_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claim_communications: {
         Row: {
           attachments: Json

@@ -35,9 +35,8 @@ export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged 
 
   const syncClaim = async (list: Sup[]) => {
     const total = authorizedTotal(list);
-    const anyDecided = list.some((s) => s.status === "approved" || s.status === "partial");
-    await supabase.from("claims").update({
-      amount_approved: anyDecided ? total : claim.amount_approved,
+        await supabase.from("claims").update({
+      amount_approved: total,
       amount_requested: list.reduce((t, s) => t + Number(s.amount_requested || 0), 0) || claim.amount_requested,
     } as any).eq("id", claim.id);
   };
@@ -50,14 +49,16 @@ export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged 
 
   const save = async () => {
     const a = Number(f.amount);
-    if (!f.description.trim() || !(a > 0)) { toast.error("Indique a descrição e o valor."); return; }
+    if (busy || !open) return;
+    if (!f.description.trim() || !Number.isFinite(a) || !(a > 0)) { toast.error("Indique a descrição e o valor."); return; }
     setBusy(true);
     const number = open === "inicial" ? 0 : Math.max(0, ...sups.filter((s) => s.type === "adicional").map((s) => s.number || 0)) + 1;
-    const { error } = await T().insert({
+    const { data: inserted, error } = await T().insert({
       claim_id: claim.id, shop_id: shopId, type: open, number, description: f.description.trim(),
       amount_requested: a, quote_id: f.quote_id || null,
-    });
-    if (!error && files.length) await uploadClaimFiles(files, { shopId, claimId: claim.id, category: "hidden_damage" });
+    }).select("id").single();
+    if (!error && files.length) await uploadClaimFiles(files, { shopId, claimId: claim.id, category: "hidden_damage", supplementId: inserted?.id });
+    if (!error && open === "inicial" && f.quote_id && !claim.quote_id) await supabase.from("claims").update({ quote_id: f.quote_id }).eq("id", claim.id).eq("shop_id", shopId);
     if (!error) await supabase.from("claim_events").insert({ claim_id: claim.id, shop_id: shopId, kind: "note", description: open === "inicial" ? `Autorização inicial pedida (${formatMoney(a)})` : `Adicional #${number} pedido: ${f.description.trim()} (${formatMoney(a)})` });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
@@ -81,7 +82,7 @@ export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged 
 
   const sendToExpert = async (s: Sup) => {
     const r = await createExpertLink(claim, shopId, s.id);
-    if (r) { await T().update({ status: "no_perito" }).eq("id", s.id); onChanged(); }
+    if (r) onChanged();
   };
 
   const totalReq = sups.reduce((t, s) => t + Number(s.amount_requested || 0), 0);
@@ -90,9 +91,9 @@ export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged 
 
   return (
     <Card className="rounded-[14px]">
-      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 space-y-0">
-        <CardTitle className="text-base">Orçamento e autorizações</CardTitle>
-        <div className="grid grid-cols-1 sm:flex gap-2">
+      <CardHeader className="flex flex-col gap-3 space-y-0">
+        <CardTitle className="text-base min-w-0 break-normal">Orçamento e autorizações</CardTitle>
+        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-2">
           {!hasInitial && <Button variant="outline" className="min-h-[44px]" onClick={() => openNew("inicial")}>Registar orçamento inicial</Button>}
           <Button className="min-h-[44px]" onClick={() => openNew("adicional")}><Plus className="h-4 w-4 mr-1" />Pedir adicional</Button>
         </div>
@@ -102,23 +103,23 @@ export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged 
           <p className="text-sm text-muted-foreground">Registe o orçamento inicial enviado à seguradora. Os danos encontrados depois entram como adicionais.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="claim-authorization-table w-full text-sm">
               <thead><tr className="text-left text-xs text-muted-foreground">
                 <th className="py-2 pr-2 font-medium">Pedido</th><th className="py-2 px-2 font-medium text-right">Valor pedido</th>
                 <th className="py-2 px-2 font-medium text-right">Valor autorizado</th><th className="py-2 pl-2 font-medium">Estado</th>
               </tr></thead>
               <tbody>
                 {[...sups].sort((a, b) => (a.type === "inicial" ? -1 : b.type === "inicial" ? 1 : (a.number || 0) - (b.number || 0))).map((s) => (
-                  <tr key={s.id} className={`border-t border-border ${isPendingSup(s) ? "bg-amber-500/10" : ""}`}>
+                  <tr key={s.id} className={`border-t border-border ${isPendingSup(s) ? "claim-tone-warning" : ""}`}>
                     <td className="py-2 pr-2">
                       <p className="font-medium">{s.type === "inicial" ? "Orçamento inicial" : `Adicional #${s.number ?? ""}`}{qNum((s as any).quote_id) ? ` · ${qNum((s as any).quote_id)}` : ""}</p>
                       <p className="text-xs text-muted-foreground">{s.description}</p>
                     </td>
-                    <td className="py-2 px-2 text-right whitespace-nowrap">{formatMoney(Number(s.amount_requested))}</td>
-                    <td className="py-2 px-2 text-right whitespace-nowrap">{s.amount_approved != null ? formatMoney(Number(s.amount_approved)) : "—"}</td>
+                    <td data-label="Valor pedido" className="py-2 px-2 text-right whitespace-nowrap">{formatMoney(Number(s.amount_requested))}</td>
+                    <td data-label="Valor autorizado" className="py-2 px-2 text-right whitespace-nowrap">{s.amount_approved != null ? formatMoney(Number(s.amount_approved)) : "—"}</td>
                     <td className="py-2 pl-2">
                       <div className="flex flex-wrap items-center gap-1">
-                        <Badge variant={s.status === "rejected" ? "destructive" : isPendingSup(s) ? "outline" : "secondary"} className={s.status === "no_perito" ? "border-amber-500 text-amber-600 dark:text-amber-400" : ""}>{STATUS[s.status] || s.status}</Badge>
+                        <Badge variant={s.status === "rejected" ? "destructive" : isPendingSup(s) ? "outline" : "secondary"} className={s.status === "no_perito" ? "claim-tone-warning" : ""}>{STATUS[s.status] || s.status}</Badge>
                         {isPendingSup(s) && (
                           <>
                             {s.status === "pending" && <Button size="sm" variant="ghost" className="min-h-[44px]" onClick={() => sendToExpert(s)}><Send className="h-4 w-4 mr-1" />Perito</Button>}
@@ -143,7 +144,7 @@ export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged 
       </CardContent>
 
       <Dialog open={!!open} onOpenChange={(o) => !o && !busy && setOpen(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="claims-surface max-w-md max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{open === "inicial" ? "Orçamento inicial" : "Pedir adicional"}</DialogTitle>
             <DialogDescription>{open === "inicial" ? "Valor enviado à seguradora para autorização." : "Danos encontrados durante a reparação que precisam de nova autorização."}</DialogDescription>
@@ -170,7 +171,7 @@ export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged 
       </Dialog>
 
       <Dialog open={!!decide} onOpenChange={(o) => !o && setDecide(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="claims-surface max-w-md max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Decisão da seguradora</DialogTitle>
             <DialogDescription>{decide?.type === "inicial" ? "Orçamento inicial" : `Adicional #${decide?.number}`} · pedido {decide ? formatMoney(Number(decide.amount_requested)) : ""}</DialogDescription>

@@ -531,3 +531,55 @@ summary {
 .sticky-thead thead {
   background-color: hsl(var(--card));
 }
+
+/* Sinistros: scoped tokens preserve all other ERP and Market pages. */
+.claims-surface {
+  --claim-complete-bg: 138 76% 97%;
+  --claim-complete: 142 72% 29%;
+  --claim-current-bg: 48 100% 96%;
+  --claim-current: 38 92% 50%;
+  --claim-future-bg: 210 20% 98%;
+  --claim-danger-bg: 0 86% 97%;
+  --claim-danger: 0 74% 42%;
+  --claim-info-bg: 204 100% 97%;
+  --claim-info: 201 96% 32%;
+  --background: 220 14% 96%;
+  --primary: 38 92% 50%;
+  --primary-foreground: 221 39% 11%;
+  --radius: 0.875rem;
+  min-width: 0;
+  letter-spacing: 0;
+}
+.dark .claims-surface {
+  --claim-complete-bg: 142 30% 13%;
+  --claim-complete: 142 64% 68%;
+  --claim-current-bg: 38 35% 13%;
+  --claim-future-bg: 220 20% 14%;
+  --claim-danger-bg: 0 35% 14%;
+  --claim-danger: 0 85% 72%;
+  --claim-info-bg: 201 35% 14%;
+  --claim-info: 201 90% 72%;
+  --background: 220 25% 7%;
+}
+.claims-surface h1, .claims-surface h2, .claims-surface h3 { letter-spacing: 0; }
+.claims-surface button:not([role="switch"]):not([role="checkbox"]), .claims-surface [role="tab"], .claims-surface input:not([type="checkbox"]), .claims-surface [role="combobox"] { min-height: 44px; }
+.claims-surface button { white-space: normal; height: auto; overflow-wrap: normal; }
+.claims-surface input { min-width: 0; }
+.claims-surface [data-claim-panel] { border-radius: 14px; }
+.claim-tone-success { background: hsl(var(--claim-complete-bg)); color: hsl(var(--claim-complete)); border-color: hsl(var(--claim-complete) / .35); }
+.claim-tone-warning { background: hsl(var(--claim-current-bg)); color: hsl(var(--foreground)); border-color: hsl(var(--claim-current)); }
+.claim-tone-danger { background: hsl(var(--claim-danger-bg)); color: hsl(var(--claim-danger)); border-color: hsl(var(--claim-danger) / .4); }
+.claim-tone-info { background: hsl(var(--claim-info-bg)); color: hsl(var(--claim-info)); border-color: hsl(var(--claim-info) / .4); }
+.claim-phase-future { background: hsl(var(--claim-future-bg)); }
+.claim-dot-success { background: hsl(var(--claim-complete)); color: hsl(var(--card)); }
+.claim-dot-warning { background: hsl(var(--claim-current)); color: hsl(var(--primary-foreground)); }
+.claim-dot-danger { background: hsl(var(--claim-danger)); color: hsl(var(--card)); }
+.claims-surface .claim-billing-option { border-radius: 0; border-width: 0 0 0 3px; }
+@media (max-width: 640px) {
+  .claims-surface [role="dialog"] { max-height: 90dvh; overflow-y: auto; }
+  .claim-authorization-table thead { display: none; }
+  .claim-authorization-table tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 12px 0; gap: 6px; }
+  .claim-authorization-table td { padding: 4px 8px; text-align: left; white-space: normal; }
+  .claim-authorization-table td:first-child, .claim-authorization-table td:last-child { grid-column: 1 / -1; }
+  .claim-authorization-table td[data-label]::before { content: attr(data-label); display: block; font-size: 12px; color: hsl(var(--muted-foreground)); }
+}

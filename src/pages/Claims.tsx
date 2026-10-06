@@ -275,22 +275,22 @@ export default function Claims() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="claims-surface space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="page-title flex items-center gap-2">
-            <ShieldAlert className="w-6 h-6 text-primary" /> Processos de Seguradoras
+            <ShieldAlert className="w-6 h-6 text-primary" /> Sinistros
           </h1>
-          <p className="text-sm text-muted-foreground">Sinistros, peritagens, aprovações e comunicações.</p>
+          
         </div>
-        <Button onClick={() => { setForm({ ...emptyClaim }); setInsSel(null); setAddVehicle(false); setOpen(true); }} className="min-h-[44px]">
+        <Button onClick={() => { setForm({ ...emptyClaim }); setInsSel(null); setAddVehicle(false); setNewPhotos([]); setNewMore(false); setOpen(true); }} className="min-h-[44px]">
           <Plus className="w-4 h-4 mr-2" /> Novo Sinistro
         </Button>
       </div>
 
       <div className="flex gap-2 overflow-x-auto snap-x pb-1 sm:grid sm:grid-cols-4 lg:grid-cols-7 sm:gap-3 sm:overflow-visible">
         {counters.map((k) => (
-          <Card key={k.key} className={`cursor-pointer hover:border-primary/50 transition-colors rounded-[14px] shrink-0 w-[118px] sm:w-auto snap-start ${statusFilter === k.key ? "border-primary" : ""} ${k.danger && k.value > 0 ? "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400" : ""}`}
+          <Card key={k.key} className={`cursor-pointer hover:border-primary/50 transition-colors rounded-[14px] shrink-0 w-[118px] sm:w-auto snap-start ${statusFilter === k.key ? "border-primary" : ""} ${k.danger && k.value > 0 ? "claim-tone-danger" : ""}`}
             onClick={() => setStatusFilter(statusFilter === k.key ? "all" : k.key)}>
             <CardContent className="p-3 sm:p-4">
               <p className="text-2xl font-bold">{k.value}</p>
@@ -307,7 +307,7 @@ export default function Claims() {
         </TabsList>
 
         <TabsContent value="claims" className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:flex gap-2">
             <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input className="pl-9" placeholder="SIN, matrícula, cliente, seguradora, processo, ORC, OS…"
@@ -318,7 +318,9 @@ export default function Claims() {
               <SelectContent>
                 <SelectItem value="all">Todos os estados</SelectItem>
                 <SelectItem value="active">Ativos</SelectItem>
-                <SelectItem value="late">Atrasados</SelectItem>
+                <SelectItem value="late">Ações em atraso</SelectItem>
+                {!IS_BR && <SelectItem value="overdue">Prazos em atraso</SelectItem>}
+                {REPAIR_PHASES.map((ph) => <SelectItem key={ph} value={`p:${ph}`}>{ph === "faturacao" && IS_BR ? "Nota fiscal" : REPAIR_PHASE_LABELS[ph]}</SelectItem>)}
                 {CLAIM_GROUPS.map((g) => <SelectItem key={g.key} value={"g:" + g.key}>Grupo: {g.label}</SelectItem>)}
                 {CLAIM_STATUSES.map((s) => <SelectItem key={s} value={s}>{CLAIM_STATUS_LABELS[s]}</SelectItem>)}
               </SelectContent>
@@ -377,7 +379,7 @@ export default function Claims() {
                         </TableCell>
                         <TableCell className="text-sm max-w-[260px]">
                           <span className="inline-flex items-start gap-1.5">
-                            {(info[c.id]?.overdue || info[c.id]?.dueSoon) && <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${info[c.id]?.overdue ? "text-destructive" : "text-amber-500"}`} aria-label={info[c.id]?.overdue ? "Prazo em atraso" : "Prazo a vencer"} />}
+                            {(info[c.id]?.overdue || info[c.id]?.dueSoon) && <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${info[c.id]?.overdue ? "text-destructive" : "text-warning"}`} aria-label={info[c.id]?.overdue ? "Prazo em atraso" : "Prazo a vencer"} />}
                             <span className="line-clamp-2">{info[c.id]?.next}</span>
                           </span>
                         </TableCell>
@@ -394,13 +396,13 @@ export default function Claims() {
                 {filtered.map((c) => (
                   <Card key={c.id} className="cursor-pointer" onClick={() => navigate(`/claims/${c.id}`)}>
                     <CardContent className="p-4 space-y-1">
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="font-semibold">{c.ref}{c.claim_number ? ` · ${c.claim_number}` : ""}</span>
                         <Badge variant="outline" className={claimStatusTone(c.status)}>
                           {info[c.id]?.badge.label || CLAIM_STATUS_LABELS[c.status as keyof typeof CLAIM_STATUS_LABELS] || c.status}
                         </Badge>
                       </div>
-                      <p className="text-xs flex items-start gap-1">{(info[c.id]?.overdue || info[c.id]?.dueSoon) && <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${info[c.id]?.overdue ? "text-destructive" : "text-amber-500"}`} />}<span>Próximo passo: {info[c.id]?.next}</span></p>
+                      <p className="text-xs flex items-start gap-1">{(info[c.id]?.overdue || info[c.id]?.dueSoon) && <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${info[c.id]?.overdue ? "text-destructive" : "text-warning"}`} />}<span>Próximo passo: {info[c.id]?.next}</span></p>
                       <p className="text-sm">{c.insurers?.name || "Sem seguradora"}</p>
                       <p className="text-xs text-muted-foreground">
                         {[clientDisplayName(c.clients), c.vehicles?.plate].filter(Boolean).join(" · ")}
@@ -452,7 +454,7 @@ export default function Claims() {
 
       {/* Novo sinistro */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="claims-surface max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Novo Sinistro</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
@@ -494,7 +496,7 @@ export default function Claims() {
               </Button>
               <input id="new-claim-photos" type="file" accept="image/*,application/pdf" capture="environment" multiple className="hidden" onChange={(e) => { setNewPhotos(Array.from(e.target.files || [])); e.target.value = ""; }} />
             </div>
-            <button type="button" className="text-sm font-medium text-primary hover:underline min-h-[44px]" onClick={() => setNewMore((v) => !v)}>{newMore ? "Esconder detalhes" : "Mais detalhes (opcional)"}</button>
+            <Button variant="link" className="px-0 min-h-[44px]" onClick={() => setNewMore((v) => !v)}>{newMore ? "Esconder detalhes" : "Mais detalhes (opcional)"}</Button>
             {newMore && (<div className="space-y-3">
             <div>
               <Label>Ordem de serviço (opcional)</Label>
@@ -530,12 +532,12 @@ export default function Claims() {
 
       {/* Seguradora */}
       <Dialog open={insurerOpen} onOpenChange={setInsurerOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="claims-surface max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{insurerEditId ? "Editar seguradora" : "Nova seguradora"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Nome *</Label><Input value={insurerForm.name} onChange={(e) => setInsurerForm({ ...insurerForm, name: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>NIF</Label><Input value={insurerForm.nif || ""} onChange={(e) => setInsurerForm({ ...insurerForm, nif: e.target.value })} /></div>
+              <div><Label>{IS_BR ? "CPF/CNPJ" : "NIF"}</Label><Input value={insurerForm.nif || ""} onChange={(e) => setInsurerForm({ ...insurerForm, nif: e.target.value })} /></div>
               <div><Label>Website</Label><Input value={insurerForm.website || ""} onChange={(e) => setInsurerForm({ ...insurerForm, website: e.target.value })} /></div>
               <div><Label>Telefone</Label><Input value={insurerForm.phone || ""} onChange={(e) => setInsurerForm({ ...insurerForm, phone: e.target.value })} /></div>
               <div><Label>Email</Label><Input value={insurerForm.email || ""} onChange={(e) => setInsurerForm({ ...insurerForm, email: e.target.value })} /></div>

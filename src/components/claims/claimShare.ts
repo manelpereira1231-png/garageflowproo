@@ -6,7 +6,7 @@ const origin = () => window.location.origin;
 /** Link de acompanhamento do cliente (reutiliza o existente se ainda for válido). */
 export async function getClientLink(claim: any, shopId: string): Promise<string | null> {
   const { data: ex } = await (supabase as any).from("claim_share_links").select("token, expires_at")
-    .eq("claim_id", claim.id).eq("audience", "cliente").is("revoked_at", null).order("created_at", { ascending: false }).limit(1);
+    .eq("claim_id", claim.id).eq("shop_id", shopId).eq("audience", "cliente").is("revoked_at", null).order("created_at", { ascending: false }).limit(1);
   const valid = (ex || []).find((l: any) => !l.expires_at || new Date(l.expires_at) > new Date());
   if (valid) return `${origin()}/acompanhar/${valid.token}`;
   const { data: auth } = await supabase.auth.getSession();
@@ -26,13 +26,14 @@ export async function createExpertLink(claim: any, shopId: string, supplementId:
   }).select("token").single();
   if (error) { toast.error(error.message); return null; }
   const url = `${origin()}/perito/${data.token}`;
-  try { await navigator.clipboard.writeText(url); } catch { /* sem permissão de cópia */ }
-  await supabase.from("claim_events").insert({ claim_id: claim.id, shop_id: shopId, kind: "note", description: "Pacote enviado ao perito (link válido 14 dias)" });
+  let copied = false;
+  try { await navigator.clipboard.writeText(url); copied = true; } catch { toast.message(url, { duration: 20000 }); }
+  await supabase.from("claim_events").insert({ claim_id: claim.id, shop_id: shopId, kind: "note", description: "Link do perito preparado (válido 14 dias)" });
   const contact = String(claim.expert_contact || "");
   const email = contact.match(/[^\s@]+@[^\s@]+\.[^\s@]+/)?.[0];
   const phone = contact.replace(/[^\d+]/g, "").replace(/^\+/, "");
   const text = `Olá${claim.expert_name ? ` ${claim.expert_name}` : ""}, segue o pedido de validação do sinistro ${claim.ref || ""}${claim.vehicles?.plate ? ` (${claim.vehicles.plate})` : ""}: ${url}`;
-  toast.success("Link do perito copiado", {
+  toast.success(copied ? "Link do perito copiado" : "Link do perito criado", {
     description: email ? "Pode colar no email ou usar o botão abaixo." : "Cole-o no email ou WhatsApp do perito.",
     action: email
       ? { label: "Abrir email", onClick: () => window.open(`mailto:${email}?subject=${encodeURIComponent(`Validação ${claim.ref || "sinistro"}`)}&body=${encodeURIComponent(text)}`, "_blank") }

@@ -29,22 +29,22 @@ export default function ClaimTrack() {
   const tl = (d.timeline || []).map((t: any) => ({ ...t, label: isBR ? t.label.replace("Viatura recebida", "Veículo recebido").replace("Pronto para levantar", "Pronto para retirar") : t.label }));
 
   return (
-    <div className="min-h-screen bg-muted/40">
+    <div className="claims-surface min-h-screen bg-muted/40">
       <header className="bg-foreground text-background px-5 pt-6 pb-8">
         <p className="text-sm opacity-80">{d.shop.name}</p>
         <h1 className="text-2xl font-bold mt-1">{isBR ? "O seu" : "O seu"} {[d.vehicle?.make, d.vehicle?.model].filter(Boolean).join(" ") || car}</h1>
         {d.vehicle?.plate && <p className="font-mono mt-1 opacity-90">{d.vehicle.plate}</p>}
       </header>
       <main className="max-w-lg mx-auto px-4 -mt-4 space-y-4 pb-10">
-        <section className="rounded-[14px] border border-amber-500 bg-amber-500/10 p-4">
-          <p className="text-xs font-bold tracking-wider text-amber-700 dark:text-amber-400">AGORA</p>
+        <section className="rounded-[14px] border claim-tone-warning p-4">
+          <p className="text-xs font-bold tracking-wider text-foreground">AGORA</p>
           <p className="mt-1 font-medium">{now}</p>
         </section>
         <section className="rounded-[14px] border border-border bg-card p-4">
           <ol className="space-y-4">
             {tl.map((t: any) => (
               <li key={t.key} className="flex gap-3">
-                {t.done ? <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" /> : <Circle className="h-5 w-5 text-muted-foreground shrink-0" />}
+                {t.done ? <CheckCircle2 className="h-5 w-5 text-success shrink-0" /> : <Circle className="h-5 w-5 text-muted-foreground shrink-0" />}
                 <div>
                   <p className={t.done ? "font-medium" : "text-muted-foreground"}>{t.label}</p>
                   {t.date && <p className="text-xs text-muted-foreground">{t.expected && !t.done ? "Previsto " : ""}{fmt(t.date)}</p>}

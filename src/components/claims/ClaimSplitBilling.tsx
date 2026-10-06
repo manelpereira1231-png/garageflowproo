@@ -21,6 +21,7 @@ type QLine = { quoteId: string; idx: number; name: string; total: number; covere
  */
 export function ClaimSplitBilling({ claim, shopId, sups, isBR, onChanged }: { claim: any; shopId: string; sups: Sup[]; isBR: boolean; onChanged: () => void }) {
   const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
   const [qlines, setQlines] = useState<QLine[]>([]);
   const [quoteRows, setQuoteRows] = useState<Record<string, any[]>>({});
   const [billed, setBilled] = useState<{ insurer: string | null; client: string | null }>({ insurer: null, client: null });
@@ -30,23 +31,23 @@ export function ClaimSplitBilling({ claim, shopId, sups, isBR, onChanged }: { cl
 
   const load = async () => {
     if (quoteIds.length) {
-      const { data } = await supabase.from("quotes").select("id, number, lines").in("id", quoteIds);
+      const { data } = await supabase.from("quotes").select("id, number, lines").in("id", quoteIds).eq("shop_id", shopId);
       const rows: Record<string, any[]> = {}; const out: QLine[] = [];
       for (const q of data || []) {
         const ls = Array.isArray(q.lines) ? (q.lines as any[]) : [];
         rows[q.id] = ls;
-        ls.forEach((l, idx) => out.push({ quoteId: q.id, idx, name: l.name || l.description || "Linha", total: Number(l.quantity || 1) * Number(l.unit_price || 0), covered: l.covered_by_insurance !== false }));
+        ls.forEach((l, idx) => out.push({ quoteId: q.id, idx, name: l.name || l.description || "Linha", total: Number(l.qty ?? l.quantity ?? 1) * Number(l.unitPrice ?? l.unit_price ?? 0), covered: l.covered_by_insurance !== false }));
       }
       setQuoteRows(rows); setQlines(out);
     } else { setQlines([]); }
-    const { data: bl } = await (supabase as any).from("claim_billing_lines").select("description, payer, invoice_id, invoices(number, status)").eq("claim_id", claim.id).not("invoice_id", "is", null);
+    const { data: bl } = await (supabase as any).from("claim_billing_lines").select("description, payer, invoice_id, invoices(number, status)").eq("claim_id", claim.id).eq("shop_id", shopId).not("invoice_id", "is", null);
     const live = (bl || []).filter((l: any) => l.invoices?.status !== "cancelled" && (l.description.startsWith(P_INS) || l.description.startsWith(P_FRANQ) || l.description.startsWith(P_EXTRA)));
     setBilled({
       insurer: live.find((l: any) => l.payer === "insurer")?.invoices?.number ?? null,
       client: live.find((l: any) => l.payer === "client")?.invoices?.number ?? null,
     });
   };
-  useEffect(() => { void load(); }, [claim.id, claim.quote_id, sups.length]);
+  useEffect(() => { void load(); }, [claim.id, claim.quote_id, JSON.stringify(sups)]);
 
   const toggleCovered = async (l: QLine, notCovered: boolean) => {
     const rows = [...(quoteRows[l.quoteId] || [])];
@@ -56,7 +57,7 @@ export function ClaimSplitBilling({ claim, shopId, sups, isBR, onChanged }: { cl
     load();
   };
 
-  const authorized = authorizedTotal(sups) || (claim.amount_approved != null && claim.amount_approved !== "" ? Number(claim.amount_approved) : 0);
+  const authorized = sups.length ? authorizedTotal(sups) : (claim.amount_approved != null && claim.amount_approved !== "" ? Number(claim.amount_approved) : 0);
   const franchise = claim.deductible != null && claim.deductible !== "" ? Number(claim.deductible) : 0;
   const extras = qlines.filter((l) => !l.covered);
   const extrasTotal = extras.reduce((t, l) => t + l.total, 0);
@@ -64,8 +65,12 @@ export function ClaimSplitBilling({ claim, shopId, sups, isBR, onChanged }: { cl
   const clientAmt = Math.round((franchise + extrasTotal) * 100) / 100;
 
   const emit = async (payer: "insurer" | "client") => {
+    if (busy || billed[payer]) return;
+    setBusy(true);
+    try {
     // limpa linhas automáticas ainda não faturadas deste destinatário e recria-as com os valores atuais
-    const { data: old } = await (supabase as any).from("claim_billing_lines").select("id, description, invoice_id, invoices(status)").eq("claim_id", claim.id).eq("payer", payer);
+    const { data: old } = await (supabase as any).from("claim_billing_lines").select("id, description, invoice_id, invoices(status)").eq("claim_id", claim.id).eq("shop_id", shopId).eq("payer", payer);
+    if ((old || []).some((l: any) => l.invoice_id && l.invoices?.status !== "cancelled" && (l.description.startsWith(P_INS) || l.description.startsWith(P_FRANQ) || l.description.startsWith(P_EXTRA)))) { toast.error("Estas linhas já estão numa fatura."); return; }
     const auto = (old || []).filter((l: any) => (l.description.startsWith(P_INS) || l.description.startsWith(P_FRANQ) || l.description.startsWith(P_EXTRA)) && (!l.invoice_id || l.invoices?.status === "cancelled"));
     for (const l of auto) {
       if (l.invoice_id) await (supabase as any).from("claim_billing_lines").update({ invoice_id: null }).eq("id", l.id);
@@ -84,15 +89,16 @@ export function ClaimSplitBilling({ claim, shopId, sups, isBR, onChanged }: { cl
     if (error) { toast.error(error.message); return; }
     onChanged();
     navigate(`/invoices/new?from_claim=${claim.id}&payer=${payer}&lines=${(data || []).map((d: any) => d.id).join(",")}`);
+    } finally { setBusy(false); }
   };
 
   const box = (title: string, amount: number, calc: string[], billedNo: string | null, onEmit: () => void, disabled: boolean, cta: string) => (
-    <div className="rounded-[14px] border border-border p-4 space-y-2 flex flex-col">
+    <div className="claim-billing-option border border-border p-4 space-y-2 flex flex-col">
       <p className="text-sm text-muted-foreground">{title}</p>
       <p className="text-2xl font-semibold">{formatMoney(amount)}</p>
       <div className="text-xs text-muted-foreground space-y-0.5 flex-1">{calc.map((c) => <p key={c}>{c}</p>)}</div>
       {billedNo ? <Badge variant="secondary" className="self-start">{isBR ? "Emitida" : "Emitida"} {billedNo}</Badge>
-        : <Button className="min-h-[44px]" disabled={disabled} onClick={onEmit}>{cta}</Button>}
+        : <Button className="min-h-[44px]" disabled={disabled || busy} onClick={onEmit}>{cta}</Button>}
     </div>
   );
 
@@ -100,7 +106,7 @@ export function ClaimSplitBilling({ claim, shopId, sups, isBR, onChanged }: { cl
     <Card className="rounded-[14px]">
       <CardHeader><CardTitle className="text-base">{isBR ? "Notas fiscais" : "Faturação"}</CardTitle></CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 2xl:grid-cols-2">
           {box(`${isBR ? "Nota fiscal" : "Fatura"} à seguradora`, insurerAmt,
             [`Autorizado ${formatMoney(authorized)}`, `− Franquia ${formatMoney(franchise)}`],
             billed.insurer, () => emit("insurer"), !claim.insurer_id || !(insurerAmt > 0),
@@ -115,9 +121,9 @@ export function ClaimSplitBilling({ claim, shopId, sups, isBR, onChanged }: { cl
           <div className="space-y-1">
             <p className="text-sm font-medium">Linhas do orçamento — marque o que a seguradora não cobre</p>
             {qlines.map((l) => (
-              <label key={`${l.quoteId}-${l.idx}`} className="flex items-center gap-3 rounded-md border border-border px-3 min-h-[44px] text-sm cursor-pointer">
-                <Checkbox checked={!l.covered} onCheckedChange={(v) => toggleCovered(l, !!v)} />
-                <span className="flex-1 truncate">{l.name}</span>
+              <label key={`${l.quoteId}-${l.idx}`} className="flex flex-wrap items-center gap-3 rounded-md border border-border px-3 min-h-[44px] text-sm cursor-pointer">
+                <Checkbox checked={!l.covered} disabled={!!billed.insurer || !!billed.client} onCheckedChange={(v) => toggleCovered(l, !!v)} />
+                <span className="flex-1 min-w-[100px]">{l.name}</span>
                 <span className="text-muted-foreground">{formatMoney(l.total)}</span>
                 {!l.covered && <Badge variant="outline">Não coberto</Badge>}
               </label>

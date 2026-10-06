@@ -44,7 +44,7 @@ export default function ClaimExpert() {
   const lineTotal = (d.lines || []).reduce((t: number, l: any) => t + l.quantity * l.unit_price, 0);
 
   const send = async (decision: "approve" | "more_photos" | "reject") => {
-    if (decision === "approve" && !(Number(amount) > 0)) { toast.error("Indique o valor que valida."); return; }
+    if (decision === "approve" && (!Number.isFinite(Number(amount)) || !(Number(amount) > 0) || Number(amount) > Number(s.amount_requested))) { toast.error("Indique o valor que valida."); return; }
     if (file && file.size > 10 * 1024 * 1024) { toast.error("O relatório tem de ter menos de 10 MB."); return; }
     setBusy(true);
     const report = file ? { name: file.name, type: file.type || "application/pdf", base64: await toB64(file) } : undefined;
@@ -55,7 +55,7 @@ export default function ClaimExpert() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/40">
+    <div className="claims-surface min-h-screen bg-muted/40">
       <header className="bg-foreground text-background px-5 py-5">
         <p className="text-sm opacity-80">Pedido enviado por {d.shop.name} · via GarageFlow</p>
         <h1 className="text-xl sm:text-2xl font-bold mt-1">{title} · {d.ref || "Sinistro"}{d.insurer ? ` · ${d.insurer}` : ""}</h1>
@@ -77,7 +77,7 @@ export default function ClaimExpert() {
             <p className="font-semibold mb-2">Fotografias dos danos</p>
             {d.photos?.length ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {d.photos.map((u: string) => <button key={u} type="button" onClick={() => setZoom(u)}><img src={u} alt="Dano" className="aspect-[4/3] w-full rounded-md object-cover" loading="lazy" /></button>)}
+                {d.photos.map((u: string) => <Button variant="ghost" className="h-auto p-0" aria-label="Ver fotografia dos danos" key={u} type="button" onClick={() => setZoom(u)}><img src={u} alt="Dano" className="aspect-[4/3] w-full rounded-md object-cover" loading="lazy" /></Button>)}
               </div>
             ) : <p className="text-sm text-muted-foreground">Sem fotografias anexadas.</p>}
           </section>
@@ -100,7 +100,7 @@ export default function ClaimExpert() {
               <div><Label>Valor que valida</Label><Input type="number" step="0.01" inputMode="decimal" className="min-h-[44px]" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
               <div><Label>Observações</Label><Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
               <div><Label>Relatório (PDF ou foto, opcional)</Label><Input type="file" accept="application/pdf,image/*" className="min-h-[44px]" onChange={(e) => setFile(e.target.files?.[0] || null)} /></div>
-              <Button className="w-full min-h-[44px] bg-emerald-600 hover:bg-emerald-700 text-primary-foreground" disabled={busy} onClick={() => send("approve")}>Validar adicional</Button>
+              <Button className="w-full min-h-[44px] claim-tone-success" disabled={busy} onClick={() => send("approve")}>Validar adicional</Button>
               <Button variant="outline" className="w-full min-h-[44px]" disabled={busy} onClick={() => send("more_photos")}>Pedir mais fotografias</Button>
               <Button variant="outline" className="w-full min-h-[44px] border-destructive text-destructive" disabled={busy} onClick={() => send("reject")}>Não validar</Button>
             </>
@@ -108,7 +108,7 @@ export default function ClaimExpert() {
         </aside>
       </main>
       <Dialog open={!!zoom} onOpenChange={(o) => !o && setZoom(null)}>
-        <DialogContent className="max-w-5xl w-[96vw]">{zoom && <img src={zoom} alt="Dano" className="w-full max-h-[85vh] object-contain" />}</DialogContent>
+        <DialogContent className="claims-surface max-w-5xl w-[96vw]">{zoom && <img src={zoom} alt="Dano" className="w-full max-h-[85vh] object-contain" />}</DialogContent>
       </Dialog>
     </div>
   );

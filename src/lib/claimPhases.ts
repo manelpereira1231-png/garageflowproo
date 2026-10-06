@@ -82,7 +82,7 @@ const ddmm = (d: string | Date, loc: string) => new Date(d).toLocaleDateString(l
 export function nextStep(claim: any, phase: string, sups: Sup[], links: { supplement_id: string | null; created_at: string; audience: string }[], isBR: boolean): string {
   const loc = isBR ? "pt-BR" : "pt-PT";
   const pend = sups.filter(isPendingSup).sort((a, b) => (a.number || 0) - (b.number || 0))[0];
-  if (pend && claim.outcome !== "perda_total") {
+  if (phase !== "fechado" && pend && claim.outcome !== "perda_total") {
     const label = pend.type === "inicial" ? "o orçamento inicial" : `o adicional #${pend.number ?? ""}`;
     const l = links.find((x) => x.audience === "perito" && x.supplement_id === pend.id);
     return l ? `perito validar ${label} (link enviado ${ddmm(l.created_at, loc)})` : `enviar ${label} ao perito para validação`;
@@ -120,7 +120,10 @@ export function ptHolidays(y: number): Set<string> {
   const fixed = ["01-01", "04-25", "05-01", "06-10", "08-15", "10-05", "11-01", "12-01", "12-08", "12-25"].map((md) => `${y}-${md}`);
   return (holidayCache[y] = new Set([...fixed, add(-2), add(0), add(60)]));
 }
-const toUTC = (s: string | Date) => { const d = new Date(s); return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); };
+const toUTC = (s: string | Date) => {
+  if (typeof s === "string" && /^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(`${s.slice(0, 10)}T00:00:00Z`);
+  const d = new Date(s); return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+};
 export const isBusinessDay = (d: Date) => { const w = d.getUTCDay(); return w !== 0 && w !== 6 && !ptHolidays(d.getUTCFullYear()).has(key(d)); };
 export function addBusinessDays(start: string | Date, n: number): Date {
   let d = toUTC(start); let left = n;
@@ -142,15 +145,16 @@ export function ptDeadlines(claim: any, sups: Sup[]): Deadline[] {
   const daaa = !!claim.has_daaa, dis = !!claim.requires_disassembly;
   const part = claim.report_date || claim.claim_date || (claim.created_at ? String(claim.created_at).slice(0, 10) : null);
   const firstLimit = part ? addBusinessDays(part, 2) : null;
+  const firstContact = claim.first_contact_at ? toUTC(claim.first_contact_at) : null;
   const expN = daaa ? (dis ? 6 : 4) : (dis ? 12 : 8);
   const repN = daaa ? 2 : 4;
   const libN = daaa ? 15 : 30;
   const paidAt = ["paid", "done"].includes(claim.status) ? (claim.closed_at ? String(claim.closed_at).slice(0, 10) : String(claim.updated_at || "").slice(0, 10)) : null;
   const list: Deadline[] = [
     { id: "first", name: "Primeiro contacto e marcação da peritagem", rule: "2 dias úteis após a participação", limit: firstLimit, doneAt: claim.first_contact_at, field: "first_contact_at" },
-    { id: "expert", name: "Peritagem concluída", rule: `${expN} dias úteis após o 1.º contacto${dis ? " (com desmontagem)" : ""}`, limit: firstLimit ? addBusinessDays(firstLimit, expN) : null, doneAt: claim.expert_done_date, field: "expert_done_date" },
+    { id: "expert", name: "Peritagem concluída", rule: `${expN} dias úteis após o 1.º contacto${dis ? " (com desmontagem)" : ""}`, limit: firstContact ? addBusinessDays(firstContact, expN) : null, doneAt: claim.expert_done_date, field: "expert_done_date" },
     { id: "report", name: "Relatório de peritagem disponível", rule: `${repN} dias úteis após a peritagem`, limit: claim.expert_done_date ? addBusinessDays(claim.expert_done_date, repN) : null, doneAt: claim.expert_report_at, field: "expert_report_at" },
-    { id: "liability", name: "Assumir ou recusar responsabilidade", rule: `${libN} dias úteis após o 1.º contacto`, limit: firstLimit ? addBusinessDays(firstLimit, libN) : null, doneAt: claim.liability_assumed_at, field: "liability_assumed_at" },
+    { id: "liability", name: "Assumir ou recusar responsabilidade", rule: `${libN} dias úteis após o 1.º contacto`, limit: firstContact ? addBusinessDays(firstContact, libN) : null, doneAt: claim.liability_assumed_at, field: "liability_assumed_at" },
     { id: "payment", name: "Pagamento", rule: "8 dias úteis após assumir a responsabilidade", limit: claim.liability_assumed_at ? addBusinessDays(claim.liability_assumed_at, 8) : null, doneAt: paidAt },
   ];
   for (const s of sups.filter((x) => x.type === "adicional")) {

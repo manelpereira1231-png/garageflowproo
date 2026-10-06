@@ -18,7 +18,7 @@ export const storagePath = (url: string) => (url.includes(`/${BUCKET}/`) ? decod
 const isImage = (d: any) => (d.file_type || "").startsWith("image/") || /\.(jpe?g|png|webp|heic|gif)$/i.test(d.file_name || "");
 
 /** Carrega ficheiros para o sinistro (reutiliza claim_documents + armazenamento existente). */
-export async function uploadClaimFiles(files: File[], opts: { shopId: string; claimId: string; category: string }) {
+export async function uploadClaimFiles(files: File[], opts: { shopId: string; claimId: string; category: string; supplementId?: string }) {
   const { data: auth } = await supabase.auth.getSession();
   let ok = 0;
   for (const file of files) {
@@ -30,8 +30,9 @@ export async function uploadClaimFiles(files: File[], opts: { shopId: string; cl
       shop_id: opts.shopId, claim_id: opts.claimId, category: opts.category,
       file_name: file.name, file_url: pub.publicUrl, file_type: file.type, file_size: file.size,
       uploaded_by: auth.session?.user.id ?? null,
+      ...(opts.supplementId ? { notes: `authorization:${opts.supplementId}` } : {}),
     });
-    if (error) toast.error(error.message); else ok++;
+    if (error) { await supabase.storage.from(BUCKET).remove([path]); toast.error(error.message); } else ok++;
   }
   return ok;
 }
@@ -54,7 +55,7 @@ export function ClaimDocumentsV2({ claimId, shopId, docs, isBR, onChanged }: { c
       setUrls(m);
     });
   }, [docs]);
-  const urlOf = (d: any) => { const p = storagePath(d.file_url); return (p && urls[p]) || d.file_url; };
+  const urlOf = (d: any) => { const p = storagePath(d.file_url); return p ? (urls[p] || undefined) : d.file_url; };
 
   const groups = useMemo(() => {
     const g: Record<string, any[]> = {};
@@ -85,18 +86,18 @@ export function ClaimDocumentsV2({ claimId, shopId, docs, isBR, onChanged }: { c
     <Card className="rounded-[14px]">
       <CardHeader><CardTitle className="text-base">Documentos</CardTitle></CardHeader>
       <CardContent className="space-y-4">
-        <button
+        <Button variant="ghost"
           type="button"
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
           onDragLeave={() => setDrag(false)}
           onDrop={(e) => { e.preventDefault(); setDrag(false); pick(e.dataTransfer.files); }}
-          className={`w-full rounded-[14px] border-2 border-dashed px-4 py-8 text-center transition-colors min-h-[44px] ${drag ? "border-primary bg-primary/10" : "border-border hover:border-primary/60"}`}
+          className={`w-full rounded-[14px] border-2 border-dashed px-4 py-8 text-center transition-colors flex-col h-auto min-h-[140px] ${drag ? "border-primary bg-primary/10" : "border-border hover:border-primary/60"}`}
         >
           <Camera className="mx-auto mb-2 h-8 w-8 text-primary" />
           <p className="font-semibold">Tirar fotografia ou arrastar ficheiros</p>
           <p className="text-sm text-muted-foreground">{isBR ? "No celular abre logo a câmera. Uma foto por folha." : "No telemóvel abre logo a câmara. Uma foto por folha."}</p>
-        </button>
+        </Button>
         <input ref={inputRef} type="file" accept="image/*,application/pdf" capture="environment" multiple className="hidden"
           onChange={(e) => { pick(e.target.files); e.target.value = ""; }} />
 
@@ -108,7 +109,7 @@ export function ClaimDocumentsV2({ claimId, shopId, docs, isBR, onChanged }: { c
               const img = list.find(isImage);
               const last = list.reduce((a, b) => (a.created_at > b.created_at ? a : b));
               return (
-                <button key={cat} type="button" onClick={() => setViewer(cat)} className="overflow-hidden rounded-[14px] border border-border text-left hover:border-primary/60">
+                <Button variant="ghost" key={cat} type="button" onClick={() => setViewer(cat)} className="block p-0 h-auto overflow-hidden rounded-[14px] border border-border text-left hover:border-primary/60">
                   <div className="flex aspect-[4/3] items-center justify-center bg-muted">
                     {img ? <img src={urlOf(img)} alt={docLabel(cat, isBR)} className="h-full w-full object-cover" loading="lazy" /> : <FileText className="h-8 w-8 text-muted-foreground" />}
                   </div>
@@ -116,7 +117,7 @@ export function ClaimDocumentsV2({ claimId, shopId, docs, isBR, onChanged }: { c
                     <p className="text-sm font-medium truncate">{docLabel(cat, isBR)}</p>
                     <p className="text-xs text-muted-foreground">{list.length} {list.length === 1 ? "ficheiro" : "ficheiros"} · {new Date(last.created_at).toLocaleDateString(loc, { day: "2-digit", month: "2-digit" })}</p>
                   </div>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -124,7 +125,7 @@ export function ClaimDocumentsV2({ claimId, shopId, docs, isBR, onChanged }: { c
       </CardContent>
 
       <Dialog open={!!pending} onOpenChange={(o) => !o && !busy && setPending(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="claims-surface max-w-md max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Que documento é este?</DialogTitle>
             <DialogDescription>{pending?.length === 1 ? "1 ficheiro" : `${pending?.length} ficheiros`} selecionado(s).</DialogDescription>
@@ -139,7 +140,7 @@ export function ClaimDocumentsV2({ claimId, shopId, docs, isBR, onChanged }: { c
       </Dialog>
 
       <Dialog open={!!viewer} onOpenChange={(o) => !o && setViewer(null)}>
-        <DialogContent className="max-w-5xl w-[96vw] max-h-[94vh] overflow-y-auto">
+        <DialogContent className="claims-surface max-w-5xl w-[96vw] max-h-[94vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{viewer ? docLabel(viewer, isBR) : ""}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             {viewing.map((d) => (

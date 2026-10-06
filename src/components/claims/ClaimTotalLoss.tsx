@@ -12,6 +12,8 @@ import { formatMoney } from "@/lib/money";
 import { daysBetween } from "./ClaimImmobilization";
 
 export const DECISIONS: Record<string, string> = {
+  keep_salvage: "Fica com o salvado sem decidir ainda a reparação",
+  pending: "Aguarda decisão do cliente",
   deliver_insurer: "Aceita a indemnização e entrega o salvado à seguradora",
   repair_own_cost: "Fica com a viatura e repara por conta própria",
   take_unrepaired: "Leva a viatura sem reparar",
@@ -25,13 +27,14 @@ export function ClaimTotalLoss({ claim, shopId, isBR, onSaved }: { claim: any; s
   const [f, setF] = useState<any>({});
   const [payer, setPayer] = useState<"insurer" | "client">("insurer");
   const [saveDefault, setSaveDefault] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [billedNo, setBilledNo] = useState<string | null>(null);
   const cur = isBR ? "R$" : "€";
   const car = isBR ? "veículo" : "viatura";
 
   useEffect(() => {
     supabase.from("shops").select("storage_daily_rate").eq("id", shopId).maybeSingle().then(({ data }) => setShopRate((data as any)?.storage_daily_rate ?? null));
-    (supabase as any).from("claim_billing_lines").select("invoice_id, invoices(number, status)").eq("claim_id", claim.id).like("description", `${PREFIX}%`).not("invoice_id", "is", null)
+    (supabase as any).from("claim_billing_lines").select("invoice_id, invoices(number, status)").eq("claim_id", claim.id).eq("shop_id", shopId).like("description", `${PREFIX}%`).not("invoice_id", "is", null)
       .then(({ data }: any) => setBilledNo((data || []).find((l: any) => l.invoices?.status !== "cancelled")?.invoices?.number ?? null));
   }, [shopId, claim.id]);
   useEffect(() => {
@@ -50,9 +53,10 @@ export function ClaimTotalLoss({ claim, shopId, isBR, onSaved }: { claim: any; s
 
   const save = async (patch: Record<string, any> = {}) => {
     const v = { ...f, ...patch };
+    if ([v.disassembly_fee, v.storage_daily_rate, v.salvage_value, v.indemnity_amount].some(x => x !== "" && x != null && (!Number.isFinite(Number(x)) || Number(x) < 0))) { toast.error("Os valores não podem ser negativos."); return false; }
     const { error } = await supabase.from("claims").update({
       client_decision: v.client_decision || "pending",
-      client_decision_date: v.client_decision ? (claim.client_decision_date || new Date().toISOString().slice(0, 10)) : null,
+      client_decision_date: v.client_decision && v.client_decision !== "pending" ? (claim.client_decision_date || new Date().toISOString().slice(0, 10)) : null,
       disassembly_fee: n(v.disassembly_fee), storage_daily_rate: n(v.storage_daily_rate),
       salvage_value: n(v.salvage_value), indemnity_amount: n(v.indemnity_amount),
     } as any).eq("id", claim.id);
@@ -63,32 +67,41 @@ export function ClaimTotalLoss({ claim, shopId, isBR, onSaved }: { claim: any; s
   };
 
   const emit = async () => {
+    if (busy || billedNo) return;
+    setBusy(true);
+    try {
     if (!(await save())) return;
     const rows = [
       ...(disassembly > 0 ? [{ description: `${PREFIX}Desmontagem para peritagem`, quantity: 1, unit_price: disassembly }] : []),
       ...(storage > 0 ? [{ description: `${PREFIX}Parqueamento (${days} dias × ${formatMoney(rate)})`, quantity: days, unit_price: rate }] : []),
     ];
     if (!rows.length) { toast.error("Indique pelo menos um encargo."); return; }
-    const { data: old } = await (supabase as any).from("claim_billing_lines").select("id").eq("claim_id", claim.id).like("description", `${PREFIX}%`).is("invoice_id", null);
-    for (const o of old || []) await (supabase as any).from("claim_billing_lines").delete().eq("id", o.id);
+    const { data: old } = await (supabase as any).from("claim_billing_lines").select("id, invoice_id, invoices(status)").eq("claim_id", claim.id).eq("shop_id", shopId).eq("payer", payer).like("description", `${PREFIX}%`);
+    if ((old || []).some((o: any) => o.invoice_id && o.invoices?.status !== "cancelled")) { toast.error("Estes encargos já estão numa fatura."); return; }
+    for (const o of old || []) {
+      if (o.invoice_id) await (supabase as any).from("claim_billing_lines").update({ invoice_id: null }).eq("id", o.id);
+      const { error } = await (supabase as any).from("claim_billing_lines").delete().eq("id", o.id);
+      if (error) { toast.error(error.message); return; }
+    }
     const { data, error } = await (supabase as any).from("claim_billing_lines").insert(rows.map((r) => ({ ...r, claim_id: claim.id, shop_id: shopId, payer }))).select("id");
     if (error) { toast.error(error.message); return; }
     navigate(`/invoices/new?from_claim=${claim.id}&payer=${payer}&lines=${(data || []).map((d: any) => d.id).join(",")}`);
+    } finally { setBusy(false); }
   };
 
   const decisions = isBR ? Object.fromEntries(Object.entries(DECISIONS).map(([k, v]) => [k, v.replace("viatura", "veículo")])) : DECISIONS;
 
   return (
-    <Card className="rounded-[14px] border-red-500/40">
+    <Card className="rounded-[14px] border-destructive/40">
       <CardHeader><CardTitle className="text-base">Perda total declarada pelo perito</CardTitle></CardHeader>
       <CardContent className="space-y-5">
         <div className="space-y-2">
           <p className="text-sm font-medium">O que decidiu o cliente?</p>
           {Object.entries(decisions).map(([k, l]) => (
-            <button key={k} type="button" onClick={() => { setF({ ...f, client_decision: k }); save({ client_decision: k }); }}
-              className={`w-full text-left rounded-[14px] border px-3 min-h-[44px] py-2 text-sm ${f.client_decision === k ? "border-primary bg-primary/10 font-medium" : "border-border hover:border-primary/50"}`}>
+            <Button variant="outline" key={k} type="button" disabled={busy} aria-pressed={f.client_decision === k} onClick={() => { setF({ ...f, client_decision: k }); save({ client_decision: k }); }}
+              className={`w-full justify-start whitespace-normal h-auto text-left rounded-[14px] border px-3 min-h-[44px] py-2 text-sm ${f.client_decision === k ? "border-primary bg-primary/10 font-medium" : "border-border hover:border-primary/50"}`}>
               {l}
-            </button>
+            </Button>
           ))}
         </div>
         <div className="grid gap-3 grid-cols-2">
@@ -112,11 +125,11 @@ export function ClaimTotalLoss({ claim, shopId, isBR, onSaved }: { claim: any; s
             <span className="text-sm">Faturar a:</span>
             <div className="inline-flex rounded-[14px] border border-border p-1">
               {(["insurer", "client"] as const).map((p) => (
-                <button key={p} type="button" onClick={() => setPayer(p)} className={`px-3 min-h-[40px] rounded-[10px] text-sm ${payer === p ? "bg-primary text-primary-foreground" : ""}`}>{p === "insurer" ? "Seguradora" : "Cliente"}</button>
+                <Button variant={payer === p ? "default" : "ghost"} key={p} type="button" aria-pressed={payer === p} onClick={() => setPayer(p)} className={`px-3 min-h-[40px] rounded-[10px] text-sm ${payer === p ? "bg-primary text-primary-foreground" : ""}`}>{p === "insurer" ? "Seguradora" : "Cliente"}</Button>
               ))}
             </div>
             {billedNo ? <Badge variant="secondary">Emitida {billedNo}</Badge>
-              : <Button className="min-h-[44px] sm:ml-auto" disabled={payer === "insurer" && !claim.insurer_id} onClick={emit}>{isBR ? "Emitir nota fiscal de encargos" : "Emitir fatura de encargos"}</Button>}
+              : <Button className="min-h-[44px] sm:ml-auto" disabled={busy || (payer === "insurer" && !claim.insurer_id)} onClick={emit}>{isBR ? "Emitir nota fiscal de encargos" : "Emitir fatura de encargos"}</Button>}
           </div>
         </div>
       </CardContent>

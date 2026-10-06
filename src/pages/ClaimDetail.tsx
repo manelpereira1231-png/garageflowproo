@@ -243,13 +243,22 @@ export default function ClaimDetail() {
     return computeRepairPhase(claim, { sups, woDone, billedAndPaid: billed > 0 && paid >= billed - 0.01 });
   }, [claim, sups, fin]);
 
+  const observedPhase = useRef<{ id: string; phase: string } | null>(null);
+  useEffect(() => {
+    if (!claim || !fin) return;
+    const current = claim.outcome === "perda_total" || claim.total_loss ? computeTotalLossPhase(claim) : repairPhase;
+    const prev = observedPhase.current;
+    observedPhase.current = { id: claim.id, phase: current };
+    if (prev?.id === claim.id && prev.phase !== current) void notifyClient(current, sups.some(isPendingSup));
+  }, [claim?.id, claim?.outcome, claim?.client_decision, repairPhase, fin, sups]);
+
   const notifyClient = async (ph: string, pendingSup: boolean) => {
     if (!claim?.auto_notify_client || !activeShopId) return;
     const msg = clientMessageForPhase(ph, IS_BR, pendingSup);
-    await supabase.from("claims").update({ last_client_message: msg, last_client_message_at: new Date().toISOString(), client_informed_at: new Date().toISOString(), client_informed_note: "automático" } as any).eq("id", claim.id);
     if (claim.clients?.email) {
       const link = await getClientLink(claim, activeShopId);
-      await sendClientEmail(claim, activeShopId, msg, link, IS_BR);
+      const sent = await sendClientEmail(claim, activeShopId, msg, link, IS_BR);
+      if (sent) await supabase.from("claims").update({ last_client_message: msg, last_client_message_at: new Date().toISOString(), client_informed_at: new Date().toISOString(), client_informed_note: "email automático" } as any).eq("id", claim.id).eq("shop_id", activeShopId);
     }
   };
 
@@ -257,7 +266,7 @@ export default function ClaimDetail() {
     const { error } = await supabase.from("claims").update({ outcome: o, total_loss: o === "perda_total", ...(o === "perda_total" && !claim.total_loss_date ? { total_loss_date: new Date().toISOString().slice(0, 10) } : {}) } as any).eq("id", claim.id);
     if (error) { toast.error(error.message); return; }
     await supabase.from("claim_events").insert({ claim_id: claim.id, shop_id: activeShopId, kind: "note", description: o === "perda_total" ? "Processo marcado como perda total" : "Processo voltou ao fluxo de reparação" } as any);
-    if (o === "perda_total") await notifyClient("decisao", false);
+
     load();
   };
 
@@ -484,7 +493,7 @@ export default function ClaimDetail() {
           </Card>
           {!IS_BR && <ClaimDeadlines claim={claim} sups={sups} onSaved={load} />}
           <ClaimImmobilization claim={claim} isBR={IS_BR} onSaved={load} />
-          {activeShopId && <ClaimClientInformed claim={claim} shopId={activeShopId} isBR={IS_BR} onSaved={load} />}
+          {activeShopId && <ClaimClientInformed claim={{ ...claim, claim_supplements: sups }} shopId={activeShopId} isBR={IS_BR} onSaved={load} />}
         </div>
       </div>
 

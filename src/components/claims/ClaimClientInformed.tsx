@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Mail, MessageCircle, Link2 } from "lucide-react";
 import { toast } from "sonner";
+import { clientMessageForPhase, computeRepairPhase, computeTotalLossPhase, isPendingSup } from "@/lib/claimPhases";
 import { getClientLink } from "./claimShare";
 
 export const waPhone = (phone: string | null | undefined, isBR: boolean) => {
@@ -23,7 +24,7 @@ export async function sendClientEmail(claim: any, shopId: string, message: strin
   const email = claim.clients?.email;
   if (!email) return false;
   const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
-  const { error } = await supabase.functions.invoke("send-email", {
+  const { data, error } = await supabase.functions.invoke("send-email", {
     body: {
       to: email, branded: true, shop_id: shopId,
       subject: `Ponto de situação ${isBR ? "do seu veículo" : "da sua viatura"}${claim.vehicles?.plate ? ` ${claim.vehicles.plate}` : ""}`,
@@ -31,7 +32,7 @@ export async function sendClientEmail(claim: any, shopId: string, message: strin
       ...(link ? { cta: { label: "Acompanhar o processo", url: link } } : {}),
     },
   });
-  if (error) return false;
+  if (error || !data?.success || data.simulated) return false;
   await supabase.from("claim_communications").insert({
     shop_id: shopId, claim_id: claim.id, kind: "email", direction: "out", status: "sent",
     occurred_at: new Date().toISOString(), contact_label: email, subject: "Ponto de situação ao cliente", body: message,
@@ -44,7 +45,9 @@ export function ClaimClientInformed({ claim, shopId, isBR, onSaved }: { claim: a
   const [busy, setBusy] = useState(false);
   const loc = isBR ? "pt-BR" : "pt-PT";
   const phone = waPhone(claim.clients?.phone, isBR);
-  const text = msg.trim() || claim.last_client_message || "";
+  const sups = claim.claim_supplements || [];
+  const phase = claim.outcome === "perda_total" || claim.total_loss ? computeTotalLossPhase(claim) : computeRepairPhase(claim, { sups });
+  const text = msg.trim() || claim.last_client_message || clientMessageForPhase(phase, isBR, sups.some(isPendingSup));
 
   const record = async (channel: string, body: string) => {
     await supabase.from("claims").update({ client_informed_at: new Date().toISOString(), client_informed_note: channel, last_client_message: body, last_client_message_at: new Date().toISOString() } as any).eq("id", claim.id);
@@ -63,8 +66,10 @@ export function ClaimClientInformed({ claim, shopId, isBR, onSaved }: { claim: a
   const viaWhatsApp = async () => {
     if (!text || !phone) return;
     const link = await getClientLink(claim, shopId);
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(`${text}${link ? `\n\nAcompanhe aqui: ${link}` : ""}`)}`, "_blank");
-    record("WhatsApp", text);
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(`${text}${link ? `\n\nAcompanhe aqui: ${link}` : ""}`)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    await supabase.from("claim_communications").insert({ claim_id: claim.id, shop_id: shopId, kind: "whatsapp", direction: "out", status: "prepared", contact_label: phone, body: text, occurred_at: new Date().toISOString() } as any);
+    toast.message("Mensagem preparada no WhatsApp");
   };
   const copyLink = async () => {
     const link = await getClientLink(claim, shopId);
@@ -73,7 +78,7 @@ export function ClaimClientInformed({ claim, shopId, isBR, onSaved }: { claim: a
 
   return (
     <Card className="rounded-[14px]">
-      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 space-y-0">
         <CardTitle className="text-base">Cliente informado</CardTitle>
         <div className="flex items-center gap-2">
           <Label htmlFor="auto-notify" className="text-sm">Automático</Label>

@@ -86,7 +86,7 @@ export default function Claims() {
     if (!activeShopId) return;
     const [cl, ins, cli, veh, wo] = await Promise.all([
       supabase.from("claims")
-        .select("*, insurers(name), clients(name, company), vehicles(make, model, plate), work_orders(number, status), claim_supplements(id, type, number, status, requested_at, decided_at, amount_requested, amount_approved)")
+        .select("*, insurers(name), clients(name, company), vehicles(make, model, plate), work_orders(number, status), invoices!invoices_claim_id_fkey(id,total,status,payments(amount)), claim_supplements(id, type, number, status, requested_at, decided_at, amount_requested, amount_approved)")
         .eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(500),
       supabase.from("insurers").select("*").eq("shop_id", activeShopId).order("name"),
       supabase.from("clients").select("id, name, company, nif").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),
@@ -113,6 +113,9 @@ export default function Claims() {
   useEffect(() => { load(); }, [load]);
   // Live: claims changed by any user of this shop refresh the list/counters.
   useRealtimeTable("claims", { shopId: activeShopId, onChange: () => { void load(); } });
+  useRealtimeTable("claim_supplements", { shopId: activeShopId, onChange: () => { void load(); } });
+  useRealtimeTable("invoices", { shopId: activeShopId, onChange: () => { void load(); } });
+  useRealtimeTable("payments", { shopId: activeShopId, onChange: () => { void load(); } });
 
   // Pré-preenchimento vindo da Ordem de Serviço (/claims?wo=<id>)
   useEffect(() => {
@@ -157,9 +160,13 @@ export default function Claims() {
     for (const c of claims) {
       const sups = c.claim_supplements || [];
       const woDone = ["completed", "done", "delivered", "ready", "invoiced"].includes(String(c.work_orders?.status || ""));
-      const phase = c.outcome === "perda_total" ? computeTotalLossPhase(c) : computeRepairPhase(c, { sups, woDone });
+      const live = (c.invoices || []).filter((i: any) => !["draft", "cancelled"].includes(i.status));
+      const billed = live.reduce((t: number, i: any) => t + Number(i.total || 0), 0);
+      const paid = live.reduce((t: number, i: any) => t + (i.payments || []).reduce((p: number, x: any) => p + Number(x.amount || 0), 0), 0);
+      const normalized = { ...c, outcome: c.total_loss ? "perda_total" : c.outcome };
+      const phase = normalized.outcome === "perda_total" ? computeTotalLossPhase(c) : computeRepairPhase(c, { sups, woDone, billedAndPaid: billed > 0 && paid >= billed - 0.01 });
       const ds = IS_BR || ["done", "cancelled"].includes(c.status) ? [] : ptDeadlines(c, sups).map(deadlineState);
-      m[c.id] = { phase, badge: phaseBadge(c, phase, sups, IS_BR), next: nextStep(c, phase, sups, [], IS_BR), overdue: ds.some((d) => d.overdue), dueSoon: ds.some((d) => d.dueSoon) };
+      m[c.id] = { phase, badge: phaseBadge(normalized, phase, sups, IS_BR), next: nextStep(normalized, phase, sups, [], IS_BR), overdue: ds.some((d) => d.overdue), dueSoon: ds.some((d) => d.dueSoon) };
     }
     return m;
   }, [claims, IS_BR]);

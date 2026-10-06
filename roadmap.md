@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Sinistros: apresentar plano do documento v2 e aguardar aprovação antes de alterar a aplicação ou dados.
+- [x] Sinistros: plano v2 aprovado; reaproveitar dados e ferramentas existentes.
+- [ ] Sinistros v2: testar página única, documentos, autorizações, encargos, links e gravação em PT/BR.
 
 - [x] Agenda mobile (lista por dia; falta testar gravação no ecrã)
 - [x] Reorganizar ficha de Sinistros

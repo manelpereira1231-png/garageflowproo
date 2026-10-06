@@ -211,6 +211,13 @@
       "when": 1791295935934,
       "tag": "0029_claims_immobilization",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1791296380241,
+      "tag": "0030_claims_v2_redesign",
+      "breakpoints": true
     }
   ]
 }

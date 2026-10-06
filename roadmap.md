@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Compactar filtros da lista de Sinistros e ligar seguradoras aos seus processos e ações existentes; verificado no computador e telemóvel com respostas simuladas, sem alterar dados; contexto de orçamento/serviço e seguradora pré-selecionada confirmados; 16 testes PT/BR aprovados.
+
 - [x] Simplificar o fluxo dos Sinistros com divulgação progressiva e ação direta para preparar o pedido ao perito; identidade da viatura no pacote; 16 testes PT/BR aprovados e vistas desktop/mobile verificadas com dados simulados, sem gravações ou envios reais.
 
 - [x] Sinistros: plano v2 aprovado; reaproveitar dados e ferramentas existentes.

@@ -32,6 +32,9 @@ import {
 } from "@/lib/claims";
 import { InsurerPicker, resolveInsurerId, type InsurerSelection } from "@/components/InsurerPicker";
 import QuickVehicleForm from "@/components/QuickVehicleForm";
+import { CompactFilterBar, FilterCombobox } from "@/components/filters/CompactFilters";
+import { ClaimRowActions } from "@/components/claims/ClaimRowActions";
+import { claimVehicleLabel } from "@/lib/claimVehicle";
 
 const emptyClaim = {
   client_id: "",
@@ -66,6 +69,8 @@ export default function Claims() {
   const [search, setSearch] = useState(params.get("search") || "");
   const [statusFilter, setStatusFilter] = useState(params.get("status") || "all");
   const [insurerFilter, setInsurerFilter] = useState("all");
+  const [tab, setTab] = useState("claims");
+  const [insurerSearch, setInsurerSearch] = useState("");
 
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -277,6 +282,21 @@ export default function Claims() {
     ...(IS_BR ? [] : [{ key: "overdue", label: "Prazos em atraso", value: claims.filter((c) => info[c.id]?.overdue).length, danger: true }]),
   ], [claims, info, IS_BR]);
 
+  const statusOptions = [
+    { value: "all", label: "Todos os estados" }, { value: "active", label: "Ativos" },
+    { value: "late", label: "Ações em atraso" },
+    ...(!IS_BR ? [{ value: "overdue", label: "Prazos em atraso" }] : []),
+    ...REPAIR_PHASES.map((ph) => ({ value: `p:${ph}`, label: ph === "faturacao" && IS_BR ? "Nota fiscal" : REPAIR_PHASE_LABELS[ph] })),
+    ...CLAIM_GROUPS.map((g) => ({ value: `g:${g.key}`, label: `Grupo: ${g.label}` })),
+    ...CLAIM_STATUSES.map((s) => ({ value: s, label: CLAIM_STATUS_LABELS[s] })),
+  ];
+  const periodOptions = [{ value: "all", label: "Qualquer data" }, { value: "30", label: "Últimos 30 dias" }, { value: "90", label: "Últimos 90 dias" }, { value: "365", label: "Último ano" }];
+  const insurerOptions = [{ value: "all", label: "Todas as seguradoras" }, ...insurers.map((i) => ({ value: i.id, label: i.name }))];
+  const filterCount = [statusFilter, period, insurerFilter].filter((value) => value !== "all").length;
+  const clearFilters = () => { setSearch(""); setStatusFilter("all"); setPeriod("all"); setInsurerFilter("all"); };
+  const newClaim = (insurerId?: string) => { setForm({ ...emptyClaim }); setInsSel(insurerId ? { insurerId } : null); setAddVehicle(false); setNewPhotos([]); setNewMore(false); setOpen(true); };
+  const viewInsurerClaims = (insurerId: string) => { clearFilters(); setInsurerFilter(insurerId); setTab("claims"); };
+
   if (loading) {
     return <div className="space-y-3">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>;
   }
@@ -290,69 +310,42 @@ export default function Claims() {
           </h1>
           
         </div>
-        <Button onClick={() => { setForm({ ...emptyClaim }); setInsSel(null); setAddVehicle(false); setNewPhotos([]); setNewMore(false); setOpen(true); }} className="min-h-[44px]">
+        <Button onClick={() => newClaim()} className="min-h-[44px]">
           <Plus className="w-4 h-4 mr-2" /> Novo Sinistro
         </Button>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto snap-x pb-1 sm:grid sm:grid-cols-4 lg:grid-cols-7 sm:gap-3 sm:overflow-visible">
+      <div className="flex gap-2 overflow-x-auto snap-x pb-1" role="group" aria-label="Filtrar por etapa">
         {counters.map((k) => (
-          <Card key={k.key} className={`cursor-pointer hover:border-primary/50 transition-colors rounded-[14px] shrink-0 w-[118px] sm:w-auto snap-start ${statusFilter === k.key ? "border-primary" : ""} ${k.danger && k.value > 0 ? "claim-tone-danger" : ""}`}
+          <Button key={k.key} variant="outline" aria-pressed={statusFilter === k.key} className={`h-auto min-h-[44px] shrink-0 snap-start gap-2 px-3 py-2 ${statusFilter === k.key ? "border-primary bg-accent" : ""} ${k.danger && k.value > 0 ? "claim-tone-danger" : ""}`}
             onClick={() => setStatusFilter(statusFilter === k.key ? "all" : k.key)}>
-            <CardContent className="p-3 sm:p-4">
-              <p className="text-2xl font-bold">{k.value}</p>
-              <p className="text-xs text-muted-foreground">{k.label}</p>
-            </CardContent>
-          </Card>
+            <span className="text-sm font-normal">{k.label}</span><span className="text-sm font-bold tabular-nums">{k.value}</span>
+          </Button>
         ))}
       </div>
 
-      <Tabs defaultValue="claims">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="claims">Sinistros</TabsTrigger>
           <TabsTrigger value="insurers">Seguradoras</TabsTrigger>
         </TabsList>
 
         <TabsContent value="claims" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:flex gap-2">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" placeholder="SIN, matrícula, cliente, seguradora, processo, ORC, OS…"
-                value={search} onChange={(e) => setSearch(e.target.value)} />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-56"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os estados</SelectItem>
-                <SelectItem value="active">Ativos</SelectItem>
-                <SelectItem value="late">Ações em atraso</SelectItem>
-                {!IS_BR && <SelectItem value="overdue">Prazos em atraso</SelectItem>}
-                {REPAIR_PHASES.map((ph) => <SelectItem key={ph} value={`p:${ph}`}>{ph === "faturacao" && IS_BR ? "Nota fiscal" : REPAIR_PHASE_LABELS[ph]}</SelectItem>)}
-                {CLAIM_GROUPS.map((g) => <SelectItem key={g.key} value={"g:" + g.key}>Grupo: {g.label}</SelectItem>)}
-                {CLAIM_STATUSES.map((s) => <SelectItem key={s} value={s}>{CLAIM_STATUS_LABELS[s]}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Sempre</SelectItem>
-                <SelectItem value="30">Últimos 30 dias</SelectItem>
-                <SelectItem value="90">Últimos 90 dias</SelectItem>
-                <SelectItem value="365">Último ano</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={insurerFilter} onValueChange={setInsurerFilter}>
-              <SelectTrigger className="w-full sm:w-52"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as seguradoras</SelectItem>
-                {insurers.map((i) => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+          <CompactFilterBar activeCount={filterCount} onClear={clearFilters}
+            search={<><Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9 min-h-[44px]" aria-label="Pesquisar sinistros" placeholder="Matrícula, cliente, processo…" value={search} onChange={(e) => setSearch(e.target.value)} /></>}
+            filters={(stacked) => <>
+              <FilterCombobox value={statusFilter} onChange={setStatusFilter} options={statusOptions} placeholder="Estado" fullWidth={stacked} className="min-h-[44px]" />
+              <FilterCombobox value={period} onChange={setPeriod} options={periodOptions} placeholder="Data" fullWidth={stacked} className="min-h-[44px]" />
+              <FilterCombobox value={insurerFilter} onChange={setInsurerFilter} options={insurerOptions} placeholder="Seguradora" fullWidth={stacked} className="min-h-[44px]" />
+            </>} />
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground" aria-live="polite">
+            <span>{filtered.length} de {claims.length} sinistros{insurerFilter !== "all" ? ` · ${insurerOptions.find((i) => i.value === insurerFilter)?.label || ""}` : ""}</span>
+            {(filterCount > 0 || search) && <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={clearFilters}>Limpar pesquisa e filtros</Button>}
           </div>
 
           {filtered.length === 0 ? (
             <Card><CardContent className="py-10 text-center text-muted-foreground">
-              Sem processos de seguradora.
+              {claims.length === 0 ? "Sem processos de seguradora." : "Nenhum sinistro corresponde à pesquisa ou aos filtros."}
             </CardContent></Card>
           ) : (
             <>
@@ -369,6 +362,7 @@ export default function Claims() {
                       <TableHead>Estado</TableHead>
                       <TableHead>Próximo passo</TableHead>
                       <TableHead className="text-right">Aprovado</TableHead>
+                      <TableHead><span className="sr-only">Ações</span></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -393,6 +387,7 @@ export default function Claims() {
                         <TableCell className="text-right">
                           {c.amount_approved != null ? formatMoney(Number(c.amount_approved)) : "—"}
                         </TableCell>
+                        <TableCell><ClaimRowActions claim={c} /></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -405,15 +400,16 @@ export default function Claims() {
                     <CardContent className="p-4 space-y-1">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="font-semibold">{c.ref}{c.claim_number ? ` · ${c.claim_number}` : ""}</span>
-                        <Badge variant="outline" className={claimStatusTone(c.status)}>
+                        <div className="flex items-center gap-1"><Badge variant="outline" className={claimStatusTone(c.status)}>
                           {info[c.id]?.badge.label || CLAIM_STATUS_LABELS[c.status as keyof typeof CLAIM_STATUS_LABELS] || c.status}
-                        </Badge>
+                        </Badge><ClaimRowActions claim={c} /></div>
                       </div>
                       <p className="text-xs flex items-start gap-1">{(info[c.id]?.overdue || info[c.id]?.dueSoon) && <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${info[c.id]?.overdue ? "text-destructive" : "text-warning"}`} />}<span>Próximo passo: {info[c.id]?.next}</span></p>
                       <p className="text-sm">{c.insurers?.name || "Sem seguradora"}</p>
                       <p className="text-xs text-muted-foreground">
-                        {[clientDisplayName(c.clients), c.vehicles?.plate].filter(Boolean).join(" · ")}
+                        {claimVehicleLabel(c.vehicles)}
                       </p>
+                      <p className="text-xs text-muted-foreground">{clientDisplayName(c.clients)}</p>
                     </CardContent>
                   </Card>
                 ))}
@@ -423,7 +419,8 @@ export default function Claims() {
         </TabsContent>
 
         <TabsContent value="insurers" className="space-y-4">
-          <div className="flex justify-end">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Input className="min-h-[44px] sm:max-w-xs" aria-label="Pesquisar seguradoras" placeholder="Pesquisar seguradora…" value={insurerSearch} onChange={(e) => setInsurerSearch(e.target.value)} />
             <Button variant="outline" className="min-h-[44px]"
               onClick={() => { setInsurerEditId(null); setInsurerForm({ ...emptyInsurer }); setInsurerOpen(true); }}>
               <Plus className="w-4 h-4 mr-2" /> Nova seguradora
@@ -435,22 +432,26 @@ export default function Claims() {
             </CardContent></Card>
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
-              {insurers.map((i) => (
+              {insurers.filter((i) => `${i.name} ${i.nif || ""}`.toLowerCase().includes(insurerSearch.trim().toLowerCase())).map((i) => (
                 <Card key={i.id}>
                   <CardContent className="p-4 space-y-1">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
                         <Building2 className="w-4 h-4 text-primary" />
-                        <span className="font-semibold">{i.name}</span>
+                        <span className="font-semibold break-words min-w-0">{i.name}</span>
                         {!i.active && <Badge variant="outline">Inativa</Badge>}
                       </div>
-                      <Button size="icon" variant="ghost"
+                      <Button size="icon" variant="ghost" aria-label={`Editar ${i.name}`} title="Editar seguradora"
                         onClick={() => { setInsurerEditId(i.id); setInsurerForm({ ...emptyInsurer, ...i }); setInsurerOpen(true); }}>
                         <Pencil className="w-4 h-4" />
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">{i.claims_email || i.email || "—"}</p>
                     <p className="text-xs text-muted-foreground">{i.claims_phone || i.phone || "—"}</p>
+                    <div className="flex flex-wrap gap-2 pt-3">
+                      <Button variant="outline" className="min-h-[44px]" onClick={() => viewInsurerClaims(i.id)}>Ver sinistros ({claims.filter((c) => c.insurer_id === i.id).length})</Button>
+                      {i.active && <Button variant="ghost" className="min-h-[44px]" onClick={() => newClaim(i.id)}><Plus className="mr-1 h-4 w-4" />Novo sinistro</Button>}
+                    </div>
                   </CardContent>
                 </Card>
               ))}

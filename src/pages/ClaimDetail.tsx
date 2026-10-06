@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/money";
 import { ClaimBillingLines } from "@/components/claims/ClaimBillingLines";
+import { ClaimSupplements } from "@/components/claims/ClaimSupplements";
 import {
   CLAIM_STATUSES, CLAIM_STATUS_LABELS, claimStatusTone,
   EXPERT_STATUSES, EXPERT_STATUS_LABELS,
@@ -477,6 +478,7 @@ export default function ClaimDetail() {
 
         {/* Reparação */}
         <TabsContent value="work" className="space-y-4">
+          {activeShopId && <ClaimSupplements claimId={claim.id} shopId={activeShopId} isBR={IS_BR} />}
           <Card>
             <CardHeader><CardTitle className="text-base">Ordem de serviço</CardTitle></CardHeader>
             <CardContent className="space-y-3">

@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { clientDisplayName } from "@/lib/clientDisplayName";
+import { claimVehicleLabel } from "@/lib/claimVehicle";
+import { Accordion } from "@/components/ui/accordion";
+import { ClaimSection } from "@/components/claims/ClaimSection";
 import { useParams, useNavigate } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { useShopCountry } from "@/hooks/useShopCountry";
@@ -87,6 +90,10 @@ export default function ClaimDetail() {
   const [events, setEvents] = useState<any[]>([]);
   const [sups, setSups] = useState<Sup[]>([]);
   const [links, setLinks] = useState<any[]>([]);
+  const [sections, setSections] = useState<string[]>([]);
+  const [expertOpen, setExpertOpen] = useState(false);
+  const [expertSupId, setExpertSupId] = useState("");
+  const [expertBusy, setExpertBusy] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [overrideOpen, setOverrideOpen] = useState(false);
@@ -102,7 +109,7 @@ export default function ClaimDetail() {
     if (!id || !activeShopId) return;
     const [c, ins, ct, cm, dc, ev] = await Promise.all([
       supabase.from("claims")
-        .select("*, insurers(*), clients(id, name, company, nif, email, phone), vehicles(id, make, model, plate, year), work_orders(id, number, status, total)")
+        .select("*, insurers(*), clients(id, name, company, nif, email, phone), vehicles(id, make, model, plate, year, version, vin, mileage, fuel), work_orders(id, number, status, total)")
         .eq("id", id).eq("shop_id", activeShopId).maybeSingle(),
       supabase.from("insurers").select("*").eq("shop_id", activeShopId).order("name"),
       supabase.from("claim_contacts").select("*").eq("claim_id", id).eq("shop_id", activeShopId).order("is_primary", { ascending: false }),
@@ -125,10 +132,10 @@ export default function ClaimDetail() {
     setLinks(lk.data || []);
     if (c.data.client_id) {
       const q = await supabase.from("quotes")
-        .select("id, number, total, status, date")
+        .select("id, number, total, status, date, vehicle_id")
         .eq("shop_id", activeShopId).eq("client_id", c.data.client_id)
         .order("created_at", { ascending: false }).limit(50);
-      setQuotes(q.data || []);
+      setQuotes((q.data || []).filter((quote) => !c.data.vehicle_id || quote.vehicle_id === c.data.vehicle_id || quote.id === c.data.quote_id));
       const [w, iv] = await Promise.all([
         supabase.from("work_orders").select("id, number, status, total, vehicle_id")
           .eq("shop_id", activeShopId).eq("client_id", c.data.client_id).order("created_at", { ascending: false }).limit(50),
@@ -290,12 +297,20 @@ export default function ClaimDetail() {
     setOverrideOpen(false); toast.success("Estado atualizado"); load();
   };
 
-  const sendExpertPackage = async () => {
+  const sendExpertPackage = async (supplementId?: string) => {
     if (!activeShopId) return;
     const pend = sups.filter(isPendingSup).sort((a, b) => (a.type === "inicial" ? -1 : (a.number || 0) - (b.number || 0)))[0];
     if (!pend) { toast.error("Registe primeiro o orçamento inicial ou um adicional para o perito validar."); return; }
-    const url = await createExpertLink(claim, activeShopId, pend.id);
-    if (url) load();
+    setExpertSupId(supplementId || pend.id);
+    setExpertOpen(true);
+  };
+  const deliverExpertPackage = async (delivery: "copy" | "email") => {
+    if (!activeShopId || !expertSupId || expertBusy) return;
+    setExpertBusy(true);
+    try {
+      const url = await createExpertLink(claim, activeShopId, expertSupId, delivery);
+      if (url) { setExpertOpen(false); void load(); }
+    } finally { setExpertBusy(false); }
   };
   const openClientView = async () => {
     if (!activeShopId) return;
@@ -429,6 +444,12 @@ export default function ClaimDetail() {
     fechado: ddmm(claim.closed_at),
   };
   const nextText = nextStep({ ...claim, outcome: isLoss ? "perda_total" : "reparacao" }, phase, sups, links, IS_BR);
+  const focusSection = isLoss ? "loss" : ["entrada", "peritagem"].includes(phase) ? "documents" : phase === "autorizacao" ? "authorization" : phase === "reparacao" ? "work" : "billing";
+  const focusLabel = isLoss ? "Ver decisão e encargos" : focusSection === "documents" ? "Ver documentos" : focusSection === "authorization" ? "Ver orçamento e autorizações" : focusSection === "work" ? "Abrir reparação" : IS_BR ? "Ver notas fiscais" : "Ver faturação";
+  const openSection = (value: string) => {
+    setSections((current) => current.includes(value) ? current : [...current, value]);
+    window.setTimeout(() => document.getElementById(`claim-section-${value}`)?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }), 100);
+  };
 
   return (
     <div className="claims-surface space-y-5 max-w-7xl mx-auto pb-24">
@@ -443,7 +464,7 @@ export default function ClaimDetail() {
             </div>
             <p className="text-sm text-muted-foreground mt-1">
               {[
-                claim.vehicles ? [claim.vehicles.make, claim.vehicles.model].filter(Boolean).join(" ") : null,
+                claim.vehicles ? [claim.vehicles.make, claim.vehicles.model, claim.vehicles.version].filter(Boolean).join(" ") : null,
                 claim.vehicles?.plate,
                 clientDisplayName(claim.clients),
                 insurer?.name,
@@ -453,8 +474,8 @@ export default function ClaimDetail() {
           </div>
         </div>
         <div className="grid grid-cols-[1fr_auto] sm:flex sm:flex-wrap gap-2">
-          <Button className="min-h-[44px] col-span-2 sm:order-3" onClick={openClientView}><Eye className="w-4 h-4 mr-2" />Ver o que o cliente vê</Button>
-          <Button variant="outline" className="min-h-[44px] sm:order-2" onClick={sendExpertPackage}><Send className="w-4 h-4 mr-2" />Enviar pacote ao perito</Button>
+          <Button variant="outline" className="min-h-[44px] col-span-2 sm:order-3" onClick={openClientView}><Eye className="w-4 h-4 mr-2" />Ver o que o cliente vê</Button>
+          <Button variant="outline" className="min-h-[44px] sm:order-2" onClick={() => sendExpertPackage()}><Send className="w-4 h-4 mr-2" />Enviar pacote ao perito</Button>
           <Button variant="outline" className="min-h-[44px] hidden sm:inline-flex sm:order-1" onClick={() => setHistoryOpen(true)}><Clock className="w-4 h-4 mr-2" />Ver histórico</Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button variant="outline" size="icon" className="min-h-[44px] min-w-[44px] sm:order-4" aria-label="Mais opções"><MoreHorizontal className="w-5 h-5" /></Button></DropdownMenuTrigger>
@@ -468,17 +489,32 @@ export default function ClaimDetail() {
       </div>
 
       {/* 2. Onde está o processo */}
-      <ClaimPhaseBar outcome={isLoss ? "perda_total" : "reparacao"} phase={phase} cancelled={claim.status === "cancelled"} subs={subs} next={nextText} onOutcome={changeOutcome} isBR={IS_BR} />
+      <ClaimPhaseBar outcome={isLoss ? "perda_total" : "reparacao"} phase={phase} cancelled={claim.status === "cancelled"} subs={subs} next={nextText} onOutcome={changeOutcome} isBR={IS_BR} action={<Button className="min-h-[44px] w-full sm:w-auto" onClick={() => !isLoss && phase === "autorizacao" && sups.some(isPendingSup) ? void sendExpertPackage() : openSection(focusSection)}>{!isLoss && phase === "autorizacao" && sups.some(isPendingSup) ? "Preparar pedido ao perito" : focusLabel}</Button>} />
 
       {/* 3. Duas colunas */}
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-5 min-w-0">
-          {activeShopId && <ClaimDocumentsV2 claimId={claim.id} shopId={activeShopId} docs={docs} isBR={IS_BR} onChanged={load} />}
-          {activeShopId && !isLoss && <ClaimSupplements claim={claim} shopId={activeShopId} sups={sups} quotes={quotes} isBR={IS_BR} onChanged={load} />}
-          {activeShopId && !isLoss && <ClaimSplitBilling claim={claim} shopId={activeShopId} sups={sups} isBR={IS_BR} onChanged={() => { void loadFin(); }} />}
-          {activeShopId && isLoss && <ClaimTotalLoss claim={claim} shopId={activeShopId} isBR={IS_BR} onSaved={load} />}
-        </div>
-        <div className="space-y-5 min-w-0">
+        <Accordion type="multiple" value={sections.length ? sections : [focusSection]} onValueChange={(values) => setSections(values.length ? values : ["collapsed"])} className="min-w-0">
+          <div id="claim-section-documents" className="scroll-mt-4"><ClaimSection value="documents" title="Documentos e fotografias" summary={`${docs.length} ${docs.length === 1 ? "ficheiro" : "ficheiros"}`}>
+            {activeShopId && <ClaimDocumentsV2 claimId={claim.id} shopId={activeShopId} docs={docs} isBR={IS_BR} onChanged={load} />}
+          </ClaimSection></div>
+          {!isLoss && <div id="claim-section-authorization" className="scroll-mt-4"><ClaimSection value="authorization" title="Orçamento e autorizações" summary={sups.length ? `${sups.filter(isPendingSup).length} pendente(s) · ${formatMoney(authorizedTotal(sups))} autorizado` : "Sem pedidos registados"}>
+            {activeShopId && <ClaimSupplements claim={claim} shopId={activeShopId} sups={sups} quotes={quotes} isBR={IS_BR} onChanged={load} onSendExpert={(supId) => { void sendExpertPackage(supId); }} />}
+          </ClaimSection></div>}
+          {!isLoss && <div id="claim-section-work" className="scroll-mt-4"><ClaimSection value="work" title="Reparação" summary={claim.work_orders?.number || "Sem ordem de serviço associada"}>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Select value={claim.work_order_id || ""} onValueChange={(v) => link({ work_order_id: v })}><SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Associar OS existente" /></SelectTrigger><SelectContent>{wos.filter((w) => !claim.vehicle_id || w.vehicle_id === claim.vehicle_id).map((w) => <SelectItem key={w.id} value={w.id}>{w.number} — {w.status}</SelectItem>)}</SelectContent></Select>
+              <Button variant="outline" className="min-h-[44px]" onClick={() => claim.work_order_id ? navigate(`/services/edit/${claim.work_order_id}`) : createWorkOrder()}>{claim.work_order_id ? "Abrir OS" : "Criar OS"}</Button>
+            </div>
+          </ClaimSection></div>}
+          {!isLoss && <div id="claim-section-billing" className="scroll-mt-4"><ClaimSection value="billing" title={IS_BR ? "Notas fiscais" : "Faturação"} summary={`${(fin?.invoices || []).filter((i: any) => i.status !== "cancelled").length} ${IS_BR ? "nota(s) fiscal(is)" : "fatura(s)"}`}>
+            {activeShopId && <ClaimSplitBilling claim={claim} shopId={activeShopId} sups={sups} isBR={IS_BR} onChanged={() => { void loadFin(); }} />}
+          </ClaimSection></div>}
+          {isLoss && <div id="claim-section-loss" className="scroll-mt-4"><ClaimSection value="loss" title="Perda total · decisão e encargos">
+            {activeShopId && <ClaimTotalLoss claim={claim} shopId={activeShopId} isBR={IS_BR} onSaved={load} />}
+          </ClaimSection></div>}
+        </Accordion>
+        <Accordion type="multiple" className="min-w-0">
+          <ClaimSection value="essential" title="Dados do processo" summary={[insurer?.name, claim.expert_name].filter(Boolean).join(" · ") || "Seguradora, franquia e perito"}>
           <Card className="rounded-[14px]">
             <CardHeader><CardTitle className="text-base">O essencial</CardTitle></CardHeader>
             <CardContent className="space-y-3">
@@ -493,19 +529,32 @@ export default function ClaimDetail() {
                 <div><Label>Perito</Label><Input className="min-h-[44px]" placeholder="Nome" value={claim.expert_name || ""} onChange={(e) => set({ expert_name: e.target.value })} /></div>
                 <div><Input className="min-h-[44px]" placeholder="Email ou telefone do perito" value={claim.expert_contact || ""} onChange={(e) => set({ expert_contact: e.target.value })} /></div>
               </div>
-              <p className="text-xs text-muted-foreground">{IS_BR ? "Veículo" : "Viatura"} de substituição: no cartão "Imobilização".</p>
               <Button className="w-full min-h-[44px]" onClick={() => persist()} disabled={saving}><Save className="w-4 h-4 mr-2" />{saving ? "A guardar…" : "Guardar"}</Button>
               <Button variant="link" className="px-0 min-h-[44px]" aria-expanded={showMore} aria-controls="claim-more-details" onClick={() => setShowMore((v) => !v)}>
                 {showMore ? "Esconder detalhes" : "Mais detalhes (opcional)"}
                </Button>
-              {!showMore && <p className="text-xs text-muted-foreground">Por defeito ficam escondidos: esta informação já está nos documentos anexados.</p>}
             </CardContent>
           </Card>
-          {!IS_BR && <ClaimDeadlines claim={claim} sups={sups} onSaved={load} />}
-          <ClaimImmobilization claim={claim} isBR={IS_BR} onSaved={load} />
-          {activeShopId && <ClaimClientInformed claim={{ ...claim, claim_supplements: sups }} shopId={activeShopId} isBR={IS_BR} onSaved={load} />}
-        </div>
+          </ClaimSection>
+          <ClaimSection value="dates" title="Datas e imobilização" summary={claim.vehicle_in_date ? `Entrada: ${new Date(claim.vehicle_in_date).toLocaleDateString(LOC)}` : "Entrada, entrega e viatura de substituição"}><ClaimImmobilization claim={claim} isBR={IS_BR} onSaved={load} /></ClaimSection>
+          {!IS_BR && <ClaimSection value="deadlines" title="Prazos da seguradora"><ClaimDeadlines claim={claim} sups={sups} onSaved={load} /></ClaimSection>}
+          <ClaimSection value="client" title="Contacto com o cliente" summary={claim.client_informed_at ? `Última atualização: ${new Date(claim.client_informed_at).toLocaleDateString(LOC)}` : "Sem atualização registada"}>{activeShopId && <ClaimClientInformed claim={{ ...claim, claim_supplements: sups }} shopId={activeShopId} isBR={IS_BR} onSaved={load} />}</ClaimSection>
+        </Accordion>
       </div>
+
+      <Dialog open={expertOpen} onOpenChange={(open) => !expertBusy && setExpertOpen(open)}>
+        <DialogContent className="claims-surface max-w-lg max-h-[90dvh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Pacote para o perito</DialogTitle><DialogDescription>{claim.ref} · {claim.process_number || claim.claim_number || "Sem nº de processo"}</DialogDescription></DialogHeader>
+          <div className="border border-border rounded-lg p-3 space-y-1 text-sm">
+            <p className="font-semibold break-words">{claimVehicleLabel(claim.vehicles) || "Sem viatura associada"}</p>
+            {claim.vehicles?.vin && <p className="font-mono break-all">VIN / Chassis: {claim.vehicles.vin}</p>}
+            <p className="text-muted-foreground">{claim.expert_name || "Perito não indicado"} · {claim.expert_contact || "Sem contacto"}</p>
+          </div>
+          <div><Label>Pedido a validar</Label><Select value={expertSupId} onValueChange={setExpertSupId}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{sups.filter(isPendingSup).map((s) => <SelectItem key={s.id} value={s.id}>{s.type === "inicial" ? "Orçamento inicial" : `Adicional #${s.number}`} · {formatMoney(Number(s.amount_requested))}</SelectItem>)}</SelectContent></Select></div>
+          <p className="text-sm text-muted-foreground">Dados da viatura, fotografias deste pedido e linhas do orçamento associado. Link válido durante 14 dias.</p>
+          <DialogFooter className="gap-2"><Button variant="outline" disabled={expertBusy} onClick={() => deliverExpertPackage("copy")}><Copy className="w-4 h-4 mr-2" />Copiar link</Button><Button disabled={expertBusy || !String(claim.expert_contact || "").match(/[^\s@]+@[^\s@]+\.[^\s@]+/)} onClick={() => deliverExpertPackage("email")}><Mail className="w-4 h-4 mr-2" />{expertBusy ? "A preparar…" : "Enviar por email"}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Mais detalhes (opcional): todos os campos antigos, nenhum obrigatório */}
       {showMore && (

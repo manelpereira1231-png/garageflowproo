@@ -20,8 +20,8 @@ const STATUS: Record<string, string> = { pending: "Pendente", no_perito: "No per
  * Orçamento e autorizações: autorização inicial + adicionais (danos ocultos).
  * Reutiliza a tabela claim_supplements. O total autorizado alimenta a faturação.
  */
-export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged }: {
-  claim: any; shopId: string; sups: Sup[]; quotes: any[]; isBR: boolean; onChanged: () => void;
+export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged, onSendExpert }: {
+  claim: any; shopId: string; sups: Sup[]; quotes: any[]; isBR: boolean; onChanged: () => void; onSendExpert?: (id: string) => void;
 }) {
   const [open, setOpen] = useState<null | "inicial" | "adicional">(null);
   const [f, setF] = useState({ description: "", amount: "", quote_id: "" });
@@ -57,7 +57,7 @@ export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged 
       claim_id: claim.id, shop_id: shopId, type: open, number, description: f.description.trim(),
       amount_requested: a, quote_id: f.quote_id || null,
     }).select("id").single();
-    if (!error && files.length) await uploadClaimFiles(files, { shopId, claimId: claim.id, category: "hidden_damage", supplementId: inserted?.id });
+    if (!error && files.length) await uploadClaimFiles(files, { shopId, claimId: claim.id, category: open === "inicial" ? "damage" : "hidden_damage", supplementId: inserted?.id });
     if (!error && open === "inicial" && f.quote_id && !claim.quote_id) await supabase.from("claims").update({ quote_id: f.quote_id }).eq("id", claim.id).eq("shop_id", shopId);
     if (!error) await supabase.from("claim_events").insert({ claim_id: claim.id, shop_id: shopId, kind: "note", description: open === "inicial" ? `Autorização inicial pedida (${formatMoney(a)})` : `Adicional #${number} pedido: ${f.description.trim()} (${formatMoney(a)})` });
     setBusy(false);
@@ -81,6 +81,7 @@ export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged 
   };
 
   const sendToExpert = async (s: Sup) => {
+    if (onSendExpert) { onSendExpert(s.id); return; }
     const r = await createExpertLink(claim, shopId, s.id);
     if (r) onChanged();
   };
@@ -95,12 +96,12 @@ export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged 
         <CardTitle className="text-base min-w-0 break-normal">Orçamento e autorizações</CardTitle>
         <div className="grid grid-cols-1 2xl:grid-cols-2 gap-2">
           {!hasInitial && <Button variant="outline" className="min-h-[44px]" onClick={() => openNew("inicial")}>Registar orçamento inicial</Button>}
-          <Button className="min-h-[44px]" onClick={() => openNew("adicional")}><Plus className="h-4 w-4 mr-1" />Pedir adicional</Button>
+          <Button variant="outline" className="min-h-[44px]" onClick={() => openNew("adicional")}><Plus className="h-4 w-4 mr-1" />Pedir adicional</Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
         {sups.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Registe o orçamento inicial enviado à seguradora. Os danos encontrados depois entram como adicionais.</p>
+          <p className="text-sm text-muted-foreground">Sem autorizações registadas.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="claim-authorization-table w-full text-sm">
@@ -140,7 +141,6 @@ export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged 
             </table>
           </div>
         )}
-        <p className="text-xs text-muted-foreground">O valor autorizado total é a soma das autorizações aprovadas e alimenta a {isBR ? "nota fiscal" : "faturação"}.</p>
       </CardContent>
 
       <Dialog open={!!open} onOpenChange={(o) => !o && !busy && setOpen(null)}>

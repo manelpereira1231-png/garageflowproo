@@ -2,19 +2,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { REPAIR_PHASES, REPAIR_PHASE_LABELS, TOTAL_LOSS_PHASES, TOTAL_LOSS_PHASE_LABELS } from "@/lib/claimPhases";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
+import { useState, type ReactNode } from "react";
 
 /** "Onde está o processo": 6 fases + seletor Reparar | Perda total + próximo passo. */
-export function ClaimPhaseBar({ outcome, phase, cancelled, subs, next, onOutcome, isBR }: {
+export function ClaimPhaseBar({ outcome, phase, cancelled, subs, next, onOutcome, isBR, action }: {
   outcome: "reparacao" | "perda_total"; phase: string; cancelled: boolean; subs: Record<string, string>;
-  next: string; onOutcome: (o: "reparacao" | "perda_total") => void; isBR: boolean;
+  next: string; onOutcome: (o: "reparacao" | "perda_total") => void; isBR: boolean; action?: ReactNode;
 }) {
   const list: string[] = outcome === "perda_total" ? [...TOTAL_LOSS_PHASES] : REPAIR_PHASES;
   const labels: Record<string, string> = outcome === "perda_total" ? TOTAL_LOSS_PHASE_LABELS : { ...REPAIR_PHASE_LABELS, faturacao: isBR ? "Nota fiscal" : "Faturação" };
   const cur = list.indexOf(phase);
+  const [expanded, setExpanded] = useState(false);
   return (
     <Card className="rounded-[14px]">
       <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 space-y-0 pb-3">
-        <CardTitle className="text-base">Onde está o processo</CardTitle>
+        <div><CardTitle className="text-base">{labels[phase] || "Onde está o processo"}</CardTitle><p className="text-xs text-muted-foreground mt-1">Etapa {Math.max(0, cur) + 1} de {list.length}</p></div>
         <div className="flex sm:inline-flex rounded-[12px] border border-border p-1" role="tablist" aria-label="Tipo de processo">
           {(["reparacao", "perda_total"] as const).map((o) => (
             <Button variant="ghost" key={o} type="button" role="tab" aria-selected={outcome === o} onClick={() => outcome !== o && onOutcome(o)}
@@ -25,7 +27,9 @@ export function ClaimPhaseBar({ outcome, phase, cancelled, subs, next, onOutcome
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <ol className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
+        <div className="space-y-3"><p className="text-sm"><span className="font-semibold">Próximo passo:</span> {next}</p>{action}</div>
+        <Button variant="ghost" className="px-0 text-muted-foreground" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? "Ocultar etapas" : "Ver todas as etapas"}</Button>
+        {expanded && <ol className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
           {list.map((p, i) => {
             const done = i < cur || (i === cur && p === "fechado");
             const current = i === cur && p !== "fechado";
@@ -42,10 +46,7 @@ export function ClaimPhaseBar({ outcome, phase, cancelled, subs, next, onOutcome
               </li>
             );
           })}
-        </ol>
-        <div className="rounded-[12px] border claim-tone-warning px-3 py-2 text-sm">
-          <span className="font-semibold">Próximo passo:</span> {next}
-        </div>
+        </ol>}
       </CardContent>
     </Card>
   );

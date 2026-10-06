@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     if (!link || link.revoked_at || (link.expires_at && new Date(link.expires_at) < new Date())) return json({ error: "expired" }, 404);
 
     const { data: claim } = await admin.from("claims")
-      .select("id, shop_id, ref, status, outcome, total_loss, phase_override, work_order_id, deductible, quote_id, insurer_id, vehicle_in_date, vehicle_out_date, promised_date, expert_done_date, expert_date, client_decision, last_client_message, amount_approved, insurers(name), vehicles(make, model, plate, year)")
+      .select("id, shop_id, ref, process_number, claim_number, status, outcome, total_loss, phase_override, work_order_id, deductible, quote_id, insurer_id, vehicle_in_date, vehicle_out_date, promised_date, expert_done_date, expert_date, client_decision, last_client_message, amount_approved, insurers(name), vehicles(make, model, plate, year, version, vin, mileage, fuel)")
       .eq("id", link.claim_id).eq("shop_id", link.shop_id).maybeSingle();
     if (!claim || claim.shop_id !== link.shop_id) return json({ error: "invalid" }, 404);
     const [{ data: shop }, { data: sups }] = await Promise.all([
@@ -41,7 +41,8 @@ Deno.serve(async (req) => {
     ]);
     const list = sups || [];
     const authorized = list.length ? list.filter((s: any) => s.status === "approved" || s.status === "partial").reduce((t: number, s: any) => t + Number(s.amount_approved || 0), 0) : Number(claim.amount_approved || 0);
-    const base = { shop: { name: shop?.name, phone: shop?.phone, logo_url: shop?.logo_url, currency: shop?.currency || "EUR", country: shop?.country_code || "PT" }, vehicle: claim.vehicles, ref: claim.ref, insurer: (claim as any).insurers?.name || null };
+    const vehicle = claim.vehicles as any;
+    const base = { shop: { name: shop?.name, phone: shop?.phone, logo_url: shop?.logo_url, currency: shop?.currency || "EUR", country: shop?.country_code || "PT" }, vehicle: vehicle ? { make: vehicle.make, model: vehicle.model, plate: vehicle.plate, year: vehicle.year } : null, ref: claim.ref, insurer: (claim as any).insurers?.name || null };
 
     const quoteLines = async (ids: string[]) => {
       if (!ids.length) return [] as any[];
@@ -144,7 +145,7 @@ Deno.serve(async (req) => {
     const lines = sup.quote_id ? await quoteLines([sup.quote_id]) : [];
     const initial = list.find((s: any) => s.type === "inicial");
     return json({
-      ...base, audience: "perito",
+       ...base, vehicle: claim.vehicles, audience: "perito", processNumber: claim.process_number || claim.claim_number || null,
       supplement: { type: sup.type, number: sup.number, description: sup.description, amount_requested: Number(sup.amount_requested), status: sup.status, amount_approved: sup.amount_approved, notes: sup.notes },
       expertDate: claim.expert_done_date || claim.expert_date, initialAuthorized: initial?.amount_approved ?? null, authorized,
       photos: signed.map((s: any) => s.signedUrl).filter(Boolean), lines,

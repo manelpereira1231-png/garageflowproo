@@ -179,3 +179,6 @@ verify_jwt = false
 
 [functions.login-guard]
 verify_jwt = false
+
+[functions.claim-share]
+verify_jwt = false

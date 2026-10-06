@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ArrowLeft, Save, ShieldAlert, Phone, Mail, Globe, Paperclip, Plus, Copy,
+  ArrowLeft, Save, ShieldAlert, Send, Eye, MoreHorizontal, Phone, Mail, Globe, Paperclip, Plus, Copy,
   Trash2, FileText, Clock, CheckCircle2, CalendarClock, Download, Star,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -27,6 +27,18 @@ import { ClaimBillingLines } from "@/components/claims/ClaimBillingLines";
 import { ClaimSupplements } from "@/components/claims/ClaimSupplements";
 import { ClaimTotalLoss } from "@/components/claims/ClaimTotalLoss";
 import { ClaimImmobilization } from "@/components/claims/ClaimImmobilization";
+import { ClaimDocumentsV2 } from "@/components/claims/ClaimDocumentsV2";
+import { ClaimSplitBilling } from "@/components/claims/ClaimSplitBilling";
+import { ClaimDeadlines } from "@/components/claims/ClaimDeadlines";
+import { ClaimClientInformed, sendClientEmail } from "@/components/claims/ClaimClientInformed";
+import { ClaimPhaseBar } from "@/components/claims/ClaimPhaseBar";
+import { createExpertLink, getClientLink } from "@/components/claims/claimShare";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  computeRepairPhase, computeTotalLossPhase, phaseBadge, nextStep, isPendingSup, clientMessageForPhase,
+  STATUS_TO_PHASE, PHASE_TO_STATUS, REPAIR_PHASES, REPAIR_PHASE_LABELS, type Sup,
+} from "@/lib/claimPhases";
 import {
   CLAIM_STATUSES, CLAIM_STATUS_LABELS, claimStatusTone,
   EXPERT_STATUSES, EXPERT_STATUS_LABELS,
@@ -74,6 +86,13 @@ export default function ClaimDetail() {
   };
   useEffect(() => { void loadFin(); }, [id]);
   const [events, setEvents] = useState<any[]>([]);
+  const [sups, setSups] = useState<Sup[]>([]);
+  const [links, setLinks] = useState<any[]>([]);
+  const [showMore, setShowMore] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [overrideStatus, setOverrideStatus] = useState("new");
+  const syncingRef = useRef(false);
   const [wos, setWos] = useState<any[]>([]);
   const [invs, setInvs] = useState<any[]>([]);
   const [members, setMembers] = useState<Record<string, string>>({});
@@ -103,6 +122,12 @@ export default function ClaimDetail() {
     setComms(cm.data || []);
     setDocs(dc.data || []);
     setEvents(ev.data || []);
+    const [sp, lk] = await Promise.all([
+      (supabase as any).from("claim_supplements").select("*").eq("claim_id", id).order("created_at"),
+      (supabase as any).from("claim_share_links").select("supplement_id, created_at, audience").eq("claim_id", id).order("created_at", { ascending: false }),
+    ]);
+    setSups(sp.data || []);
+    setLinks(lk.data || []);
     if (c.data.client_id) {
       const q = await supabase.from("quotes")
         .select("id, number, total, status, date")
@@ -135,6 +160,7 @@ export default function ClaimDetail() {
   useRealtimeTable("claim_events", { ...liveOpts, filter: `claim_id=eq.${id}` });
   useRealtimeTable("claim_communications", { ...liveOpts, filter: `claim_id=eq.${id}` });
   useRealtimeTable("claim_documents", { ...liveOpts, filter: `claim_id=eq.${id}` });
+  useRealtimeTable("claim_supplements", { ...liveOpts, filter: `claim_id=eq.${id}` });
 
   const set = (patch: Record<string, any>) => setClaim((c: any) => ({ ...c, ...patch }));
 
@@ -207,6 +233,78 @@ export default function ClaimDetail() {
     quote_number: quotes.find((q) => q.id === claim?.quote_id)?.number,
     amount: claim?.amount_requested != null ? formatMoney(Number(claim.amount_requested)) : undefined,
   }), [claim, quotes]);
+
+
+  /* ---------------- Fases (v2): avanço automático ---------------- */
+  const repairPhase = useMemo(() => {
+    if (!claim) return "entrada" as const;
+    const live = (fin?.invoices || []).filter((i: any) => i.status !== "cancelled");
+    const billed = live.reduce((t: number, i: any) => t + Number(i.total || 0), 0);
+    const paid = (fin?.payments || []).reduce((t: number, p: any) => t + Number(p.amount || 0), 0);
+    const woDone = ["completed", "done", "delivered", "ready", "invoiced"].includes(String(claim.work_orders?.status || ""));
+    return computeRepairPhase(claim, { sups, woDone, billedAndPaid: billed > 0 && paid >= billed - 0.01 });
+  }, [claim, sups, fin]);
+
+  const notifyClient = async (ph: string, pendingSup: boolean) => {
+    if (!claim?.auto_notify_client || !activeShopId) return;
+    const msg = clientMessageForPhase(ph, IS_BR, pendingSup);
+    await supabase.from("claims").update({ last_client_message: msg, last_client_message_at: new Date().toISOString(), client_informed_at: new Date().toISOString(), client_informed_note: "automático" } as any).eq("id", claim.id);
+    if (claim.clients?.email) {
+      const link = await getClientLink(claim, activeShopId);
+      await sendClientEmail(claim, activeShopId, msg, link, IS_BR);
+    }
+  };
+
+  useEffect(() => {
+    if (!claim || !activeShopId || syncingRef.current || claim.outcome === "perda_total" || claim.phase_override) return;
+    const stored = STATUS_TO_PHASE[claim.status] || "entrada";
+    const pendingSup = sups.some(isPendingSup);
+    const target = repairPhase;
+    const forward = REPAIR_PHASES.indexOf(target) > REPAIR_PHASES.indexOf(stored);
+    const holdAuth = target === "autorizacao" && pendingSup && stored !== "autorizacao" && REPAIR_PHASES.indexOf(stored) < REPAIR_PHASES.indexOf("faturacao");
+    if (!forward && !holdAuth) return;
+    syncingRef.current = true;
+    (async () => {
+      const status = PHASE_TO_STATUS[target];
+      await supabase.from("claims").update({ status, ...(target === "fechado" ? { closed_at: new Date().toISOString() } : {}) } as any).eq("id", claim.id);
+      await supabase.from("claim_events").insert({ claim_id: claim.id, shop_id: activeShopId, kind: "status", description: `Fase: ${REPAIR_PHASE_LABELS[target]} (automático)`, meta: { to: status, auto: true } } as any);
+      await notifyClient(target, pendingSup);
+      syncingRef.current = false;
+      load();
+    })();
+  }, [repairPhase, claim?.status, claim?.phase_override]);
+
+  const changeOutcome = async (o: "reparacao" | "perda_total") => {
+    const { error } = await supabase.from("claims").update({ outcome: o, total_loss: o === "perda_total", ...(o === "perda_total" && !claim.total_loss_date ? { total_loss_date: new Date().toISOString().slice(0, 10) } : {}) } as any).eq("id", claim.id);
+    if (error) { toast.error(error.message); return; }
+    await supabase.from("claim_events").insert({ claim_id: claim.id, shop_id: activeShopId, kind: "note", description: o === "perda_total" ? "Processo marcado como perda total" : "Processo voltou ao fluxo de reparação" } as any);
+    if (o === "perda_total") await notifyClient("decisao", false);
+    load();
+  };
+
+  const applyOverride = async (status: string | null) => {
+    const { data: auth } = await supabase.auth.getSession();
+    const who = auth.session?.user.email || "utilizador";
+    const patch: any = status ? { status, phase_override: STATUS_TO_PHASE[status] || null } : { phase_override: null };
+    const { error } = await supabase.from("claims").update(patch).eq("id", claim.id);
+    if (error) { toast.error(error.message); return; }
+    await supabase.from("claim_events").insert({ claim_id: claim.id, shop_id: activeShopId, kind: "status", description: status ? `Estado corrigido manualmente por ${who}: ${CLAIM_STATUS_LABELS[status] || status}` : `Cálculo automático retomado por ${who}`, meta: status ? { to: status, manual: true } : {} } as any);
+    setOverrideOpen(false); toast.success("Estado atualizado"); load();
+  };
+
+  const sendExpertPackage = async () => {
+    if (!activeShopId) return;
+    const pend = sups.filter(isPendingSup).sort((a, b) => (a.type === "inicial" ? -1 : (a.number || 0) - (b.number || 0)))[0];
+    if (!pend) { toast.error("Registe primeiro o orçamento inicial ou um adicional para o perito validar."); return; }
+    const url = await createExpertLink(claim, activeShopId, pend.id);
+    if (url) { await (supabase as any).from("claim_supplements").update({ status: "no_perito" }).eq("id", pend.id); load(); }
+  };
+  const openClientView = async () => {
+    if (!activeShopId) return;
+    const w = window.open("about:blank", "_blank");
+    const url = await getClientLink(claim, activeShopId);
+    if (url) { if (w) w.location.href = url; else window.location.href = url; } else w?.close();
+  };
 
   /* ---------------- Contactos ---------------- */
   const [contactOpen, setContactOpen] = useState(false);

@@ -510,6 +510,10 @@ export default function ClaimDetail() {
           {activeShopId && !isLoss && <ClaimSupplements claim={claim} shopId={activeShopId} sups={sups} quotes={quotes} isBR={IS_BR} onChanged={load} />}
           {activeShopId && !isLoss && <ClaimSplitBilling claim={claim} shopId={activeShopId} sups={sups} isBR={IS_BR} onChanged={() => { void loadFin(); }} />}
           {activeShopId && isLoss && <ClaimTotalLoss claim={claim} shopId={activeShopId} isBR={IS_BR} onSaved={load} />}
+          <div className={`grid gap-5 ${IS_BR ? "" : "xl:grid-cols-2"} items-start`}>
+            {!IS_BR && <ClaimDeadlines claim={claim} sups={sups} onSaved={load} />}
+            <ClaimImmobilization claim={claim} isBR={IS_BR} onSaved={load} />
+          </div>
         </div>
         <div className="space-y-5">
           <Card className="rounded-[14px]">
@@ -534,8 +538,6 @@ export default function ClaimDetail() {
               {!showMore && <p className="text-xs text-muted-foreground">Por defeito ficam escondidos: esta informação já está nos documentos anexados.</p>}
             </CardContent>
           </Card>
-          {!IS_BR && <ClaimDeadlines claim={claim} sups={sups} onSaved={load} />}
-          <ClaimImmobilization claim={claim} isBR={IS_BR} onSaved={load} />
           {activeShopId && <ClaimClientInformed claim={claim} shopId={activeShopId} isBR={IS_BR} onSaved={load} />}
         </div>
       </div>

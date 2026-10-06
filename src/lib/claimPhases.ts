@@ -172,10 +172,10 @@ export const claimHasOverdue = (claim: any, sups: Sup[]) =>
 /** Mensagem simples ao cliente para cada fase. */
 export function clientMessageForPhase(phase: string, isBR: boolean, hasPendingSup: boolean): string {
   const car = isBR ? "o seu veículo" : "a sua viatura";
-  if (hasPendingSup) return "Ao desmontar encontrámos danos adicionais. Já pedimos aprovação à seguradora e avisamos assim que houver resposta.".replace("encontrámos", isBR ? "encontramos" : "encontrámos").replace("pedimos", "pedimos");
+  if (hasPendingSup) return `Ao desmontar ${isBR ? "encontramos" : "encontrámos"} danos adicionais. Já pedimos aprovação à seguradora e avisamos assim que houver resposta.`;
   const m: Record<string, string> = {
     entrada: `Recebemos ${car} e abrimos o processo junto da seguradora.`,
-    peritagem: `${isBR ? "O" : "O"} perito da seguradora vai avaliar os danos de ${car}. Avisamos logo que haja novidades.`,
+    peritagem: `O perito da seguradora vai avaliar os danos de ${car}. Avisamos logo que haja novidades.`,
     autorizacao: "A peritagem está feita. Estamos a aguardar a autorização da seguradora para iniciar a reparação.",
     reparacao: `A seguradora autorizou a reparação. ${isBR ? "Já estamos reparando" : "Já estamos a reparar"} ${car}.`,
     faturacao: `A reparação está concluída. ${car.charAt(0).toUpperCase() + car.slice(1)} está ${isBR ? "pronto" : "pronta"} para levantar.`,

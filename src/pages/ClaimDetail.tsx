@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ArrowLeft, Save, ShieldAlert, Send, Eye, MoreHorizontal, Phone, Mail, Globe, Paperclip, Plus, Copy,
+  ArrowLeft, Save, ShieldAlert, Phone, Mail, Globe, Paperclip, Plus, Copy,
   Trash2, FileText, Clock, CheckCircle2, CalendarClock, Download, Star,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -27,18 +27,6 @@ import { ClaimBillingLines } from "@/components/claims/ClaimBillingLines";
 import { ClaimSupplements } from "@/components/claims/ClaimSupplements";
 import { ClaimTotalLoss } from "@/components/claims/ClaimTotalLoss";
 import { ClaimImmobilization } from "@/components/claims/ClaimImmobilization";
-import { ClaimDocumentsV2 } from "@/components/claims/ClaimDocumentsV2";
-import { ClaimSplitBilling } from "@/components/claims/ClaimSplitBilling";
-import { ClaimDeadlines } from "@/components/claims/ClaimDeadlines";
-import { ClaimClientInformed, sendClientEmail } from "@/components/claims/ClaimClientInformed";
-import { ClaimPhaseBar } from "@/components/claims/ClaimPhaseBar";
-import { createExpertLink, getClientLink } from "@/components/claims/claimShare";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import {
-  computeRepairPhase, computeTotalLossPhase, phaseBadge, nextStep, isPendingSup, clientMessageForPhase,
-  STATUS_TO_PHASE, PHASE_TO_STATUS, REPAIR_PHASES, REPAIR_PHASE_LABELS, type Sup,
-} from "@/lib/claimPhases";
 import {
   CLAIM_STATUSES, CLAIM_STATUS_LABELS, claimStatusTone,
   EXPERT_STATUSES, EXPERT_STATUS_LABELS,
@@ -86,13 +74,6 @@ export default function ClaimDetail() {
   };
   useEffect(() => { void loadFin(); }, [id]);
   const [events, setEvents] = useState<any[]>([]);
-  const [sups, setSups] = useState<Sup[]>([]);
-  const [links, setLinks] = useState<any[]>([]);
-  const [showMore, setShowMore] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [overrideOpen, setOverrideOpen] = useState(false);
-  const [overrideStatus, setOverrideStatus] = useState("new");
-  const syncingRef = useRef(false);
   const [wos, setWos] = useState<any[]>([]);
   const [invs, setInvs] = useState<any[]>([]);
   const [members, setMembers] = useState<Record<string, string>>({});
@@ -122,12 +103,6 @@ export default function ClaimDetail() {
     setComms(cm.data || []);
     setDocs(dc.data || []);
     setEvents(ev.data || []);
-    const [sp, lk] = await Promise.all([
-      (supabase as any).from("claim_supplements").select("*").eq("claim_id", id).order("created_at"),
-      (supabase as any).from("claim_share_links").select("supplement_id, created_at, audience").eq("claim_id", id).order("created_at", { ascending: false }),
-    ]);
-    setSups(sp.data || []);
-    setLinks(lk.data || []);
     if (c.data.client_id) {
       const q = await supabase.from("quotes")
         .select("id, number, total, status, date")
@@ -160,7 +135,6 @@ export default function ClaimDetail() {
   useRealtimeTable("claim_events", { ...liveOpts, filter: `claim_id=eq.${id}` });
   useRealtimeTable("claim_communications", { ...liveOpts, filter: `claim_id=eq.${id}` });
   useRealtimeTable("claim_documents", { ...liveOpts, filter: `claim_id=eq.${id}` });
-  useRealtimeTable("claim_supplements", { ...liveOpts, filter: `claim_id=eq.${id}` });
 
   const set = (patch: Record<string, any>) => setClaim((c: any) => ({ ...c, ...patch }));
 
@@ -233,78 +207,6 @@ export default function ClaimDetail() {
     quote_number: quotes.find((q) => q.id === claim?.quote_id)?.number,
     amount: claim?.amount_requested != null ? formatMoney(Number(claim.amount_requested)) : undefined,
   }), [claim, quotes]);
-
-
-  /* ---------------- Fases (v2): avanço automático ---------------- */
-  const repairPhase = useMemo(() => {
-    if (!claim) return "entrada" as const;
-    const live = (fin?.invoices || []).filter((i: any) => i.status !== "cancelled");
-    const billed = live.reduce((t: number, i: any) => t + Number(i.total || 0), 0);
-    const paid = (fin?.payments || []).reduce((t: number, p: any) => t + Number(p.amount || 0), 0);
-    const woDone = ["completed", "done", "delivered", "ready", "invoiced"].includes(String(claim.work_orders?.status || ""));
-    return computeRepairPhase(claim, { sups, woDone, billedAndPaid: billed > 0 && paid >= billed - 0.01 });
-  }, [claim, sups, fin]);
-
-  const notifyClient = async (ph: string, pendingSup: boolean) => {
-    if (!claim?.auto_notify_client || !activeShopId) return;
-    const msg = clientMessageForPhase(ph, IS_BR, pendingSup);
-    await supabase.from("claims").update({ last_client_message: msg, last_client_message_at: new Date().toISOString(), client_informed_at: new Date().toISOString(), client_informed_note: "automático" } as any).eq("id", claim.id);
-    if (claim.clients?.email) {
-      const link = await getClientLink(claim, activeShopId);
-      await sendClientEmail(claim, activeShopId, msg, link, IS_BR);
-    }
-  };
-
-  useEffect(() => {
-    if (!claim || !activeShopId || syncingRef.current || claim.outcome === "perda_total" || claim.phase_override) return;
-    const stored = STATUS_TO_PHASE[claim.status] || "entrada";
-    const pendingSup = sups.some(isPendingSup);
-    const target = repairPhase;
-    const forward = REPAIR_PHASES.indexOf(target) > REPAIR_PHASES.indexOf(stored);
-    const holdAuth = target === "autorizacao" && pendingSup && stored !== "autorizacao" && REPAIR_PHASES.indexOf(stored) < REPAIR_PHASES.indexOf("faturacao");
-    if (!forward && !holdAuth) return;
-    syncingRef.current = true;
-    (async () => {
-      const status = PHASE_TO_STATUS[target];
-      await supabase.from("claims").update({ status, ...(target === "fechado" ? { closed_at: new Date().toISOString() } : {}) } as any).eq("id", claim.id);
-      await supabase.from("claim_events").insert({ claim_id: claim.id, shop_id: activeShopId, kind: "status", description: `Fase: ${REPAIR_PHASE_LABELS[target]} (automático)`, meta: { to: status, auto: true } } as any);
-      await notifyClient(target, pendingSup);
-      syncingRef.current = false;
-      load();
-    })();
-  }, [repairPhase, claim?.status, claim?.phase_override]);
-
-  const changeOutcome = async (o: "reparacao" | "perda_total") => {
-    const { error } = await supabase.from("claims").update({ outcome: o, total_loss: o === "perda_total", ...(o === "perda_total" && !claim.total_loss_date ? { total_loss_date: new Date().toISOString().slice(0, 10) } : {}) } as any).eq("id", claim.id);
-    if (error) { toast.error(error.message); return; }
-    await supabase.from("claim_events").insert({ claim_id: claim.id, shop_id: activeShopId, kind: "note", description: o === "perda_total" ? "Processo marcado como perda total" : "Processo voltou ao fluxo de reparação" } as any);
-    if (o === "perda_total") await notifyClient("decisao", false);
-    load();
-  };
-
-  const applyOverride = async (status: string | null) => {
-    const { data: auth } = await supabase.auth.getSession();
-    const who = auth.session?.user.email || "utilizador";
-    const patch: any = status ? { status, phase_override: STATUS_TO_PHASE[status] || null } : { phase_override: null };
-    const { error } = await supabase.from("claims").update(patch).eq("id", claim.id);
-    if (error) { toast.error(error.message); return; }
-    await supabase.from("claim_events").insert({ claim_id: claim.id, shop_id: activeShopId, kind: "status", description: status ? `Estado corrigido manualmente por ${who}: ${CLAIM_STATUS_LABELS[status] || status}` : `Cálculo automático retomado por ${who}`, meta: status ? { to: status, manual: true } : {} } as any);
-    setOverrideOpen(false); toast.success("Estado atualizado"); load();
-  };
-
-  const sendExpertPackage = async () => {
-    if (!activeShopId) return;
-    const pend = sups.filter(isPendingSup).sort((a, b) => (a.type === "inicial" ? -1 : (a.number || 0) - (b.number || 0)))[0];
-    if (!pend) { toast.error("Registe primeiro o orçamento inicial ou um adicional para o perito validar."); return; }
-    const url = await createExpertLink(claim, activeShopId, pend.id);
-    if (url) { await (supabase as any).from("claim_supplements").update({ status: "no_perito" }).eq("id", pend.id); load(); }
-  };
-  const openClientView = async () => {
-    if (!activeShopId) return;
-    const w = window.open("about:blank", "_blank");
-    const url = await getClientLink(claim, activeShopId);
-    if (url) { if (w) w.location.href = url; else window.location.href = url; } else w?.close();
-  };
 
   /* ---------------- Contactos ---------------- */
   const [contactOpen, setContactOpen] = useState(false);
@@ -439,132 +341,149 @@ export default function ClaimDetail() {
 
   const insurer = claim.insurers;
 
-  const isLoss = claim.outcome === "perda_total";
-  const phase = isLoss ? computeTotalLossPhase(claim) : repairPhase;
-  const badge = phaseBadge(claim, phase, sups, IS_BR);
-  const badgeTone: Record<string, string> = {
-    amber: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/40",
-    blue: "bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/40",
-    red: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/40",
-    green: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/40",
-    gray: "bg-muted text-muted-foreground border-border",
-  };
-  const ddmm = (v: string | null | undefined) => (v ? new Date(v).toLocaleDateString(LOC, { day: "2-digit", month: "2-digit" }) : "");
-  const initialSup = sups.find((s) => s.type === "inicial");
-  const subs: Record<string, string> = {
-    entrada: ddmm(claim.vehicle_in_date || claim.report_date || claim.created_at),
-    peritagem: claim.expert_done_date ? `Feita ${ddmm(claim.expert_done_date)}` : claim.expert_date ? `Marcada ${ddmm(claim.expert_date)}` : "",
-    autorizacao: sups.some(isPendingSup) ? "À espera do perito" : initialSup?.decided_at ? `Autorizada ${ddmm(initialSup.decided_at)}` : "",
-    reparacao: claim.status === "waiting_parts" ? (IS_BR ? "Aguardando peças" : "A aguardar peças") : claim.work_orders?.number ? `OS ${claim.work_orders.number}` : "",
-    faturacao: fin?.invoices?.length ? `${fin.invoices.filter((i: any) => i.status !== "cancelled").length} ${IS_BR ? "nota(s)" : "fatura(s)"}` : "",
-    perda_total: ddmm(claim.total_loss_date),
-    decisao: claim.client_decision && claim.client_decision !== "pending" ? `Decidido ${ddmm(claim.client_decision_date)}` : "",
-    fechado: ddmm(claim.closed_at),
-  };
-  const nextText = nextStep(claim, phase, sups, links, IS_BR);
-
   return (
-    <div className="space-y-5 max-w-6xl mx-auto pb-24">
-      {/* 1. Cabeçalho */}
-      <div className="flex flex-col lg:flex-row lg:items-start gap-3">
-        <div className="flex items-start gap-2 flex-1 min-w-0">
-          <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px]" aria-label="Voltar" onClick={() => navigate("/claims")}><ArrowLeft className="w-5 h-5" /></Button>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-bold">{claim.ref || "Sinistro"}</h1>
-              <Badge variant="outline" className={badgeTone[badge.tone]}>{badge.label}</Badge>
+    <div className="space-y-5 max-w-5xl mx-auto pb-24">
+      {/* Cabeçalho + estado global */}
+      <div className="flex items-start gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/claims")}><ArrowLeft className="w-5 h-5" /></Button>
+        <div className="flex-1 min-w-0">
+          <h1 className="page-title flex items-center gap-2 whitespace-nowrap">
+            <ShieldAlert className="w-6 h-6 text-primary shrink-0" />
+            {claim.ref || "Sinistro"}
+          </h1>
+          {claim.claim_number ? <p className="text-sm text-muted-foreground break-all">Processo {claim.claim_number}</p> : null}
+          <p className="text-sm text-muted-foreground">
+            {clientDisplayName(claim.clients)} · {claim.vehicles ? `${claim.vehicles.make} ${claim.vehicles.model} — ${claim.vehicles.plate}` : "—"}
+            {claim.work_orders?.number ? ` · OS ${claim.work_orders.number}` : ""}
+          </p>
+        </div>
+        <Button onClick={() => persist()} disabled={saving} className="min-h-[44px]">
+          <Save className="w-4 h-4 mr-2" />{saving ? "A guardar…" : "Guardar"}
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-4 grid gap-3 md:grid-cols-3">
+          <div>
+            <Label>Estado do processo</Label>
+            <Select value={claim.status} onValueChange={(v) => { set({ status: v }); persist({ status: v }); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{CLAIM_STATUSES.map((s) => <SelectItem key={s} value={s}>{CLAIM_STATUS_LABELS[s]}</SelectItem>)}</SelectContent>
+            </Select>
+            <Badge variant="outline" className={`mt-2 ${claimStatusTone(claim.status)}`}>
+              {CLAIM_STATUS_LABELS[claim.status as keyof typeof CLAIM_STATUS_LABELS] || claim.status}
+            </Badge>
+          </div>
+          <div>
+            <Label>Próxima ação</Label>
+            <Input value={claim.next_action || ""} onChange={(e) => set({ next_action: e.target.value })}
+              placeholder="Ex.: aguardar resposta da seguradora" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label>Data</Label>
+              <Input type="date" value={claim.next_action_date || ""} onChange={(e) => set({ next_action_date: e.target.value })} />
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              {[
-                claim.vehicles ? [claim.vehicles.make, claim.vehicles.model].filter(Boolean).join(" ") : null,
-                claim.vehicles?.plate,
-                clientDisplayName(claim.clients),
-                insurer?.name,
-                (claim.process_number || claim.claim_number) ? `Proc. nº ${claim.process_number || claim.claim_number}` : null,
-              ].filter(Boolean).join(" · ")}
-            </p>
+            <div>
+              <Label>Responsável</Label>
+              <Input value={claim.next_action_owner || ""} onChange={(e) => set({ next_action_owner: e.target.value })} />
+            </div>
           </div>
-        </div>
-        <div className="grid grid-cols-[1fr_auto] sm:flex sm:flex-wrap gap-2">
-          <Button className="min-h-[44px] col-span-2 sm:order-3" onClick={openClientView}><Eye className="w-4 h-4 mr-2" />Ver o que o cliente vê</Button>
-          <Button variant="outline" className="min-h-[44px] sm:order-2" onClick={sendExpertPackage}><Send className="w-4 h-4 mr-2" />Enviar pacote ao perito</Button>
-          <Button variant="outline" className="min-h-[44px] hidden sm:inline-flex sm:order-1" onClick={() => setHistoryOpen(true)}><Clock className="w-4 h-4 mr-2" />Ver histórico</Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild><Button variant="outline" size="icon" className="min-h-[44px] min-w-[44px] sm:order-4" aria-label="Mais opções"><MoreHorizontal className="w-5 h-5" /></Button></DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem className="sm:hidden" onClick={() => setHistoryOpen(true)}>Ver histórico</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setOverrideStatus(claim.status); setOverrideOpen(true); }}>Corrigir estado manualmente</DropdownMenuItem>
-              {claim.phase_override && <DropdownMenuItem onClick={() => applyOverride(null)}>Voltar ao cálculo automático</DropdownMenuItem>}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* 2. Onde está o processo */}
-      <ClaimPhaseBar outcome={isLoss ? "perda_total" : "reparacao"} phase={phase} cancelled={claim.status === "cancelled"} subs={subs} next={nextText} onOutcome={changeOutcome} isBR={IS_BR} />
-
-      {/* 3. Duas colunas */}
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-5 min-w-0">
-          {activeShopId && <ClaimDocumentsV2 claimId={claim.id} shopId={activeShopId} docs={docs} isBR={IS_BR} onChanged={load} />}
-          {activeShopId && !isLoss && <ClaimSupplements claim={claim} shopId={activeShopId} sups={sups} quotes={quotes} isBR={IS_BR} onChanged={load} />}
-          {activeShopId && !isLoss && <ClaimSplitBilling claim={claim} shopId={activeShopId} sups={sups} isBR={IS_BR} onChanged={() => { void loadFin(); }} />}
-          {activeShopId && isLoss && <ClaimTotalLoss claim={claim} shopId={activeShopId} isBR={IS_BR} onSaved={load} />}
-          <div className={`grid gap-5 ${IS_BR ? "" : "xl:grid-cols-2"} items-start`}>
-            {!IS_BR && <ClaimDeadlines claim={claim} sups={sups} onSaved={load} />}
-            <ClaimImmobilization claim={claim} isBR={IS_BR} onSaved={load} />
-          </div>
-        </div>
-        <div className="space-y-5">
-          <Card className="rounded-[14px]">
-            <CardHeader><CardTitle className="text-base">O essencial</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              <InsurerPicker
-                shopId={activeShopId}
-                value={insSel ?? (claim.insurer_id ? { insurerId: claim.insurer_id } : null)}
-                onChange={(v) => { setInsSel(v); if (!v) set({ insurer_id: null }); else if (v.insurerId) set({ insurer_id: v.insurerId }); }}
-              />
-              <div><Label>Nº do processo</Label><Input className="min-h-[44px]" placeholder="Está no relatório? Deixa vazio" value={claim.process_number || ""} onChange={(e) => set({ process_number: e.target.value })} /></div>
-              <div><Label>Franquia ({IS_BR ? "R$" : "€"})</Label><Input className="min-h-[44px]" type="number" step="0.01" inputMode="decimal" value={claim.deductible ?? ""} onChange={(e) => set({ deductible: e.target.value })} /></div>
-              <div className="grid grid-cols-1 gap-2">
-                <div><Label>Perito</Label><Input className="min-h-[44px]" placeholder="Nome" value={claim.expert_name || ""} onChange={(e) => set({ expert_name: e.target.value })} /></div>
-                <div><Input className="min-h-[44px]" placeholder="Email ou telefone do perito" value={claim.expert_contact || ""} onChange={(e) => set({ expert_contact: e.target.value })} /></div>
-              </div>
-              <p className="text-xs text-muted-foreground">{IS_BR ? "Veículo" : "Viatura"} de substituição: no cartão "Imobilização".</p>
-              <Button className="w-full min-h-[44px]" onClick={() => persist()} disabled={saving}><Save className="w-4 h-4 mr-2" />{saving ? "A guardar…" : "Guardar"}</Button>
-              <button type="button" className="text-sm font-medium text-primary underline-offset-4 hover:underline min-h-[44px]" onClick={() => setShowMore((v) => !v)}>
-                {showMore ? "Esconder detalhes" : "Mais detalhes (opcional)"}
-              </button>
-              {!showMore && <p className="text-xs text-muted-foreground">Por defeito ficam escondidos: esta informação já está nos documentos anexados.</p>}
-            </CardContent>
-          </Card>
-          {activeShopId && <ClaimClientInformed claim={claim} shopId={activeShopId} isBR={IS_BR} onSaved={load} />}
-        </div>
-      </div>
-
-      {/* Mais detalhes (opcional): todos os campos antigos, nenhum obrigatório */}
-      {showMore && (
-      <div className="space-y-3">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold">Mais detalhes (opcional)</h2>
-        <Button onClick={() => persist()} disabled={saving} className="min-h-[44px] w-full sm:w-auto"><Save className="w-4 h-4 mr-2" />{saving ? "A guardar…" : "Guardar detalhes"}</Button>
-      </div>
-      <Tabs defaultValue="process">
-        <div>
-        <TabsList className="h-auto w-full grid grid-cols-1 gap-1 sm:flex sm:w-auto sm:flex-wrap">
-          <TabsTrigger value="process" className="min-h-[40px]">Dados, contactos e peritagem</TabsTrigger>
-          <TabsTrigger value="work" className="min-h-[40px]">Orçamento e OS</TabsTrigger>
-          <TabsTrigger value="values" className="min-h-[40px]">{IS_BR ? "Valores e notas fiscais" : "Valores e faturas"}</TabsTrigger>
+      <Tabs defaultValue="summary">
+        <div className="-mx-1 overflow-x-auto px-1">
+        <TabsList className="h-auto w-max sm:w-auto sm:flex-wrap">
+          <TabsTrigger value="summary" className="min-h-[40px]">Resumo</TabsTrigger>
+          <TabsTrigger value="process" className="min-h-[40px]">Processo e peritagem</TabsTrigger>
+          <TabsTrigger value="work" className="min-h-[40px]">Orçamento e reparação</TabsTrigger>
+          <TabsTrigger value="values" className="min-h-[40px]">{IS_BR ? "Valores e nota fiscal" : "Valores e faturação"}</TabsTrigger>
+          <TabsTrigger value="docs" className="min-h-[40px]">Documentos e comunicações</TabsTrigger>
+          <TabsTrigger value="timeline" className="min-h-[40px]">Histórico</TabsTrigger>
         </TabsList>
         </div>
-        <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:items-end rounded-[14px] border border-border p-3">
-          <div className="flex-1"><Label>Próxima ação (manual)</Label><Input value={claim.next_action || ""} onChange={(e) => set({ next_action: e.target.value })} placeholder="Ex.: aguardar resposta da seguradora" /></div>
-          <div><Label>Data</Label><Input type="date" value={claim.next_action_date || ""} onChange={(e) => set({ next_action_date: e.target.value })} /></div>
-          <div><Label>Responsável</Label><Input value={claim.next_action_owner || ""} onChange={(e) => set({ next_action_owner: e.target.value })} /></div>
-        </div>
+
+        {/* Resumo */}
+        <TabsContent value="summary" className="space-y-4">
+          <ClaimImmobilization claim={claim} isBR={IS_BR} onSaved={load} />
+          <div className="grid gap-3 md:grid-cols-2">
+            <Card><CardContent className="p-4 text-sm space-y-1">
+              <p className="text-xs text-muted-foreground">Cliente</p>
+              <button className="font-semibold hover:underline text-left" onClick={() => navigate(`/clients?search=${encodeURIComponent(clientDisplayName(claim.clients) || "")}`)}>{clientDisplayName(claim.clients) || "—"}</button>
+              <p className="text-muted-foreground">{[claim.clients?.phone, claim.clients?.email].filter(Boolean).join(" · ") || "Sem contacto"}</p>
+            </CardContent></Card>
+            <Card><CardContent className="p-4 text-sm space-y-1">
+              <p className="text-xs text-muted-foreground">Viatura</p>
+              <button className="font-semibold font-mono hover:underline" onClick={() => navigate(`/vehicles?search=${encodeURIComponent(claim.vehicles?.plate || "")}`)}>{claim.vehicles?.plate || "—"}</button>
+              <p className="text-muted-foreground">{[claim.vehicles?.make, claim.vehicles?.model, claim.vehicles?.year].filter(Boolean).join(" ")}</p>
+            </CardContent></Card>
+            <Card><CardContent className="p-4 text-sm space-y-1">
+              <p className="text-xs text-muted-foreground">Seguradora</p>
+              <p className="font-semibold">{insurer?.name || "Ainda não definida"}</p>
+              <p className="text-muted-foreground">Processo: {claim.claim_number || "—"} · Apólice: {claim.policy_number || "—"}</p>
+            </CardContent></Card>
+            <Card><CardContent className="p-4 text-sm space-y-1">
+              <p className="text-xs text-muted-foreground">Autorização</p>
+              <p className="font-semibold">{APPROVAL_STATUS_LABELS[claim.approval_status || "waiting"]}</p>
+              <p className="text-muted-foreground">Autorizado: {claim.amount_approved != null ? formatMoney(Number(claim.amount_approved)) : "—"}</p>
+            </CardContent></Card>
+          </div>
+          {(() => {
+            const q = quotes.find((x) => x.id === claim.quote_id);
+            const quoted = claim.amount_initial_quote != null && claim.amount_initial_quote !== "" ? Number(claim.amount_initial_quote) : (q ? Number(q.total) : null);
+            const approved = claim.amount_approved != null && claim.amount_approved !== "" ? Number(claim.amount_approved) : null;
+            const diff = quoted != null && approved != null ? Math.round((quoted - approved) * 100) / 100 : null;
+            const last = events[0];
+            return (
+              <Card><CardContent className="p-4 grid gap-3 grid-cols-2 sm:grid-cols-4 text-sm">
+                <div><p className="text-xs text-muted-foreground">Orçamentado</p><p className="font-semibold">{quoted != null ? formatMoney(quoted) : "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Autorizado</p><p className="font-semibold">{approved != null ? formatMoney(approved) : "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Diferença</p><p className="font-semibold">{diff != null ? formatMoney(diff) : "—"}</p></div>
+                <div><p className="text-xs text-muted-foreground">Última atualização</p><p className="font-medium">{last ? new Date(last.created_at).toLocaleString(LOC, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : new Date(claim.updated_at || claim.created_at).toLocaleString(LOC, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>{last?.description || last?.title ? <p className="text-xs text-muted-foreground truncate">{last.title || last.description}</p> : null}</div>
+                {diff != null && diff !== 0 && <p className="col-span-2 sm:col-span-4 text-xs text-muted-foreground">A diferença é apenas informativa — não é cobrada automaticamente ao cliente.</p>}
+                <div className="col-span-2 sm:col-span-4"><p className="text-xs text-muted-foreground">Próxima ação</p><p className="font-medium">{claim.next_action || "Nenhuma definida"}{claim.next_action_date ? ` · ${claim.next_action_date}` : ""}</p></div>
+              </CardContent></Card>
+            );
+          })()}
+          {(() => {
+            const qn = quotes.find((q) => q.id === claim.quote_id)?.number;
+            const inv = invs.find((i) => i.id === claim.invoice_id);
+            const ap = claim.approval_status;
+            const steps = [
+              { l: "Sinistro", done: true, sub: claim.ref || "" },
+              { l: "Orçamento", done: !!claim.quote_id, sub: qn || "Por associar", go: claim.quote_id ? `/quotes/edit/${claim.quote_id}` : null },
+              { l: "Autorização", done: ap === "approved" || ap === "partial", sub: APPROVAL_STATUS_LABELS[ap || "waiting"] },
+              { l: "Reparação", done: !!claim.work_order_id, sub: claim.work_orders?.number || "Por iniciar", go: claim.work_order_id ? `/services/edit/${claim.work_order_id}` : null },
+              { l: DOC, done: !!claim.invoice_id, sub: inv?.number || "Por emitir", go: claim.invoice_id ? `/invoices/${claim.invoice_id}` : null },
+            ];
+            return (
+              <Card><CardContent className="p-3">
+                <ol className="grid grid-cols-5 gap-1">
+                  {steps.map((st, i) => (
+                    <li key={i}>
+                      <button type="button" disabled={!st.go} onClick={() => st.go && navigate(st.go)}
+                        className={`w-full min-h-[56px] rounded-md border px-1 py-1.5 text-center ${st.done ? "border-primary/40 bg-primary/10" : "border-border"} ${st.go ? "hover:bg-primary/15" : ""}`}>
+                        <span className="block text-[11px] sm:text-xs font-semibold">{st.l}</span>
+                        <span className="block text-[10px] sm:text-xs text-muted-foreground truncate">{st.sub}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </CardContent></Card>
+            );
+          })()}
+          <Card><CardContent className="p-4 grid gap-2 sm:grid-cols-3 text-sm">
+            <div><p className="text-xs text-muted-foreground">Orçamento</p><p className="font-medium">{quotes.find((q) => q.id === claim.quote_id)?.number || "Não associado"}</p></div>
+            <div><p className="text-xs text-muted-foreground">Ordem de serviço</p><p className="font-medium">{claim.work_orders?.number || "Não associada"}</p></div>
+            <div><p className="text-xs text-muted-foreground">{DOC}</p><p className="font-medium">{invs.find((i) => i.id === claim.invoice_id)?.number || "Não associada"}</p></div>
+          </CardContent></Card>
+          <p className="text-xs text-muted-foreground">Sem ligação direta à seguradora: o GarageFlow regista o que a oficina recebe e envia por email, telefone ou portal.</p>
+        </TabsContent>
 
         {/* Reparação */}
         <TabsContent value="work" className="space-y-4">
+          {activeShopId && <ClaimSupplements claimId={claim.id} shopId={activeShopId} isBR={IS_BR} />}
           <Card>
             <CardHeader><CardTitle className="text-base">Ordem de serviço</CardTitle></CardHeader>
             <CardContent className="space-y-3">
@@ -575,6 +494,11 @@ export default function ClaimDetail() {
                 </Select>
                 {!claim.work_order_id && <Button className="min-h-[44px]" onClick={createWorkOrder}><Plus className="w-4 h-4 mr-2" />Criar OS</Button>}
                 {claim.work_order_id && <Button variant="outline" className="min-h-[44px]" onClick={() => navigate(`/services/edit/${claim.work_order_id}`)}>Abrir OS</Button>}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[["repairing", "Em reparação"], ["waiting_parts", "A aguardar peças"], ["repair_done", "Reparação concluída"]].map(([k, l]) => (
+                  <Button key={k} size="sm" variant={claim.status === k ? "default" : "outline"} onClick={() => { set({ status: k }); persist({ status: k }); }}>{l}</Button>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -655,12 +579,21 @@ export default function ClaimDetail() {
                   <span className="text-muted-foreground">Data</span><span>{inv.date ? new Date(inv.date).toLocaleDateString(LOC) : "—"}</span>
                   <span className="text-muted-foreground">Estado</span><span>{inv.status}</span>
                 </div>) : null; })()}
+              <div className="flex flex-wrap gap-2">
+                {[["waiting_invoice", IS_BR ? "Aguardando nota fiscal" : "A aguardar faturação"], ["invoiced", IS_BR ? "Nota fiscal emitida" : "Faturado"], ["waiting_payment", "A aguardar pagamento"], ["paid", "Pago"], ["done", "Encerrar"]].map(([k, l]) => (
+                  <Button key={k} size="sm" variant={claim.status === k ? "default" : "outline"} onClick={() => { set({ status: k }); persist({ status: k }); }}>{l}</Button>
+                ))}
+                {["done", "cancelled"].includes(claim.status) && (
+                  <Button size="sm" variant="outline" onClick={() => { set({ status: "repairing" }); persist({ status: "repairing" }); }}>Reabrir</Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Dados */}
         <TabsContent value="process" className="space-y-4">
+          {activeShopId && <ClaimTotalLoss claim={claim} shopId={activeShopId} isBR={IS_BR} onSaved={load} />}
           <Card>
             <CardHeader><CardTitle className="text-base">Dados do sinistro</CardTitle></CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2">
@@ -824,33 +757,8 @@ export default function ClaimDetail() {
           </Card>
         </TabsContent>
 
-      </Tabs>
-      </div>
-      )}
-
-      {/* Histórico + comunicações (gaveta lateral) */}
-      <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
-          <SheetHeader><SheetTitle>Histórico e comunicações</SheetTitle></SheetHeader>
-          <Tabs defaultValue="timeline" className="mt-4">
-            <TabsList><TabsTrigger value="timeline">Histórico</TabsTrigger><TabsTrigger value="comms">Comunicações</TabsTrigger></TabsList>
-            <TabsContent value="timeline">
-        <div className="space-y-2">
-          {events.length === 0 ? (
-            <Card><CardContent className="py-8 text-center text-muted-foreground">Sem histórico.</CardContent></Card>
-          ) : events.map((e) => (
-            <div key={e.id} className="flex gap-3 items-start border-l-2 border-border pl-4 py-2">
-              <Clock className="w-4 h-4 text-muted-foreground mt-0.5" />
-              <div className="text-sm">
-                <p>{eventText(e)}</p>
-                <p className="text-xs text-muted-foreground">{dt(e.created_at)}{e.created_by && members[e.created_by] ? ` · ${members[e.created_by]}` : ""}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-            </TabsContent>
-            <TabsContent value="comms">
-        <div className="space-y-3">
+        {/* Comunicações */}
+        <TabsContent value="docs" className="space-y-3">
           <div className="flex flex-wrap gap-2 justify-end">
             <Button variant="outline" className="min-h-[44px]" onClick={() => openComm("email")}><Mail className="w-4 h-4 mr-2" />Enviar email</Button>
             <Button variant="outline" className="min-h-[44px]" onClick={() => openComm("phone")}><Phone className="w-4 h-4 mr-2" />Registar chamada</Button>
@@ -888,28 +796,61 @@ export default function ClaimDetail() {
               </CardContent>
             </Card>
           ))}
-        </div>
+        </TabsContent>
 
-            </TabsContent>
-          </Tabs>
-        </SheetContent>
-      </Sheet>
+        {/* Documentos */}
+        <TabsContent value="docs" className="space-y-3">
+          <Card>
+            <CardContent className="p-4 flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
+              <div className="flex-1">
+                <Label>Categoria</Label>
+                <Select value={docCategory} onValueChange={setDocCategory}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{DOC_CATEGORIES.map((d) => <SelectItem key={d} value={d}>{DOC_CATEGORY_LABELS[d]}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <input ref={fileRef} type="file" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadDoc(f); e.target.value = ""; }} />
+              <Button className="min-h-[44px]" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                <Paperclip className="w-4 h-4 mr-2" />{uploading ? "A carregar…" : "Anexar documento"}
+              </Button>
+            </CardContent>
+          </Card>
+          {docs.length === 0 ? (
+            <Card><CardContent className="py-8 text-center text-muted-foreground">Sem documentos.</CardContent></Card>
+          ) : docs.map((d) => (
+            <Card key={d.id}>
+              <CardContent className="p-4 flex items-center justify-between gap-3 text-sm">
+                <div>
+                  <p className="font-medium">{d.file_name}</p>
+                  <p className="text-xs text-muted-foreground">{DOC_CATEGORY_LABELS[d.category] || d.category} · {dt(d.created_at)}</p>
+                </div>
+                <div className="flex gap-1">
+                  <Button size="icon" variant="ghost" asChild>
+                    <a href={d.file_url} target="_blank" rel="noreferrer"><Download className="w-4 h-4" /></a>
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={() => removeDoc(d.id)}><Trash2 className="w-4 h-4" /></Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
 
-      {/* Corrigir estado manualmente */}
-      <Dialog open={overrideOpen} onOpenChange={setOverrideOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Corrigir estado manualmente</DialogTitle>
-            <DialogDescription>Só para exceções. Fica registado no histórico quem fez a correção.</DialogDescription>
-          </DialogHeader>
-          <Select value={overrideStatus} onValueChange={setOverrideStatus}>
-            <SelectTrigger className="min-h-[44px]"><SelectValue /></SelectTrigger>
-            <SelectContent>{CLAIM_STATUSES.map((s) => <SelectItem key={s} value={s}>{CLAIM_STATUS_LABELS[s]}</SelectItem>)}</SelectContent>
-          </Select>
-          <DialogFooter><Button className="min-h-[44px]" onClick={() => applyOverride(overrideStatus)}>Aplicar</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-
+        {/* Timeline */}
+        <TabsContent value="timeline" className="space-y-2">
+          {events.length === 0 ? (
+            <Card><CardContent className="py-8 text-center text-muted-foreground">Sem histórico.</CardContent></Card>
+          ) : events.map((e) => (
+            <div key={e.id} className="flex gap-3 items-start border-l-2 border-border pl-4 py-2">
+              <Clock className="w-4 h-4 text-muted-foreground mt-0.5" />
+              <div className="text-sm">
+                <p>{eventText(e)}</p>
+                <p className="text-xs text-muted-foreground">{dt(e.created_at)}{e.created_by && members[e.created_by] ? ` · ${members[e.created_by]}` : ""}</p>
+              </div>
+            </div>
+          ))}
+        </TabsContent>
+      </Tabs>
 
       {/* Dialog contacto */}
       <Dialog open={contactOpen} onOpenChange={setContactOpen}>

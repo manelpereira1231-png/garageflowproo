@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/money";
+import { ClaimBillingLines } from "@/components/claims/ClaimBillingLines";
 import {
   CLAIM_STATUSES, CLAIM_STATUS_LABELS, claimStatusTone,
   EXPERT_STATUSES, EXPERT_STATUS_LABELS,
@@ -498,6 +499,7 @@ export default function ClaimDetail() {
 
         {/* Valores + faturação */}
         <TabsContent value="values" className="space-y-4">
+          {activeShopId && <ClaimBillingLines claimId={claim.id} shopId={activeShopId} isBR={IS_BR} hasInsurer={!!claim.insurer_id} />}
           {fin && fin.invoices.length > 0 && (() => {
             const live = fin.invoices.filter((i: any) => i.status !== "cancelled");
             const billed = live.reduce((t: number, i: any) => t + Number(i.total || 0), 0);
@@ -543,7 +545,7 @@ export default function ClaimDetail() {
                 ["amount_invoiced", IS_BR ? "Valor da nota fiscal" : "Valor faturado"], ["amount_paid_insurer", "Pago pela seguradora"],
                 ["amount_client", "A cargo do cliente"], ["amount_pending", "Pendente"],
               ] as const).map(([k, l]) => (
-                <div key={k}><Label>{l} (€)</Label><Input type="number" step="0.01" inputMode="decimal" value={claim[k] ?? ""} onChange={(e) => set({ [k]: e.target.value })} /></div>
+                <div key={k}><Label>{l} ({IS_BR ? "R$" : "€"})</Label><Input type="number" step="0.01" inputMode="decimal" value={claim[k] ?? ""} onChange={(e) => set({ [k]: e.target.value })} /></div>
               ))}
               <p className="sm:col-span-2 text-xs text-muted-foreground">Os valores são registados pela oficina; o GarageFlow não decide quem paga cada parte.</p>
             </CardContent>

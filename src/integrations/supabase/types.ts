@@ -2259,6 +2259,66 @@ export type Database = {
           },
         ]
       }
+      claim_supplements: {
+        Row: {
+          amount_approved: number | null
+          amount_requested: number
+          billing_line_id: string | null
+          claim_id: string
+          created_at: string
+          decided_at: string | null
+          description: string
+          id: string
+          notes: string | null
+          requested_at: string
+          shop_id: string
+          status: string
+        }
+        Insert: {
+          amount_approved?: number | null
+          amount_requested?: number
+          billing_line_id?: string | null
+          claim_id: string
+          created_at?: string
+          decided_at?: string | null
+          description: string
+          id?: string
+          notes?: string | null
+          requested_at?: string
+          shop_id: string
+          status?: string
+        }
+        Update: {
+          amount_approved?: number | null
+          amount_requested?: number
+          billing_line_id?: string | null
+          claim_id?: string
+          created_at?: string
+          decided_at?: string | null
+          description?: string
+          id?: string
+          notes?: string | null
+          requested_at?: string
+          shop_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_supplements_billing_line_id_fkey"
+            columns: ["billing_line_id"]
+            isOneToOne: false
+            referencedRelation: "claim_billing_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_supplements_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claims: {
         Row: {
           amount_approved: number | null

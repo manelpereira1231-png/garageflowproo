@@ -151,7 +151,7 @@ export default function InvoiceForm() {
           if (claimLineIds.length) {
             const { data: bl } = await (supabase as any).from("claim_billing_lines")
               .select("id, description, quantity, unit_price, vat_rate").in("id", claimLineIds).is("invoice_id", null);
-            if (bl?.length) setItems(bl.map((l: any) => ({ id: crypto.randomUUID(), description: l.description, quantity: Number(l.quantity), unit_price: Number(l.unit_price), vat_rate: l.vat_rate ?? (shop?.vat_rate || 23) })));
+            if (bl?.length) setItems(bl.map((l: any) => ({ id: crypto.randomUUID(), description: l.description, quantity: Number(l.quantity), unit_price: Number(l.unit_price), vat_rate: l.vat_rate ?? ((shopRes as any).data?.vat_rate || 23) })));
           }
           if (claimPayer !== "client" && ins?.name) {
             const list = (clientsRes.data || []) as any[];

@@ -34,6 +34,8 @@ export default function InvoiceForm() {
   // Sinistro: mesmo fluxo nos dois países; o documento local (Fatura PT / Nota fiscal BR)
   // é decidido pelo provider da oficina. A seguradora do sinistro vem pré-selecionada.
   const fromClaim = searchParams.get("from_claim");
+  const claimPayer = searchParams.get("payer"); // "insurer" | "client" (faturação por linhas)
+  const claimLineIds = (searchParams.get("lines") || "").split(",").filter(Boolean);
 
   const [clients, setClients] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -146,7 +148,12 @@ export default function InvoiceForm() {
           if (claim.claim_number) setNotes((n) => n || `Sinistro / processo ${claim.claim_number}`);
           const ins = claim.insurers;
           let recipient: string | null = claim.client_id || null;
-          if (ins?.name) {
+          if (claimLineIds.length) {
+            const { data: bl } = await (supabase as any).from("claim_billing_lines")
+              .select("id, description, quantity, unit_price, vat_rate").in("id", claimLineIds).is("invoice_id", null);
+            if (bl?.length) setItems(bl.map((l: any) => ({ id: crypto.randomUUID(), description: l.description, quantity: Number(l.quantity), unit_price: Number(l.unit_price), vat_rate: l.vat_rate ?? (shop?.vat_rate || 23) })));
+          }
+          if (claimPayer !== "client" && ins?.name) {
             const list = (clientsRes.data || []) as any[];
             const nif = (ins.nif || "").replace(/\D/g, "");
             const nm = ins.name.trim().toLowerCase();
@@ -261,6 +268,7 @@ export default function InvoiceForm() {
     if (fromClaim) {
       await (supabase as any).from("invoices").update({ claim_id: fromClaim }).eq("id", invoice.id);
       await (supabase as any).from("claims").update({ invoice_id: invoice.id, status: "invoiced" }).eq("id", fromClaim);
+      if (claimLineIds.length) await (supabase as any).from("claim_billing_lines").update({ invoice_id: invoice.id }).in("id", claimLineIds).is("invoice_id", null);
     }
     navigate(`/invoices/${invoice.id}${autoSend ? '?autosend=1' : ''}`);
     setSaving(false);

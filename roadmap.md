@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Simplificar o fluxo dos Sinistros com divulgação progressiva, próxima ação acessível e revisão do pacote do perito; validar PT/BR e ecrãs pequenos.
+- [x] Simplificar o fluxo dos Sinistros com divulgação progressiva e ação direta para preparar o pedido ao perito; identidade da viatura no pacote; 16 testes PT/BR aprovados e vistas desktop/mobile verificadas com dados simulados, sem gravações ou envios reais.
 
 - [x] Sinistros: plano v2 aprovado; reaproveitar dados e ferramentas existentes.
 - [x] Sinistros v2: verificar página única, gravação do essencial, autorizações, decisão de perda total, abertura da fatura, fotografias privadas e links expirados no navegador PT; 14 testes PT/BR aprovados; visual BR verificado com resposta de país simulada, sem mudar a oficina PT; dados temporários apagados.

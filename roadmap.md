@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Simplificar o fluxo dos Sinistros com divulgação progressiva, próxima ação acessível e revisão do pacote do perito; validar PT/BR e ecrãs pequenos.
+
 - [x] Sinistros: plano v2 aprovado; reaproveitar dados e ferramentas existentes.
 - [x] Sinistros v2: verificar página única, gravação do essencial, autorizações, decisão de perda total, abertura da fatura, fotografias privadas e links expirados no navegador PT; 14 testes PT/BR aprovados; visual BR verificado com resposta de país simulada, sem mudar a oficina PT; dados temporários apagados.
 - [ ] Sinistros v2: emissão fiscal real e entrega real de emails/WhatsApp por confirmar; não executar cobranças/emissões nem contactar clientes durante os testes; teste integral numa oficina BR real pendente de contexto autorizado.

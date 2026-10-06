@@ -161,7 +161,7 @@ export default function InvoiceForm() {
             if (found) recipient = found.id;
             else {
               const { data: created } = await supabase.from("clients").insert({
-                shop_id: activeId, name: ins.name, company: ins.name, nif: ins.nif || null, email: ins.email || null, phone: ins.phone || "",
+                shop_id: activeId, name: ins.name, company: ins.name, nif: ins.nif || null, email: ins.email || "", phone: ins.phone || "",
               } as any).select("id, name, company, nif, email, phone").single();
               if (created) { setClients((cs) => [...cs, created]); recipient = created.id; }
             }

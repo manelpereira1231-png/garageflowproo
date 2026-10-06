@@ -55,7 +55,7 @@ export function ClaimDocumentsV2({ claimId, shopId, docs, isBR, onChanged }: { c
       setUrls(m);
     });
   }, [docs]);
-  const urlOf = (d: any) => { const p = storagePath(d.file_url); return p ? (urls[p] || undefined) : d.file_url; };
+  const urlOf = (d: any) => { const p = storagePath(d.file_url); return p ? (urls[p] || undefined) : undefined; };
 
   const groups = useMemo(() => {
     const g: Record<string, any[]> = {};

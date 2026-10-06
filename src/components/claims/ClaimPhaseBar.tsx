@@ -25,7 +25,7 @@ export function ClaimPhaseBar({ outcome, phase, cancelled, subs, next, onOutcome
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <ol className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-6 gap-2">
+        <ol className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
           {list.map((p, i) => {
             const done = i < cur || (i === cur && p === "fechado");
             const current = i === cur && p !== "fechado";

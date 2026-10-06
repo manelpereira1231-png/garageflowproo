@@ -28,11 +28,11 @@ describe("Prazos portugueses", () => {
   it("exclui fins de semana e o feriado de 5 de outubro", () => {
     expect(addBusinessDays("2026-10-02", 1).toISOString().slice(0, 10)).toBe("2026-10-06");
   });
-  it("não inventa início da peritagem antes do primeiro contacto", () => {
-    expect(ptDeadlines({ claim_date: "2026-10-01" }, []).find(d => d.id === "expert")?.limit).toBeNull();
+  it("não inventa prazo quando falta a data da participação", () => {
+    expect(ptDeadlines({}, []).find(d => d.id === "expert")?.limit).toBeNull();
   });
-  it("conta a partir do contacto real, com DAAA", () => {
-    const d = ptDeadlines({ claim_date: "2026-09-20", first_contact_at: "2026-10-02", has_daaa: true }, []).find(d => d.id === "expert");
-    expect(d?.limit?.toISOString().slice(0, 10)).toBe("2026-10-09");
+  it("conta desde o fim do prazo do contacto, com DAAA", () => {
+    const d = ptDeadlines({ report_date: "2026-10-02", first_contact_at: "2026-10-02", has_daaa: true }, []).find(d => d.id === "expert");
+    expect(d?.limit?.toISOString().slice(0, 10)).toBe("2026-10-13");
   });
 });

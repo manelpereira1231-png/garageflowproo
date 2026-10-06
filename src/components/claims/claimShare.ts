@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { generatePdf } from "@/lib/pdfGenerator";
+import { clientDisplayName } from "@/lib/clientDisplayName";
 
 const origin = () => window.location.origin;
 
@@ -33,6 +35,34 @@ export async function createExpertLink(claim: any, shopId: string, supplementId:
   const email = contact.match(/[^\s@]+@[^\s@]+\.[^\s@]+/)?.[0];
   const phone = contact.replace(/[^\d+]/g, "").replace(/^\+/, "");
   const text = `Olá${claim.expert_name ? ` ${claim.expert_name}` : ""}, segue o pedido de validação do sinistro ${claim.ref || ""}${claim.vehicles?.plate ? ` (${claim.vehicles.plate})` : ""}: ${url}`;
+  if (email) {
+    try {
+      const attachments: { filename: string; content: string }[] = [];
+      const { data: sup } = await (supabase as any).from("claim_supplements").select("quote_id").eq("id", supplementId).eq("shop_id", shopId).single();
+      if (sup?.quote_id) {
+        const [{ data: quote }, { data: shop }] = await Promise.all([
+          supabase.from("quotes").select("*, clients(name,company,email,phone,nif), vehicles(make,model,plate)").eq("id", sup.quote_id).eq("shop_id", shopId).single(),
+          supabase.from("shops").select("*").eq("id", shopId).single(),
+        ]);
+        if (!quote || !shop) throw new Error("Não foi possível preparar o orçamento em anexo.");
+        const q = quote as any;
+        const doc = await generatePdf({ type: "quote", number: q.number, date: q.date || q.created_at.slice(0, 10), validityDate: q.validity_date,
+          shopName: shop.name, shopEmail: shop.email || "", shopPhone: shop.phone || "", shopNif: shop.nif || undefined, shopAddress: shop.address || undefined,
+          clientName: clientDisplayName(q.clients), clientEmail: q.clients?.email, clientPhone: q.clients?.phone, clientNif: q.clients?.nif,
+          vehicleMake: q.vehicles?.make || "", vehicleModel: q.vehicles?.model || "", vehiclePlate: q.vehicles?.plate || "",
+          lines: Array.isArray(q.lines) ? q.lines : [], subtotal: Number(q.subtotal || 0), vatTotal: Number(q.vat_total || 0), total: Number(q.total || 0), profit: Number(q.profit || 0),
+          currency: shop.currency || (shop.country_code === "BR" ? "BRL" : "EUR"), notes: q.notes, laborHours: q.labor_hours, laborRate: Number(shop.labor_rate || 0),
+        }, false);
+        attachments.push({ filename: `${q.number}.pdf`, content: doc.output("datauristring").split(",")[1] });
+      }
+      const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] || c));
+      const { data: sent, error: sendError } = await supabase.functions.invoke("send-email", { body: { to: email, shop_id: shopId, branded: true, subject: `Validação ${claim.ref || "sinistro"}`, html: `<p>${esc(text)}</p>`, cta: { label: "Ver pedido e registar decisão", url }, attachments } });
+      if (sendError || !sent?.success || sent.simulated) throw new Error("O email não foi enviado. O link continua disponível para partilhar.");
+      await supabase.from("claim_communications").insert({ claim_id: claim.id, shop_id: shopId, kind: "email", direction: "out", status: "sent", contact_label: email, subject: `Validação ${claim.ref || "sinistro"}`, body: text, occurred_at: new Date().toISOString() } as any);
+      toast.success("Pacote enviado por email ao perito");
+      return url;
+    } catch (e: any) { toast.error(e.message || "Não foi possível enviar o email ao perito."); }
+  }
   toast.success(copied ? "Link do perito copiado" : "Link do perito criado", {
     description: email ? "Pode colar no email ou usar o botão abaixo." : "Cole-o no email ou WhatsApp do perito.",
     action: email

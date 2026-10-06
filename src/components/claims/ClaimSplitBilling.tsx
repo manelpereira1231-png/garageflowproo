@@ -98,7 +98,7 @@ export function ClaimSplitBilling({ claim, shopId, sups, isBR, onChanged }: { cl
       <p className="text-2xl font-semibold">{formatMoney(amount)}</p>
       <div className="text-xs text-muted-foreground space-y-0.5 flex-1">{calc.map((c) => <p key={c}>{c}</p>)}</div>
       {billedNo ? <Badge variant="secondary" className="self-start">{isBR ? "Emitida" : "Emitida"} {billedNo}</Badge>
-        : <Button className="min-h-[44px]" disabled={disabled || busy} onClick={onEmit}>{cta}</Button>}
+        : <Button className="min-h-[44px] h-auto py-2 whitespace-normal" disabled={disabled || busy} onClick={onEmit}>{cta}</Button>}
     </div>
   );
 
@@ -106,7 +106,7 @@ export function ClaimSplitBilling({ claim, shopId, sups, isBR, onChanged }: { cl
     <Card className="rounded-[14px]">
       <CardHeader><CardTitle className="text-base">{isBR ? "Notas fiscais" : "Faturação"}</CardTitle></CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-3 2xl:grid-cols-2">
+        <div className="grid gap-3 xl:grid-cols-2">
           {box(`${isBR ? "Nota fiscal" : "Fatura"} à seguradora`, insurerAmt,
             [`Autorizado ${formatMoney(authorized)}`, `− Franquia ${formatMoney(franchise)}`],
             billed.insurer, () => emit("insurer"), !claim.insurer_id || !(insurerAmt > 0),

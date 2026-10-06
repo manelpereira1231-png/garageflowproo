@@ -145,16 +145,15 @@ export function ptDeadlines(claim: any, sups: Sup[]): Deadline[] {
   const daaa = !!claim.has_daaa, dis = !!claim.requires_disassembly;
   const part = claim.report_date || claim.claim_date || (claim.created_at ? String(claim.created_at).slice(0, 10) : null);
   const firstLimit = part ? addBusinessDays(part, 2) : null;
-  const firstContact = claim.first_contact_at ? toUTC(claim.first_contact_at) : null;
   const expN = daaa ? (dis ? 6 : 4) : (dis ? 12 : 8);
   const repN = daaa ? 2 : 4;
   const libN = daaa ? 15 : 30;
   const paidAt = ["paid", "done"].includes(claim.status) ? (claim.closed_at ? String(claim.closed_at).slice(0, 10) : String(claim.updated_at || "").slice(0, 10)) : null;
   const list: Deadline[] = [
     { id: "first", name: "Primeiro contacto e marcação da peritagem", rule: "2 dias úteis após a participação", limit: firstLimit, doneAt: claim.first_contact_at, field: "first_contact_at" },
-    { id: "expert", name: "Peritagem concluída", rule: `${expN} dias úteis após o 1.º contacto${dis ? " (com desmontagem)" : ""}`, limit: firstContact ? addBusinessDays(firstContact, expN) : null, doneAt: claim.expert_done_date, field: "expert_done_date" },
+    { id: "expert", name: "Peritagem concluída", rule: `${expN} dias úteis após o prazo do 1.º contacto${dis ? " (com desmontagem)" : ""}`, limit: firstLimit ? addBusinessDays(firstLimit, expN) : null, doneAt: claim.expert_done_date, field: "expert_done_date" },
     { id: "report", name: "Relatório de peritagem disponível", rule: `${repN} dias úteis após a peritagem`, limit: claim.expert_done_date ? addBusinessDays(claim.expert_done_date, repN) : null, doneAt: claim.expert_report_at, field: "expert_report_at" },
-    { id: "liability", name: "Assumir ou recusar responsabilidade", rule: `${libN} dias úteis após o 1.º contacto`, limit: firstContact ? addBusinessDays(firstContact, libN) : null, doneAt: claim.liability_assumed_at, field: "liability_assumed_at" },
+    { id: "liability", name: "Assumir ou recusar responsabilidade", rule: `${libN} dias úteis após o prazo do 1.º contacto`, limit: firstLimit ? addBusinessDays(firstLimit, libN) : null, doneAt: claim.liability_assumed_at, field: "liability_assumed_at" },
     { id: "payment", name: "Pagamento", rule: "8 dias úteis após assumir a responsabilidade", limit: claim.liability_assumed_at ? addBusinessDays(claim.liability_assumed_at, 8) : null, doneAt: paidAt },
   ];
   for (const s of sups.filter((x) => x.type === "adicional")) {

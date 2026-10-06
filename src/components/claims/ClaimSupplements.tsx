@@ -57,7 +57,7 @@ export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged,
       claim_id: claim.id, shop_id: shopId, type: open, number, description: f.description.trim(),
       amount_requested: a, quote_id: f.quote_id || null,
     }).select("id").single();
-    if (!error && files.length) await uploadClaimFiles(files, { shopId, claimId: claim.id, category: "hidden_damage", supplementId: inserted?.id });
+    if (!error && files.length) await uploadClaimFiles(files, { shopId, claimId: claim.id, category: open === "inicial" ? "damage" : "hidden_damage", supplementId: inserted?.id });
     if (!error && open === "inicial" && f.quote_id && !claim.quote_id) await supabase.from("claims").update({ quote_id: f.quote_id }).eq("id", claim.id).eq("shop_id", shopId);
     if (!error) await supabase.from("claim_events").insert({ claim_id: claim.id, shop_id: shopId, kind: "note", description: open === "inicial" ? `Autorização inicial pedida (${formatMoney(a)})` : `Adicional #${number} pedido: ${f.description.trim()} (${formatMoney(a)})` });
     setBusy(false);

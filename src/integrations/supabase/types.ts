@@ -5956,6 +5956,7 @@ export type Database = {
           atcud: string | null
           cancelled_at: string | null
           certified_series: string | null
+          claim_id: string | null
           client_id: string
           created_at: string
           credit_note_atcud: string | null
@@ -5998,6 +5999,7 @@ export type Database = {
           atcud?: string | null
           cancelled_at?: string | null
           certified_series?: string | null
+          claim_id?: string | null
           client_id: string
           created_at?: string
           credit_note_atcud?: string | null
@@ -6040,6 +6042,7 @@ export type Database = {
           atcud?: string | null
           cancelled_at?: string | null
           certified_series?: string | null
+          claim_id?: string | null
           client_id?: string
           created_at?: string
           credit_note_atcud?: string | null
@@ -6079,6 +6082,13 @@ export type Database = {
           work_order_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "invoices_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoices_client_id_fkey"
             columns: ["client_id"]

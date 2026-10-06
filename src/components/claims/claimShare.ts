@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { generatePdf } from "@/lib/pdfGenerator";
 import { clientDisplayName } from "@/lib/clientDisplayName";
+import { claimVehicleLabel } from "@/lib/claimVehicle";
 
 const origin = () => "https://garageflow.pt";
 
@@ -20,7 +21,7 @@ export async function getClientLink(claim: any, shopId: string): Promise<string 
 }
 
 /** Cria o link do perito (14 dias) para uma autorização e abre as opções de envio. */
-export async function createExpertLink(claim: any, shopId: string, supplementId: string): Promise<string | null> {
+export async function createExpertLink(claim: any, shopId: string, supplementId: string, delivery: "copy" | "email" = "copy"): Promise<string | null> {
   const { data: auth } = await supabase.auth.getSession();
   const { data, error } = await (supabase as any).from("claim_share_links").insert({
     claim_id: claim.id, shop_id: shopId, audience: "perito", supplement_id: supplementId,
@@ -34,8 +35,9 @@ export async function createExpertLink(claim: any, shopId: string, supplementId:
   const contact = String(claim.expert_contact || "");
   const email = contact.match(/[^\s@]+@[^\s@]+\.[^\s@]+/)?.[0];
   const phone = contact.replace(/[^\d+]/g, "").replace(/^\+/, "");
-  const text = `Olá${claim.expert_name ? ` ${claim.expert_name}` : ""}, segue o pedido de validação do sinistro ${claim.ref || ""}${claim.vehicles?.plate ? ` (${claim.vehicles.plate})` : ""}: ${url}`;
-  if (email) {
+  const identity = claimVehicleLabel(claim.vehicles);
+  const text = `Olá${claim.expert_name ? ` ${claim.expert_name}` : ""}, segue o pedido de validação do sinistro ${claim.ref || ""}${claim.process_number || claim.claim_number ? ` · Processo ${claim.process_number || claim.claim_number}` : ""}${identity ? `\nViatura: ${identity}` : ""}${claim.vehicles?.vin ? `\nVIN / Chassis: ${claim.vehicles.vin}` : ""}\n${url}`;
+  if (email && delivery === "email") {
     try {
       const attachments: { filename: string; content: string }[] = [];
       const { data: sup } = await (supabase as any).from("claim_supplements").select("quote_id").eq("id", supplementId).eq("shop_id", shopId).single();
@@ -49,7 +51,7 @@ export async function createExpertLink(claim: any, shopId: string, supplementId:
         const doc = await generatePdf({ type: "quote", number: q.number, date: q.date || q.created_at.slice(0, 10), validityDate: q.validity_date,
           shopName: shop.name, shopEmail: shop.email || "", shopPhone: shop.phone || "", shopNif: shop.nif || undefined, shopAddress: shop.address || undefined,
           clientName: clientDisplayName(q.clients), clientEmail: q.clients?.email, clientPhone: q.clients?.phone, clientNif: q.clients?.nif,
-          vehicleMake: q.vehicles?.make || "", vehicleModel: q.vehicles?.model || "", vehiclePlate: q.vehicles?.plate || "",
+          vehicleMake: claim.vehicles?.make || "", vehicleModel: [claim.vehicles?.model, claim.vehicles?.version].filter(Boolean).join(" "), vehiclePlate: claim.vehicles?.plate || "",
           lines: Array.isArray(q.lines) ? q.lines : [], subtotal: Number(q.subtotal || 0), vatTotal: Number(q.vat_total || 0), total: Number(q.total || 0), profit: Number(q.profit || 0),
           currency: shop.currency || (shop.country_code === "BR" ? "BRL" : "EUR"), notes: q.notes, laborHours: q.labor_hours, laborRate: Number(shop.labor_rate || 0),
         }, false);

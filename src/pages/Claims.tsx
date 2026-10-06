@@ -378,8 +378,8 @@ export default function Claims() {
                             {info[c.id]?.badge.label || CLAIM_STATUS_LABELS[c.status as keyof typeof CLAIM_STATUS_LABELS] || c.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm">
-                          <div className="flex w-[280px] max-w-full items-start gap-1.5">
+                        <TableCell className="whitespace-normal text-sm">
+                          <div className="flex items-start gap-1.5">
                             {(info[c.id]?.overdue || info[c.id]?.dueSoon) && <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${info[c.id]?.overdue ? "text-destructive" : "text-warning"}`} aria-label={info[c.id]?.overdue ? "Prazo em atraso" : "Prazo a vencer"} />}
                             <span className="line-clamp-2 break-words">{info[c.id]?.next}</span>
                           </div>

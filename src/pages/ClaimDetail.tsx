@@ -545,13 +545,13 @@ export default function ClaimDetail() {
       {/* Mais detalhes (opcional): todos os campos antigos, nenhum obrigatório */}
       {showMore && (
       <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold">Mais detalhes (opcional)</h2>
-        <Button onClick={() => persist()} disabled={saving} className="min-h-[44px]"><Save className="w-4 h-4 mr-2" />{saving ? "A guardar…" : "Guardar detalhes"}</Button>
+        <Button onClick={() => persist()} disabled={saving} className="min-h-[44px] w-full sm:w-auto"><Save className="w-4 h-4 mr-2" />{saving ? "A guardar…" : "Guardar detalhes"}</Button>
       </div>
       <Tabs defaultValue="process">
-        <div className="-mx-1 overflow-x-auto px-1">
-        <TabsList className="h-auto w-max sm:w-auto sm:flex-wrap">
+        <div>
+        <TabsList className="h-auto w-full grid grid-cols-1 gap-1 sm:flex sm:w-auto sm:flex-wrap">
           <TabsTrigger value="process" className="min-h-[40px]">Dados, contactos e peritagem</TabsTrigger>
           <TabsTrigger value="work" className="min-h-[40px]">Orçamento e OS</TabsTrigger>
           <TabsTrigger value="values" className="min-h-[40px]">{IS_BR ? "Valores e notas fiscais" : "Valores e faturas"}</TabsTrigger>

@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Sinistros: apresentar plano do documento v2 e aguardar aprovação antes de alterar a aplicação ou dados.
+
 - [x] Agenda mobile (lista por dia; falta testar gravação no ecrã)
 - [x] Reorganizar ficha de Sinistros
 - [ ] Notas de crédito parciais: feitas, falta teste numa oficina Pro

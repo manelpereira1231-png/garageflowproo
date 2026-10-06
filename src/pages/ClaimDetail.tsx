@@ -58,6 +58,15 @@ export default function ClaimDetail() {
   const [contacts, setContacts] = useState<any[]>([]);
   const [comms, setComms] = useState<any[]>([]);
   const [docs, setDocs] = useState<any[]>([]);
+  const [fin, setFin] = useState<{ invoices: any[]; payments: any[] } | null>(null);
+  const loadFin = async () => {
+    if (!id) return;
+    const { data: iv } = await (supabase as any).from("invoices").select("id, number, total, status, client_id, client_name").eq("claim_id", id).order("created_at");
+    const ids = (iv || []).map((i: any) => i.id);
+    const { data: py } = ids.length ? await supabase.from("payments").select("amount, invoice_id").in("invoice_id", ids) : { data: [] as any[] };
+    setFin({ invoices: iv || [], payments: py || [] });
+  };
+  useEffect(() => { void loadFin(); }, [id]);
   const [events, setEvents] = useState<any[]>([]);
   const [wos, setWos] = useState<any[]>([]);
   const [invs, setInvs] = useState<any[]>([]);
@@ -489,6 +498,42 @@ export default function ClaimDetail() {
 
         {/* Valores + faturação */}
         <TabsContent value="values" className="space-y-4">
+          {fin && fin.invoices.length > 0 && (() => {
+            const live = fin.invoices.filter((i: any) => i.status !== "cancelled");
+            const billed = live.reduce((t: number, i: any) => t + Number(i.total || 0), 0);
+            const toClient = live.filter((i: any) => i.client_id === claim.client_id).reduce((t: number, i: any) => t + Number(i.total || 0), 0);
+            const paid = fin.payments.reduce((t: number, p: any) => t + Number(p.amount || 0), 0);
+            const rows: [string, number | null][] = [
+              ["Valor autorizado", claim.amount_approved != null && claim.amount_approved !== "" ? Number(claim.amount_approved) : null],
+              ["Franquia", claim.deductible != null && claim.deductible !== "" ? Number(claim.deductible) : null],
+              [IS_BR ? "Total em notas fiscais" : "Total faturado", billed],
+              [IS_BR ? "Notas fiscais a outras entidades (seguradora)" : "Faturado a outras entidades (seguradora)", billed - toClient],
+              [IS_BR ? "Notas fiscais ao cliente" : "Faturado ao cliente", toClient],
+              ["Pago", paid],
+              ["Pendente", Math.max(0, billed - paid)],
+            ];
+            return (
+              <Card>
+                <CardHeader><CardTitle className="text-base">Resumo financeiro (calculado)</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {rows.filter(([, v]) => v != null).map(([l, v]) => (
+                      <div key={l} className="rounded-lg border border-border p-3"><p className="text-xs text-muted-foreground">{l}</p><p className="font-semibold">{formatMoney(v as number)}</p></div>
+                    ))}
+                  </div>
+                  <div className="space-y-1">
+                    {fin.invoices.map((i: any) => (
+                      <button key={i.id} type="button" onClick={() => navigate(`/invoices/${i.id}`)} className="w-full flex justify-between gap-2 rounded-md border border-border px-3 py-2 text-sm min-h-[44px] hover:border-primary/50">
+                        <span>{i.number || "—"} · {i.client_id === claim.client_id ? "Cliente" : (i.client_name || "Outra entidade")}</span>
+                        <span className={i.status === "cancelled" ? "line-through text-muted-foreground" : ""}>{formatMoney(Number(i.total || 0))}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{IS_BR ? "Calculado a partir das notas fiscais e pagamentos reais ligados a este sinistro." : "Calculado a partir das faturas e pagamentos reais ligados a este sinistro."}</p>
+                </CardContent>
+              </Card>
+            );
+          })()}
           <Card>
             <CardHeader><CardTitle className="text-base">Valores</CardTitle></CardHeader>
             <CardContent className="grid gap-3 grid-cols-1 sm:grid-cols-2">
@@ -510,6 +555,7 @@ export default function ClaimDetail() {
                 <Select value={claim.invoice_id || ""} onValueChange={(v) => {
                   const inv = invs.find((i) => i.id === v);
                   link({ invoice_id: v, ...(inv && claim.amount_invoiced == null ? { amount_invoiced: inv.total } : {}) });
+                  void (supabase as any).from("invoices").update({ claim_id: claim.id }).eq("id", v).then(() => loadFin());
                 }}>
                   <SelectTrigger className="min-h-[44px]"><SelectValue placeholder={IS_BR ? "Associar nota fiscal existente" : "Associar fatura existente"} /></SelectTrigger>
                   <SelectContent>{invs.map((i) => <SelectItem key={i.id} value={i.id}>{i.number} — {formatMoney(Number(i.total))}</SelectItem>)}</SelectContent>

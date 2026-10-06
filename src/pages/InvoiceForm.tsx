@@ -259,6 +259,7 @@ export default function InvoiceForm() {
       autoSend = !!client?.email;
     }
     if (fromClaim) {
+      await (supabase as any).from("invoices").update({ claim_id: fromClaim }).eq("id", invoice.id);
       await (supabase as any).from("claims").update({ invoice_id: invoice.id, status: "invoiced" }).eq("id", fromClaim);
     }
     navigate(`/invoices/${invoice.id}${autoSend ? '?autosend=1' : ''}`);

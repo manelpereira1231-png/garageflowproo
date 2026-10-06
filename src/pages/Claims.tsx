@@ -351,38 +351,38 @@ export default function Claims() {
             <>
               {/* Desktop */}
               <div className="hidden sm:block">
-                <Table>
+                <Table className="table-fixed">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Sinistro</TableHead>
-                      <TableHead>Seguradora</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Viatura</TableHead>
-                      <TableHead>OS</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Próximo passo</TableHead>
-                      <TableHead className="text-right">Aprovado</TableHead>
-                      <TableHead><span className="sr-only">Ações</span></TableHead>
+                      <TableHead className="w-[9%]">Sinistro</TableHead>
+                      <TableHead className="w-[13%]">Seguradora</TableHead>
+                      <TableHead className="w-[9%]">Cliente</TableHead>
+                      <TableHead className="w-[16%]">Viatura</TableHead>
+                      <TableHead className="w-[8%]">OS</TableHead>
+                      <TableHead className="w-[10%]">Estado</TableHead>
+                      <TableHead className="w-[22%]">Próximo passo</TableHead>
+                      <TableHead className="w-[8%] text-right">Aprovado</TableHead>
+                      <TableHead className="w-12"><span className="sr-only">Ações</span></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filtered.map((c) => (
                       <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/claims/${c.id}`)}>
-                        <TableCell className="font-medium">{c.ref}<div className="text-xs text-muted-foreground">{c.claim_number || ""}</div></TableCell>
-                        <TableCell>{c.insurers?.name || "—"}</TableCell>
-                        <TableCell>{clientDisplayName(c.clients) || "—"}</TableCell>
-                        <TableCell>{c.vehicles ? `${c.vehicles.make} ${c.vehicles.model} — ${c.vehicles.plate}` : "—"}</TableCell>
-                        <TableCell>{c.work_orders?.number || "—"}</TableCell>
+                        <TableCell className="font-medium"><div className="truncate">{c.ref}</div><div className="text-xs text-muted-foreground truncate">{c.claim_number || ""}</div></TableCell>
+                        <TableCell><div className="truncate">{c.insurers?.name || "—"}</div></TableCell>
+                        <TableCell><div className="truncate">{clientDisplayName(c.clients) || "—"}</div></TableCell>
+                        <TableCell><div className="truncate">{c.vehicles ? `${c.vehicles.make} ${c.vehicles.model} — ${c.vehicles.plate}` : "—"}</div></TableCell>
+                        <TableCell><div className="truncate">{c.work_orders?.number || "—"}</div></TableCell>
                         <TableCell>
                           <Badge variant="outline" className={claimStatusTone(c.status)}>
                             {info[c.id]?.badge.label || CLAIM_STATUS_LABELS[c.status as keyof typeof CLAIM_STATUS_LABELS] || c.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm max-w-[260px]">
-                          <span className="inline-flex items-start gap-1.5">
+                        <TableCell className="whitespace-normal text-sm">
+                          <div className="flex items-start gap-1.5">
                             {(info[c.id]?.overdue || info[c.id]?.dueSoon) && <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${info[c.id]?.overdue ? "text-destructive" : "text-warning"}`} aria-label={info[c.id]?.overdue ? "Prazo em atraso" : "Prazo a vencer"} />}
-                            <span className="line-clamp-2">{info[c.id]?.next}</span>
-                          </span>
+                            <span className="line-clamp-2 break-words">{info[c.id]?.next}</span>
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           {c.amount_approved != null ? formatMoney(Number(c.amount_approved)) : "—"}

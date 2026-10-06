@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { formatMoney } from "@/lib/money";
 import { ClaimBillingLines } from "@/components/claims/ClaimBillingLines";
 import { ClaimSupplements } from "@/components/claims/ClaimSupplements";
+import { ClaimTotalLoss } from "@/components/claims/ClaimTotalLoss";
 import {
   CLAIM_STATUSES, CLAIM_STATUS_LABELS, claimStatusTone,
   EXPERT_STATUSES, EXPERT_STATUS_LABELS,
@@ -588,6 +589,7 @@ export default function ClaimDetail() {
 
         {/* Dados */}
         <TabsContent value="process" className="space-y-4">
+          {activeShopId && <ClaimTotalLoss claim={claim} shopId={activeShopId} isBR={IS_BR} onSaved={load} />}
           <Card>
             <CardHeader><CardTitle className="text-base">Dados do sinistro</CardTitle></CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2">

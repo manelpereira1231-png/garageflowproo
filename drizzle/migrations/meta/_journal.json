@@ -197,6 +197,13 @@
       "when": 1791295726579,
       "tag": "0027_claim_supplements",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1791295828476,
+      "tag": "0028_claims_total_loss",
+      "breakpoints": true
     }
   ]
 }

@@ -2338,6 +2338,8 @@ export type Database = {
           claim_date: string | null
           claim_number: string | null
           claim_type: string | null
+          client_decision: string | null
+          client_decision_date: string | null
           client_id: string | null
           closed_at: string | null
           coverage: string | null
@@ -2358,6 +2360,7 @@ export type Database = {
           expert_time: string | null
           external_ref: Json
           id: string
+          indemnity_amount: number | null
           insurer_id: string | null
           insurer_quote_notes: string | null
           invoice_id: string | null
@@ -2373,10 +2376,15 @@ export type Database = {
           ref: string | null
           report_date: string | null
           report_number: string | null
+          salvage_value: number | null
           shop_id: string
           status: string
+          total_loss: boolean
+          total_loss_date: string | null
+          total_loss_notes: string | null
           updated_at: string
           vehicle_id: string | null
+          vehicle_market_value: number | null
           work_order_id: string | null
         }
         Insert: {
@@ -2397,6 +2405,8 @@ export type Database = {
           claim_date?: string | null
           claim_number?: string | null
           claim_type?: string | null
+          client_decision?: string | null
+          client_decision_date?: string | null
           client_id?: string | null
           closed_at?: string | null
           coverage?: string | null
@@ -2417,6 +2427,7 @@ export type Database = {
           expert_time?: string | null
           external_ref?: Json
           id?: string
+          indemnity_amount?: number | null
           insurer_id?: string | null
           insurer_quote_notes?: string | null
           invoice_id?: string | null
@@ -2432,10 +2443,15 @@ export type Database = {
           ref?: string | null
           report_date?: string | null
           report_number?: string | null
+          salvage_value?: number | null
           shop_id: string
           status?: string
+          total_loss?: boolean
+          total_loss_date?: string | null
+          total_loss_notes?: string | null
           updated_at?: string
           vehicle_id?: string | null
+          vehicle_market_value?: number | null
           work_order_id?: string | null
         }
         Update: {
@@ -2456,6 +2472,8 @@ export type Database = {
           claim_date?: string | null
           claim_number?: string | null
           claim_type?: string | null
+          client_decision?: string | null
+          client_decision_date?: string | null
           client_id?: string | null
           closed_at?: string | null
           coverage?: string | null
@@ -2476,6 +2494,7 @@ export type Database = {
           expert_time?: string | null
           external_ref?: Json
           id?: string
+          indemnity_amount?: number | null
           insurer_id?: string | null
           insurer_quote_notes?: string | null
           invoice_id?: string | null
@@ -2491,10 +2510,15 @@ export type Database = {
           ref?: string | null
           report_date?: string | null
           report_number?: string | null
+          salvage_value?: number | null
           shop_id?: string
           status?: string
+          total_loss?: boolean
+          total_loss_date?: string | null
+          total_loss_notes?: string | null
           updated_at?: string
           vehicle_id?: string | null
+          vehicle_market_value?: number | null
           work_order_id?: string | null
         }
         Relationships: [

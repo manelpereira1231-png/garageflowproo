@@ -459,7 +459,7 @@ export default function ClaimDetail() {
             ];
             return (
               <Card><CardContent className="p-3">
-                <ol className="grid grid-cols-5 gap-1">
+                <ol className="grid grid-cols-2 gap-1 sm:grid-cols-5">
                   {steps.map((st, i) => (
                     <li key={i}>
                       <button type="button" disabled={!st.go} onClick={() => st.go && navigate(st.go)}

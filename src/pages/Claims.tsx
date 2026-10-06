@@ -368,11 +368,11 @@ export default function Claims() {
                   <TableBody>
                     {filtered.map((c) => (
                       <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/claims/${c.id}`)}>
-                        <TableCell className="font-medium">{c.ref}<div className="text-xs text-muted-foreground">{c.claim_number || ""}</div></TableCell>
-                        <TableCell>{c.insurers?.name || "—"}</TableCell>
-                        <TableCell>{clientDisplayName(c.clients) || "—"}</TableCell>
-                        <TableCell>{c.vehicles ? `${c.vehicles.make} ${c.vehicles.model} — ${c.vehicles.plate}` : "—"}</TableCell>
-                        <TableCell>{c.work_orders?.number || "—"}</TableCell>
+                        <TableCell className="font-medium"><div className="truncate">{c.ref}</div><div className="text-xs text-muted-foreground truncate">{c.claim_number || ""}</div></TableCell>
+                        <TableCell><div className="truncate">{c.insurers?.name || "—"}</div></TableCell>
+                        <TableCell><div className="truncate">{clientDisplayName(c.clients) || "—"}</div></TableCell>
+                        <TableCell><div className="truncate">{c.vehicles ? `${c.vehicles.make} ${c.vehicles.model} — ${c.vehicles.plate}` : "—"}</div></TableCell>
+                        <TableCell><div className="truncate">{c.work_orders?.number || "—"}</div></TableCell>
                         <TableCell>
                           <Badge variant="outline" className={claimStatusTone(c.status)}>
                             {info[c.id]?.badge.label || CLAIM_STATUS_LABELS[c.status as keyof typeof CLAIM_STATUS_LABELS] || c.status}

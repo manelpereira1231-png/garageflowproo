@@ -26,6 +26,7 @@ import { formatMoney } from "@/lib/money";
 import { ClaimBillingLines } from "@/components/claims/ClaimBillingLines";
 import { ClaimSupplements } from "@/components/claims/ClaimSupplements";
 import { ClaimTotalLoss } from "@/components/claims/ClaimTotalLoss";
+import { ClaimImmobilization } from "@/components/claims/ClaimImmobilization";
 import {
   CLAIM_STATUSES, CLAIM_STATUS_LABELS, claimStatusTone,
   EXPERT_STATUSES, EXPERT_STATUS_LABELS,
@@ -45,11 +46,13 @@ function eventText(e: any): string {
   return e.description;
 }
 
-const dt = (v: string | null) => (v ? new Date(v).toLocaleString("pt-PT") : "—");
+let LOC = "pt-PT";
+const dt = (v: string | null) => (v ? new Date(v).toLocaleString(LOC) : "—");
 
 export default function ClaimDetail() {
   const IS_BR = useShopCountry().code === "BR";
   const DOC = IS_BR ? "Nota fiscal" : "Fatura";
+  LOC = IS_BR ? "pt-BR" : "pt-PT";
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const activeShopId = useActiveShopId();
@@ -403,6 +406,7 @@ export default function ClaimDetail() {
 
         {/* Resumo */}
         <TabsContent value="summary" className="space-y-4">
+          <ClaimImmobilization claim={claim} isBR={IS_BR} onSaved={load} />
           <div className="grid gap-3 md:grid-cols-2">
             <Card><CardContent className="p-4 text-sm space-y-1">
               <p className="text-xs text-muted-foreground">Cliente</p>
@@ -436,7 +440,7 @@ export default function ClaimDetail() {
                 <div><p className="text-xs text-muted-foreground">Orçamentado</p><p className="font-semibold">{quoted != null ? formatMoney(quoted) : "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Autorizado</p><p className="font-semibold">{approved != null ? formatMoney(approved) : "—"}</p></div>
                 <div><p className="text-xs text-muted-foreground">Diferença</p><p className="font-semibold">{diff != null ? formatMoney(diff) : "—"}</p></div>
-                <div><p className="text-xs text-muted-foreground">Última atualização</p><p className="font-medium">{last ? new Date(last.created_at).toLocaleString("pt-PT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : new Date(claim.updated_at || claim.created_at).toLocaleString("pt-PT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>{last?.description || last?.title ? <p className="text-xs text-muted-foreground truncate">{last.title || last.description}</p> : null}</div>
+                <div><p className="text-xs text-muted-foreground">Última atualização</p><p className="font-medium">{last ? new Date(last.created_at).toLocaleString(LOC, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : new Date(claim.updated_at || claim.created_at).toLocaleString(LOC, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>{last?.description || last?.title ? <p className="text-xs text-muted-foreground truncate">{last.title || last.description}</p> : null}</div>
                 {diff != null && diff !== 0 && <p className="col-span-2 sm:col-span-4 text-xs text-muted-foreground">A diferença é apenas informativa — não é cobrada automaticamente ao cliente.</p>}
                 <div className="col-span-2 sm:col-span-4"><p className="text-xs text-muted-foreground">Próxima ação</p><p className="font-medium">{claim.next_action || "Nenhuma definida"}{claim.next_action_date ? ` · ${claim.next_action_date}` : ""}</p></div>
               </CardContent></Card>
@@ -572,7 +576,7 @@ export default function ClaimDetail() {
                   <span className="text-muted-foreground">Número</span><span>{inv.number}</span>
                   <span className="text-muted-foreground">Valor</span><span>{formatMoney(Number(inv.total))}</span>
                   <span className="text-muted-foreground">Entidade faturada</span><span>{inv.client_name || clientDisplayName(claim.clients)}</span>
-                  <span className="text-muted-foreground">Data</span><span>{inv.date ? new Date(inv.date).toLocaleDateString("pt-PT") : "—"}</span>
+                  <span className="text-muted-foreground">Data</span><span>{inv.date ? new Date(inv.date).toLocaleDateString(LOC) : "—"}</span>
                   <span className="text-muted-foreground">Estado</span><span>{inv.status}</span>
                 </div>) : null; })()}
               <div className="flex flex-wrap gap-2">

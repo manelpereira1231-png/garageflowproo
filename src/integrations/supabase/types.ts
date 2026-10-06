@@ -2341,6 +2341,8 @@ export type Database = {
           client_decision: string | null
           client_decision_date: string | null
           client_id: string | null
+          client_informed_at: string | null
+          client_informed_note: string | null
           closed_at: string | null
           coverage: string | null
           created_at: string
@@ -2372,6 +2374,7 @@ export type Database = {
           notes: string | null
           policy_number: string | null
           process_number: string | null
+          promised_date: string | null
           quote_id: string | null
           ref: string | null
           report_date: string | null
@@ -2384,7 +2387,9 @@ export type Database = {
           total_loss_notes: string | null
           updated_at: string
           vehicle_id: string | null
+          vehicle_in_date: string | null
           vehicle_market_value: number | null
+          vehicle_out_date: string | null
           work_order_id: string | null
         }
         Insert: {
@@ -2408,6 +2413,8 @@ export type Database = {
           client_decision?: string | null
           client_decision_date?: string | null
           client_id?: string | null
+          client_informed_at?: string | null
+          client_informed_note?: string | null
           closed_at?: string | null
           coverage?: string | null
           created_at?: string
@@ -2439,6 +2446,7 @@ export type Database = {
           notes?: string | null
           policy_number?: string | null
           process_number?: string | null
+          promised_date?: string | null
           quote_id?: string | null
           ref?: string | null
           report_date?: string | null
@@ -2451,7 +2459,9 @@ export type Database = {
           total_loss_notes?: string | null
           updated_at?: string
           vehicle_id?: string | null
+          vehicle_in_date?: string | null
           vehicle_market_value?: number | null
+          vehicle_out_date?: string | null
           work_order_id?: string | null
         }
         Update: {
@@ -2475,6 +2485,8 @@ export type Database = {
           client_decision?: string | null
           client_decision_date?: string | null
           client_id?: string | null
+          client_informed_at?: string | null
+          client_informed_note?: string | null
           closed_at?: string | null
           coverage?: string | null
           created_at?: string
@@ -2506,6 +2518,7 @@ export type Database = {
           notes?: string | null
           policy_number?: string | null
           process_number?: string | null
+          promised_date?: string | null
           quote_id?: string | null
           ref?: string | null
           report_date?: string | null
@@ -2518,7 +2531,9 @@ export type Database = {
           total_loss_notes?: string | null
           updated_at?: string
           vehicle_id?: string | null
+          vehicle_in_date?: string | null
           vehicle_market_value?: number | null
+          vehicle_out_date?: string | null
           work_order_id?: string | null
         }
         Relationships: [

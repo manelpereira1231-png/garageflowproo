@@ -359,7 +359,7 @@ export default function Claims() {
                       <TableHead className="w-[9%]">Cliente</TableHead>
                       <TableHead className="w-[16%]">Viatura</TableHead>
                       <TableHead className="w-[8%]">OS</TableHead>
-                      <TableHead className="w-[11%]">Estado</TableHead>
+                      <TableHead className="w-[10%]">Estado</TableHead>
                       <TableHead className="w-[22%]">Próximo passo</TableHead>
                       <TableHead className="w-[8%] text-right">Aprovado</TableHead>
                       <TableHead className="w-12"><span className="sr-only">Ações</span></TableHead>

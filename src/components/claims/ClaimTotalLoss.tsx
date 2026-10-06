@@ -1,117 +1,125 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/money";
+import { daysBetween } from "./ClaimImmobilization";
 
-const DECISIONS: Record<string, string> = {
-  pending: "Aguarda decisão do cliente",
-  keep_salvage: "Cliente fica com o salvado",
-  deliver_insurer: "Cliente entrega a viatura à seguradora",
-  repair_own_cost: "Cliente repara por conta própria",
+export const DECISIONS: Record<string, string> = {
+  deliver_insurer: "Aceita a indemnização e entrega o salvado à seguradora",
+  repair_own_cost: "Fica com a viatura e repara por conta própria",
+  take_unrepaired: "Leva a viatura sem reparar",
 };
 const PREFIX = "Encargo: ";
 
-/** Perda total: valores da seguradora, decisão do cliente e encargos (vão para as linhas a faturar). */
+/** Perda total declarada pelo perito: decisão do cliente e encargos a cobrar. */
 export function ClaimTotalLoss({ claim, shopId, isBR, onSaved }: { claim: any; shopId: string; isBR: boolean; onSaved: () => void }) {
+  const navigate = useNavigate();
+  const [shopRate, setShopRate] = useState<number | null>(null);
   const [f, setF] = useState<any>({});
-  const [charges, setCharges] = useState<any[]>([]);
-  const [c, setC] = useState({ description: "", amount: "", payer: "client" });
+  const [payer, setPayer] = useState<"insurer" | "client">("insurer");
+  const [saveDefault, setSaveDefault] = useState(false);
+  const [billedNo, setBilledNo] = useState<string | null>(null);
   const cur = isBR ? "R$" : "€";
+  const car = isBR ? "veículo" : "viatura";
 
   useEffect(() => {
+    supabase.from("shops").select("storage_daily_rate").eq("id", shopId).maybeSingle().then(({ data }) => setShopRate((data as any)?.storage_daily_rate ?? null));
+    (supabase as any).from("claim_billing_lines").select("invoice_id, invoices(number, status)").eq("claim_id", claim.id).like("description", `${PREFIX}%`).not("invoice_id", "is", null)
+      .then(({ data }: any) => setBilledNo((data || []).find((l: any) => l.invoices?.status !== "cancelled")?.invoices?.number ?? null));
+  }, [shopId, claim.id]);
+  useEffect(() => {
     setF({
-      total_loss: !!claim.total_loss, total_loss_date: claim.total_loss_date || "",
-      vehicle_market_value: claim.vehicle_market_value ?? "", salvage_value: claim.salvage_value ?? "",
-      indemnity_amount: claim.indemnity_amount ?? "", client_decision: claim.client_decision || "pending",
-      client_decision_date: claim.client_decision_date || "", total_loss_notes: claim.total_loss_notes || "",
+      client_decision: claim.client_decision && claim.client_decision !== "pending" ? claim.client_decision : "",
+      disassembly_fee: claim.disassembly_fee ?? "", storage_daily_rate: claim.storage_daily_rate ?? "",
+      salvage_value: claim.salvage_value ?? "", indemnity_amount: claim.indemnity_amount ?? "",
     });
-  }, [claim.id, claim.total_loss, claim.client_decision, claim.indemnity_amount]);
+  }, [claim.id, claim.client_decision, claim.disassembly_fee, claim.storage_daily_rate, claim.salvage_value, claim.indemnity_amount]);
 
-  const loadCharges = async () => {
-    const { data } = await (supabase as any).from("claim_billing_lines").select("id, description, unit_price, quantity, payer, invoice_id")
-      .eq("claim_id", claim.id).like("description", `${PREFIX}%`).order("created_at");
-    setCharges(data || []);
-  };
-  useEffect(() => { void loadCharges(); }, [claim.id]);
-
+  const rate = f.storage_daily_rate !== "" && f.storage_daily_rate != null ? Number(f.storage_daily_rate) : (shopRate ?? 0);
+  const days = claim.vehicle_in_date ? daysBetween(claim.vehicle_in_date, claim.vehicle_out_date) : 0;
+  const storage = Math.round(days * rate * 100) / 100;
+  const disassembly = f.disassembly_fee !== "" ? Number(f.disassembly_fee) : 0;
   const n = (v: any) => (v === "" || v == null ? null : Number(v));
-  const save = async (patch?: any) => {
+
+  const save = async (patch: Record<string, any> = {}) => {
     const v = { ...f, ...patch };
     const { error } = await supabase.from("claims").update({
-      total_loss: v.total_loss, total_loss_date: v.total_loss_date || null,
-      vehicle_market_value: n(v.vehicle_market_value), salvage_value: n(v.salvage_value), indemnity_amount: n(v.indemnity_amount),
-      client_decision: v.total_loss ? v.client_decision : null, client_decision_date: v.client_decision_date || null,
-      total_loss_notes: v.total_loss_notes || null,
+      client_decision: v.client_decision || "pending",
+      client_decision_date: v.client_decision ? (claim.client_decision_date || new Date().toISOString().slice(0, 10)) : null,
+      disassembly_fee: n(v.disassembly_fee), storage_daily_rate: n(v.storage_daily_rate),
+      salvage_value: n(v.salvage_value), indemnity_amount: n(v.indemnity_amount),
     } as any).eq("id", claim.id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Perda total guardada"); onSaved();
+    if (error) { toast.error(error.message); return false; }
+    if (saveDefault && n(v.storage_daily_rate) != null) await supabase.from("shops").update({ storage_daily_rate: n(v.storage_daily_rate) } as any).eq("id", shopId);
+    if (patch.client_decision) await supabase.from("claim_events").insert({ claim_id: claim.id, shop_id: shopId, kind: "note", description: `Decisão do cliente: ${DECISIONS[patch.client_decision]}` });
+    onSaved(); return true;
   };
 
-  const addCharge = async () => {
-    const a = Number(c.amount);
-    if (!c.description.trim() || !(a > 0)) { toast.error("Indique o encargo e o valor."); return; }
-    const { error } = await (supabase as any).from("claim_billing_lines").insert({ claim_id: claim.id, shop_id: shopId, description: PREFIX + c.description.trim(), quantity: 1, unit_price: a, payer: c.payer });
+  const emit = async () => {
+    if (!(await save())) return;
+    const rows = [
+      ...(disassembly > 0 ? [{ description: `${PREFIX}Desmontagem para peritagem`, quantity: 1, unit_price: disassembly }] : []),
+      ...(storage > 0 ? [{ description: `${PREFIX}Parqueamento (${days} dias × ${formatMoney(rate)})`, quantity: days, unit_price: rate }] : []),
+    ];
+    if (!rows.length) { toast.error("Indique pelo menos um encargo."); return; }
+    const { data: old } = await (supabase as any).from("claim_billing_lines").select("id").eq("claim_id", claim.id).like("description", `${PREFIX}%`).is("invoice_id", null);
+    for (const o of old || []) await (supabase as any).from("claim_billing_lines").delete().eq("id", o.id);
+    const { data, error } = await (supabase as any).from("claim_billing_lines").insert(rows.map((r) => ({ ...r, claim_id: claim.id, shop_id: shopId, payer }))).select("id");
     if (error) { toast.error(error.message); return; }
-    setC({ ...c, description: "", amount: "" }); loadCharges();
+    navigate(`/invoices/new?from_claim=${claim.id}&payer=${payer}&lines=${(data || []).map((d: any) => d.id).join(",")}`);
   };
 
-  const net = n(f.indemnity_amount);
+  const decisions = isBR ? Object.fromEntries(Object.entries(DECISIONS).map(([k, v]) => [k, v.replace("viatura", "veículo")])) : DECISIONS;
+
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-        <CardTitle className="text-base">Perda total</CardTitle>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="tl" className="text-sm">É perda total</Label>
-          <Switch id="tl" checked={!!f.total_loss} onCheckedChange={(v) => { setF({ ...f, total_loss: v }); save({ total_loss: v, total_loss_date: v && !f.total_loss_date ? new Date().toISOString().slice(0, 10) : f.total_loss_date }); }} />
+    <Card className="rounded-[14px] border-red-500/40">
+      <CardHeader><CardTitle className="text-base">Perda total declarada pelo perito</CardTitle></CardHeader>
+      <CardContent className="space-y-5">
+        <div className="space-y-2">
+          <p className="text-sm font-medium">O que decidiu o cliente?</p>
+          {Object.entries(decisions).map(([k, l]) => (
+            <button key={k} type="button" onClick={() => { setF({ ...f, client_decision: k }); save({ client_decision: k }); }}
+              className={`w-full text-left rounded-[14px] border px-3 min-h-[44px] py-2 text-sm ${f.client_decision === k ? "border-primary bg-primary/10 font-medium" : "border-border hover:border-primary/50"}`}>
+              {l}
+            </button>
+          ))}
         </div>
-      </CardHeader>
-      {f.total_loss && (
-        <CardContent className="space-y-4">
+        <div className="grid gap-3 grid-cols-2">
+          <div><Label>Indemnização proposta ({cur})</Label><Input type="number" step="0.01" inputMode="decimal" className="min-h-[44px]" value={f.indemnity_amount ?? ""} onChange={(e) => setF({ ...f, indemnity_amount: e.target.value })} onBlur={() => save()} /></div>
+          <div><Label>Valor do salvado ({cur})</Label><Input type="number" step="0.01" inputMode="decimal" className="min-h-[44px]" value={f.salvage_value ?? ""} onChange={(e) => setF({ ...f, salvage_value: e.target.value })} onBlur={() => save()} /></div>
+        </div>
+        <div className="space-y-2 border-t border-border pt-3">
+          <p className="text-sm font-medium">Encargos a cobrar</p>
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-            <div><Label>Data da perda total</Label><Input type="date" className="min-h-[44px]" value={f.total_loss_date} onChange={(e) => setF({ ...f, total_loss_date: e.target.value })} /></div>
-            <div><Label>Valor venal / de mercado ({cur})</Label><Input type="number" step="0.01" inputMode="decimal" className="min-h-[44px]" value={f.vehicle_market_value} onChange={(e) => setF({ ...f, vehicle_market_value: e.target.value })} /></div>
-            <div><Label>Valor do salvado ({cur})</Label><Input type="number" step="0.01" inputMode="decimal" className="min-h-[44px]" value={f.salvage_value} onChange={(e) => setF({ ...f, salvage_value: e.target.value })} /></div>
-            <div><Label>Indemnização proposta ({cur})</Label><Input type="number" step="0.01" inputMode="decimal" className="min-h-[44px]" value={f.indemnity_amount} onChange={(e) => setF({ ...f, indemnity_amount: e.target.value })} /></div>
-            <div><Label>Decisão do cliente</Label>
-              <Select value={f.client_decision} onValueChange={(v) => setF({ ...f, client_decision: v, client_decision_date: v !== "pending" && !f.client_decision_date ? new Date().toISOString().slice(0, 10) : f.client_decision_date })}>
-                <SelectTrigger className="min-h-[44px]"><SelectValue /></SelectTrigger>
-                <SelectContent>{Object.entries(DECISIONS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div><Label>Data da decisão</Label><Input type="date" className="min-h-[44px]" value={f.client_decision_date} onChange={(e) => setF({ ...f, client_decision_date: e.target.value })} /></div>
-            <div className="sm:col-span-2"><Label>Notas</Label><Textarea value={f.total_loss_notes} onChange={(e) => setF({ ...f, total_loss_notes: e.target.value })} /></div>
+            <div><Label>Desmontagem para peritagem ({cur})</Label><Input type="number" step="0.01" inputMode="decimal" className="min-h-[44px]" value={f.disassembly_fee ?? ""} onChange={(e) => setF({ ...f, disassembly_fee: e.target.value })} /></div>
+            <div><Label>Parqueamento por dia ({cur})</Label><Input type="number" step="0.01" inputMode="decimal" className="min-h-[44px]" placeholder={shopRate != null ? String(shopRate) : ""} value={f.storage_daily_rate ?? ""} onChange={(e) => setF({ ...f, storage_daily_rate: e.target.value })} /></div>
           </div>
-          {net != null && <p className="text-sm text-muted-foreground">Valores indicados pela seguradora e registados pela oficina. O GarageFlow não calcula a indemnização.</p>}
-          <Button className="min-h-[44px]" onClick={() => save()}>Guardar perda total</Button>
-
-          <div className="space-y-2 border-t border-border pt-3">
-            <p className="text-sm font-medium">Encargos (parqueamento, reboque, desmontagem, peritagem…)</p>
-            {charges.map((l) => (
-              <div key={l.id} className="flex justify-between gap-2 rounded-md border border-border px-3 py-2 text-sm">
-                <span>{l.description.slice(PREFIX.length)} · {l.payer === "insurer" ? "Seguradora" : "Cliente"}</span>
-                <span>{formatMoney(Number(l.unit_price) * Number(l.quantity))}{l.invoice_id ? (isBR ? " · emitida" : " · faturado") : ""}</span>
-              </div>
-            ))}
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px_140px_auto] gap-2">
-              <Input className="min-h-[44px]" placeholder="Encargo (ex.: Parqueamento 10 dias)" value={c.description} onChange={(e) => setC({ ...c, description: e.target.value })} />
-              <Input className="min-h-[44px]" type="number" step="0.01" inputMode="decimal" placeholder="Valor" value={c.amount} onChange={(e) => setC({ ...c, amount: e.target.value })} />
-              <Select value={c.payer} onValueChange={(v) => setC({ ...c, payer: v })}>
-                <SelectTrigger className="min-h-[44px]"><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="client">Cliente</SelectItem><SelectItem value="insurer">Seguradora</SelectItem></SelectContent>
-              </Select>
-              <Button variant="outline" className="min-h-[44px]" onClick={addCharge}>Adicionar</Button>
-            </div>
-            <p className="text-xs text-muted-foreground">{isBR ? "Os encargos entram nos itens a emitir em nota fiscal (separador Valores)." : "Os encargos entram nas linhas a faturar (separador Valores)."}</p>
+          <label className="flex items-center gap-2 text-sm min-h-[44px]"><Checkbox checked={saveDefault} onCheckedChange={(v) => setSaveDefault(!!v)} />Usar este preço por dia como predefinição da oficina</label>
+          <div className="rounded-md border border-border p-3 text-sm space-y-1">
+            <div className="flex justify-between"><span>Desmontagem</span><span>{formatMoney(disassembly)}</span></div>
+            <div className="flex justify-between"><span>Parqueamento: {days} dias × {formatMoney(rate)}</span><span>{formatMoney(storage)}</span></div>
+            <div className="flex justify-between font-semibold border-t border-border pt-1"><span>Total</span><span>{formatMoney(disassembly + storage)}</span></div>
+            {!claim.vehicle_in_date && <p className="text-xs text-muted-foreground">Indique a data de entrada da {car} em "Imobilização" para contar os dias.</p>}
           </div>
-        </CardContent>
-      )}
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <span className="text-sm">Faturar a:</span>
+            <div className="inline-flex rounded-[14px] border border-border p-1">
+              {(["insurer", "client"] as const).map((p) => (
+                <button key={p} type="button" onClick={() => setPayer(p)} className={`px-3 min-h-[40px] rounded-[10px] text-sm ${payer === p ? "bg-primary text-primary-foreground" : ""}`}>{p === "insurer" ? "Seguradora" : "Cliente"}</button>
+              ))}
+            </div>
+            {billedNo ? <Badge variant="secondary">Emitida {billedNo}</Badge>
+              : <Button className="min-h-[44px] sm:ml-auto" disabled={payer === "insurer" && !claim.insurer_id} onClick={emit}>{isBR ? "Emitir nota fiscal de encargos" : "Emitir fatura de encargos"}</Button>}
+          </div>
+        </div>
+      </CardContent>
     </Card>
   );
 }

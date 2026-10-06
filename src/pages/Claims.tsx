@@ -16,7 +16,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShieldAlert, Plus, Search, Building2, Pencil } from "lucide-react";
+import { ShieldAlert, Plus, Search, Building2, Pencil, AlertTriangle, Camera } from "lucide-react";
+import { useShopCountry } from "@/hooks/useShopCountry";
+import { computeRepairPhase, computeTotalLossPhase, phaseBadge, nextStep, ptDeadlines, deadlineState, REPAIR_PHASES, REPAIR_PHASE_LABELS, isPendingSup } from "@/lib/claimPhases";
+import { uploadClaimFiles } from "@/components/claims/ClaimDocumentsV2";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/money";
 import {
@@ -71,6 +74,9 @@ export default function Claims() {
   const [addVehicle, setAddVehicle] = useState(false);
   const [period, setPeriod] = useState("all");
   const [quoteNums, setQuoteNums] = useState<Record<string, string>>({});
+  const IS_BR = useShopCountry().code === "BR";
+  const [newPhotos, setNewPhotos] = useState<File[]>([]);
+  const [newMore, setNewMore] = useState(false);
 
   const [insurerOpen, setInsurerOpen] = useState(false);
   const [insurerEditId, setInsurerEditId] = useState<string | null>(null);
@@ -80,7 +86,7 @@ export default function Claims() {
     if (!activeShopId) return;
     const [cl, ins, cli, veh, wo] = await Promise.all([
       supabase.from("claims")
-        .select("*, insurers(name), clients(name, company), vehicles(make, model, plate), work_orders(number)")
+        .select("*, insurers(name), clients(name, company), vehicles(make, model, plate), work_orders(number, status), claim_supplements(id, type, number, status, requested_at, decided_at, amount_requested, amount_approved)")
         .eq("shop_id", activeShopId).order("created_at", { ascending: false }).limit(500),
       supabase.from("insurers").select("*").eq("shop_id", activeShopId).order("name"),
       supabase.from("clients").select("id, name, company, nif").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),
@@ -146,13 +152,32 @@ export default function Claims() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeShopId]);
 
+  const info = useMemo(() => {
+    const m: Record<string, { phase: string; badge: ReturnType<typeof phaseBadge>; next: string; overdue: boolean; dueSoon: boolean }> = {};
+    for (const c of claims) {
+      const sups = c.claim_supplements || [];
+      const woDone = ["completed", "done", "delivered", "ready", "invoiced"].includes(String(c.work_orders?.status || ""));
+      const phase = c.outcome === "perda_total" ? computeTotalLossPhase(c) : computeRepairPhase(c, { sups, woDone });
+      const ds = IS_BR || ["done", "cancelled"].includes(c.status) ? [] : ptDeadlines(c, sups).map(deadlineState);
+      m[c.id] = { phase, badge: phaseBadge(c, phase, sups, IS_BR), next: nextStep(c, phase, sups, [], IS_BR), overdue: ds.some((d) => d.overdue), dueSoon: ds.some((d) => d.dueSoon) };
+    }
+    return m;
+  }, [claims, IS_BR]);
+  const phaseGroup = (c: any) => {
+    const ph = info[c.id]?.phase || "entrada";
+    if (ph === "perda_total" || ph === "decisao" || ph === "encargos") return "autorizacao";
+    return ph;
+  };
+
   // Filtro por grupo vindo do painel (?status=g:<grupo> / late)
   const groupFilter = statusFilter.startsWith("g:") ? CLAIM_GROUPS.find((g) => "g:" + g.key === statusFilter) : null;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return claims.filter((c) => {
-      if (groupFilter) { if (!groupFilter.statuses.includes(c.status)) return false; }
+      if (statusFilter.startsWith("p:")) { if (phaseGroup(c) !== statusFilter.slice(2)) return false; }
+      else if (statusFilter === "overdue") { if (!info[c.id]?.overdue) return false; }
+      else if (groupFilter) { if (!groupFilter.statuses.includes(c.status)) return false; }
       else if (statusFilter === "late") {
         if (CLAIM_CLOSED.includes(c.status) || !c.next_action_date || c.next_action_date >= new Date().toISOString().slice(0, 10)) return false;
       } else if (statusFilter === "active") { if (CLAIM_CLOSED.includes(c.status)) return false; }
@@ -171,7 +196,7 @@ export default function Claims() {
       ].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
-  }, [claims, search, statusFilter, insurerFilter, period, quoteNums, groupFilter]);
+  }, [claims, search, statusFilter, insurerFilter, period, quoteNums, groupFilter, info]);
 
   const vehiclesForClient = useMemo(
     () => vehicles.filter((v) => !form.client_id || v.client_id === form.client_id),
@@ -215,6 +240,8 @@ export default function Claims() {
     if (form.work_order_id) {
       await supabase.from("work_orders").update({ process_type: "seguradora" }).eq("id", form.work_order_id);
     }
+    if (newPhotos.length) await uploadClaimFiles(newPhotos, { shopId: activeShopId, claimId: data.id, category: "damage" });
+    setNewPhotos([]); setNewMore(false);
     toast.success("Sinistro criado");
     setOpen(false);
     setForm({ ...emptyClaim });
@@ -235,9 +262,13 @@ export default function Claims() {
     load();
   };
 
-  const counters = useMemo(() => CLAIM_GROUPS.map((g) => ({
-    key: "g:" + g.key, label: g.label, value: claims.filter((c) => g.statuses.includes(c.status)).length,
-  })), [claims]);
+  const counters = useMemo(() => [
+    ...REPAIR_PHASES.map((ph) => ({
+      key: "p:" + ph, label: ph === "fechado" ? "Fechados" : ph === "faturacao" && IS_BR ? "Nota fiscal" : REPAIR_PHASE_LABELS[ph],
+      value: claims.filter((c) => phaseGroup(c) === ph).length, danger: false,
+    })),
+    ...(IS_BR ? [] : [{ key: "overdue", label: "Prazos em atraso", value: claims.filter((c) => info[c.id]?.overdue).length, danger: true }]),
+  ], [claims, info, IS_BR]);
 
   if (loading) {
     return <div className="space-y-3">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>;
@@ -257,11 +288,11 @@ export default function Claims() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="flex gap-2 overflow-x-auto snap-x pb-1 sm:grid sm:grid-cols-4 lg:grid-cols-7 sm:gap-3 sm:overflow-visible">
         {counters.map((k) => (
-          <Card key={k.key} className={`cursor-pointer hover:border-primary/50 transition-colors ${statusFilter === k.key ? "border-primary" : ""}`}
+          <Card key={k.key} className={`cursor-pointer hover:border-primary/50 transition-colors rounded-[14px] shrink-0 w-[118px] sm:w-auto snap-start ${statusFilter === k.key ? "border-primary" : ""} ${k.danger && k.value > 0 ? "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400" : ""}`}
             onClick={() => setStatusFilter(statusFilter === k.key ? "all" : k.key)}>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <p className="text-2xl font-bold">{k.value}</p>
               <p className="text-xs text-muted-foreground">{k.label}</p>
             </CardContent>
@@ -327,6 +358,7 @@ export default function Claims() {
                       <TableHead>Viatura</TableHead>
                       <TableHead>OS</TableHead>
                       <TableHead>Estado</TableHead>
+                      <TableHead>Próximo passo</TableHead>
                       <TableHead className="text-right">Aprovado</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -340,8 +372,14 @@ export default function Claims() {
                         <TableCell>{c.work_orders?.number || "—"}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={claimStatusTone(c.status)}>
-                            {CLAIM_STATUS_LABELS[c.status as keyof typeof CLAIM_STATUS_LABELS] || c.status}
+                            {info[c.id]?.badge.label || CLAIM_STATUS_LABELS[c.status as keyof typeof CLAIM_STATUS_LABELS] || c.status}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm max-w-[260px]">
+                          <span className="inline-flex items-start gap-1.5">
+                            {(info[c.id]?.overdue || info[c.id]?.dueSoon) && <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${info[c.id]?.overdue ? "text-destructive" : "text-amber-500"}`} aria-label={info[c.id]?.overdue ? "Prazo em atraso" : "Prazo a vencer"} />}
+                            <span className="line-clamp-2">{info[c.id]?.next}</span>
+                          </span>
                         </TableCell>
                         <TableCell className="text-right">
                           {c.amount_approved != null ? formatMoney(Number(c.amount_approved)) : "—"}
@@ -359,12 +397,13 @@ export default function Claims() {
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-semibold">{c.ref}{c.claim_number ? ` · ${c.claim_number}` : ""}</span>
                         <Badge variant="outline" className={claimStatusTone(c.status)}>
-                          {CLAIM_STATUS_LABELS[c.status as keyof typeof CLAIM_STATUS_LABELS] || c.status}
+                          {info[c.id]?.badge.label || CLAIM_STATUS_LABELS[c.status as keyof typeof CLAIM_STATUS_LABELS] || c.status}
                         </Badge>
                       </div>
+                      <p className="text-xs flex items-start gap-1">{(info[c.id]?.overdue || info[c.id]?.dueSoon) && <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${info[c.id]?.overdue ? "text-destructive" : "text-amber-500"}`} />}<span>Próximo passo: {info[c.id]?.next}</span></p>
                       <p className="text-sm">{c.insurers?.name || "Sem seguradora"}</p>
                       <p className="text-xs text-muted-foreground">
-                        {clientDisplayName(c.clients)} · {c.vehicles?.plate}
+                        {[clientDisplayName(c.clients), c.vehicles?.plate].filter(Boolean).join(" · ")}
                       </p>
                     </CardContent>
                   </Card>
@@ -448,6 +487,15 @@ export default function Claims() {
                 </Select>
               )}
             </div>
+            <InsurerPicker shopId={activeShopId} value={insSel} onChange={setInsSel} />
+            <div>
+              <Button type="button" variant="outline" className="w-full min-h-[44px]" onClick={() => document.getElementById("new-claim-photos")?.click()}>
+                <Camera className="w-4 h-4 mr-2" />{newPhotos.length ? `${newPhotos.length} fotografia(s)/documento(s)` : "Fotografias (opcional)"}
+              </Button>
+              <input id="new-claim-photos" type="file" accept="image/*,application/pdf" capture="environment" multiple className="hidden" onChange={(e) => { setNewPhotos(Array.from(e.target.files || [])); e.target.value = ""; }} />
+            </div>
+            <button type="button" className="text-sm font-medium text-primary hover:underline min-h-[44px]" onClick={() => setNewMore((v) => !v)}>{newMore ? "Esconder detalhes" : "Mais detalhes (opcional)"}</button>
+            {newMore && (<div className="space-y-3">
             <div>
               <Label>Ordem de serviço (opcional)</Label>
               <Select value={form.work_order_id} onValueChange={(v) => setForm({ ...form, work_order_id: v })}>
@@ -457,7 +505,6 @@ export default function Claims() {
                 </SelectContent>
               </Select>
             </div>
-            <InsurerPicker shopId={activeShopId} value={insSel} onChange={setInsSel} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>Nº sinistro/processo</Label><Input value={form.claim_number} onChange={(e) => setForm({ ...form, claim_number: e.target.value })} /></div>
               <div><Label>Nº da apólice</Label><Input value={form.policy_number} onChange={(e) => setForm({ ...form, policy_number: e.target.value })} /></div>
@@ -472,6 +519,7 @@ export default function Claims() {
             </div>
             <div><Label>Descrição</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
             <div><Label>Observações</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+            </div>)}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>

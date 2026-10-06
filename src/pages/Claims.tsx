@@ -288,7 +288,7 @@ export default function Claims() {
         </Button>
       </div>
 
-      <div className="-mx-4 px-4 flex gap-2 overflow-x-auto snap-x sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4 lg:grid-cols-7 sm:gap-3 sm:overflow-visible">
+      <div className="-mx-6 px-6 flex gap-2 overflow-x-auto snap-x sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4 lg:grid-cols-7 sm:gap-3 sm:overflow-visible">
         {counters.map((k) => (
           <Card key={k.key} className={`cursor-pointer hover:border-primary/50 transition-colors rounded-[14px] shrink-0 w-[118px] sm:w-auto snap-start ${statusFilter === k.key ? "border-primary" : ""} ${k.danger && k.value > 0 ? "border-red-500/50 bg-red-500/10 text-red-700 dark:text-red-400" : ""}`}
             onClick={() => setStatusFilter(statusFilter === k.key ? "all" : k.key)}>
@@ -403,7 +403,7 @@ export default function Claims() {
                       <p className="text-xs flex items-start gap-1">{(info[c.id]?.overdue || info[c.id]?.dueSoon) && <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${info[c.id]?.overdue ? "text-destructive" : "text-amber-500"}`} />}<span>Próximo passo: {info[c.id]?.next}</span></p>
                       <p className="text-sm">{c.insurers?.name || "Sem seguradora"}</p>
                       <p className="text-xs text-muted-foreground">
-                        {clientDisplayName(c.clients)} · {c.vehicles?.plate}
+                        {[clientDisplayName(c.clients), c.vehicles?.plate].filter(Boolean).join(" · ")}
                       </p>
                     </CardContent>
                   </Card>

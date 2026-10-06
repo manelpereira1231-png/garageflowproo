@@ -92,17 +92,16 @@ export function ClaimDocumentsV2({ claimId, shopId, docs, isBR, onChanged }: { c
           onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
           onDragLeave={() => setDrag(false)}
           onDrop={(e) => { e.preventDefault(); setDrag(false); pick(e.dataTransfer.files); }}
-          className={`w-full rounded-[14px] border-2 border-dashed px-4 py-8 text-center transition-colors flex-col h-auto min-h-[140px] ${drag ? "border-primary bg-primary/10" : "border-border hover:border-primary/60"}`}
+          className={`w-full rounded-lg border border-dashed px-4 py-4 text-center transition-colors flex-col h-auto min-h-[88px] ${drag ? "border-primary bg-primary/10" : "border-border hover:border-primary/60"}`}
         >
           <Camera className="mx-auto mb-2 h-8 w-8 text-primary" />
-          <p className="font-semibold">Tirar fotografia ou arrastar ficheiros</p>
-          <p className="text-sm text-muted-foreground">{isBR ? "No celular abre logo a câmera. Uma foto por folha." : "No telemóvel abre logo a câmara. Uma foto por folha."}</p>
+          <p className="font-semibold">Adicionar fotografias ou PDF</p>
         </Button>
         <input ref={inputRef} type="file" accept="image/*,application/pdf" capture="environment" multiple className="hidden"
           onChange={(e) => { pick(e.target.files); e.target.value = ""; }} />
 
         {groups.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Ainda não há documentos. Fotografe a Declaração Amigável, o relatório do perito e os danos.</p>
+          <p className="text-sm text-muted-foreground">Sem documentos anexados.</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {groups.map(([cat, list]) => {

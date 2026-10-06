@@ -2259,6 +2259,60 @@ export type Database = {
           },
         ]
       }
+      claim_share_links: {
+        Row: {
+          audience: string
+          claim_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          revoked_at: string | null
+          shop_id: string
+          supplement_id: string | null
+          token: string
+        }
+        Insert: {
+          audience: string
+          claim_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          shop_id: string
+          supplement_id?: string | null
+          token?: string
+        }
+        Update: {
+          audience?: string
+          claim_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          shop_id?: string
+          supplement_id?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_share_links_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_share_links_supplement_id_fkey"
+            columns: ["supplement_id"]
+            isOneToOne: false
+            referencedRelation: "claim_supplements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claim_supplements: {
         Row: {
           amount_approved: number | null
@@ -2267,12 +2321,16 @@ export type Database = {
           claim_id: string
           created_at: string
           decided_at: string | null
+          decided_by: string | null
           description: string
           id: string
           notes: string | null
+          number: number | null
+          quote_id: string | null
           requested_at: string
           shop_id: string
           status: string
+          type: string
         }
         Insert: {
           amount_approved?: number | null
@@ -2281,12 +2339,16 @@ export type Database = {
           claim_id: string
           created_at?: string
           decided_at?: string | null
+          decided_by?: string | null
           description: string
           id?: string
           notes?: string | null
+          number?: number | null
+          quote_id?: string | null
           requested_at?: string
           shop_id: string
           status?: string
+          type?: string
         }
         Update: {
           amount_approved?: number | null
@@ -2295,12 +2357,16 @@ export type Database = {
           claim_id?: string
           created_at?: string
           decided_at?: string | null
+          decided_by?: string | null
           description?: string
           id?: string
           notes?: string | null
+          number?: number | null
+          quote_id?: string | null
           requested_at?: string
           shop_id?: string
           status?: string
+          type?: string
         }
         Relationships: [
           {
@@ -2315,6 +2381,20 @@ export type Database = {
             columns: ["claim_id"]
             isOneToOne: false
             referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_supplements_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_supplements_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2335,6 +2415,7 @@ export type Database = {
           approval_reference: string | null
           approval_status: string
           approved_by: string | null
+          auto_notify_client: boolean
           claim_date: string | null
           claim_number: string | null
           claim_type: string | null
@@ -2349,6 +2430,7 @@ export type Database = {
           created_by: string | null
           deductible: number | null
           description: string | null
+          disassembly_fee: number | null
           expert_company: string | null
           expert_contact: string | null
           expert_date: string | null
@@ -2356,32 +2438,45 @@ export type Database = {
           expert_location: string | null
           expert_name: string | null
           expert_notes: string | null
+          expert_report_at: string | null
           expert_report_number: string | null
           expert_result: string | null
           expert_status: string
           expert_time: string | null
           external_ref: Json
+          first_contact_at: string | null
+          has_daaa: boolean
           id: string
           indemnity_amount: number | null
           insurer_id: string | null
           insurer_quote_notes: string | null
           invoice_id: string | null
+          last_client_message: string | null
+          last_client_message_at: string | null
           liability: string | null
+          liability_assumed_at: string | null
           location: string | null
           next_action: string | null
           next_action_date: string | null
           next_action_owner: string | null
           notes: string | null
+          outcome: string
+          phase_override: string | null
           policy_number: string | null
           process_number: string | null
           promised_date: string | null
           quote_id: string | null
           ref: string | null
+          replacement_end: string | null
+          replacement_start: string | null
+          replacement_vehicle: string
           report_date: string | null
           report_number: string | null
+          requires_disassembly: boolean
           salvage_value: number | null
           shop_id: string
           status: string
+          storage_daily_rate: number | null
           total_loss: boolean
           total_loss_date: string | null
           total_loss_notes: string | null
@@ -2407,6 +2502,7 @@ export type Database = {
           approval_reference?: string | null
           approval_status?: string
           approved_by?: string | null
+          auto_notify_client?: boolean
           claim_date?: string | null
           claim_number?: string | null
           claim_type?: string | null
@@ -2421,6 +2517,7 @@ export type Database = {
           created_by?: string | null
           deductible?: number | null
           description?: string | null
+          disassembly_fee?: number | null
           expert_company?: string | null
           expert_contact?: string | null
           expert_date?: string | null
@@ -2428,32 +2525,45 @@ export type Database = {
           expert_location?: string | null
           expert_name?: string | null
           expert_notes?: string | null
+          expert_report_at?: string | null
           expert_report_number?: string | null
           expert_result?: string | null
           expert_status?: string
           expert_time?: string | null
           external_ref?: Json
+          first_contact_at?: string | null
+          has_daaa?: boolean
           id?: string
           indemnity_amount?: number | null
           insurer_id?: string | null
           insurer_quote_notes?: string | null
           invoice_id?: string | null
+          last_client_message?: string | null
+          last_client_message_at?: string | null
           liability?: string | null
+          liability_assumed_at?: string | null
           location?: string | null
           next_action?: string | null
           next_action_date?: string | null
           next_action_owner?: string | null
           notes?: string | null
+          outcome?: string
+          phase_override?: string | null
           policy_number?: string | null
           process_number?: string | null
           promised_date?: string | null
           quote_id?: string | null
           ref?: string | null
+          replacement_end?: string | null
+          replacement_start?: string | null
+          replacement_vehicle?: string
           report_date?: string | null
           report_number?: string | null
+          requires_disassembly?: boolean
           salvage_value?: number | null
           shop_id: string
           status?: string
+          storage_daily_rate?: number | null
           total_loss?: boolean
           total_loss_date?: string | null
           total_loss_notes?: string | null
@@ -2479,6 +2589,7 @@ export type Database = {
           approval_reference?: string | null
           approval_status?: string
           approved_by?: string | null
+          auto_notify_client?: boolean
           claim_date?: string | null
           claim_number?: string | null
           claim_type?: string | null
@@ -2493,6 +2604,7 @@ export type Database = {
           created_by?: string | null
           deductible?: number | null
           description?: string | null
+          disassembly_fee?: number | null
           expert_company?: string | null
           expert_contact?: string | null
           expert_date?: string | null
@@ -2500,32 +2612,45 @@ export type Database = {
           expert_location?: string | null
           expert_name?: string | null
           expert_notes?: string | null
+          expert_report_at?: string | null
           expert_report_number?: string | null
           expert_result?: string | null
           expert_status?: string
           expert_time?: string | null
           external_ref?: Json
+          first_contact_at?: string | null
+          has_daaa?: boolean
           id?: string
           indemnity_amount?: number | null
           insurer_id?: string | null
           insurer_quote_notes?: string | null
           invoice_id?: string | null
+          last_client_message?: string | null
+          last_client_message_at?: string | null
           liability?: string | null
+          liability_assumed_at?: string | null
           location?: string | null
           next_action?: string | null
           next_action_date?: string | null
           next_action_owner?: string | null
           notes?: string | null
+          outcome?: string
+          phase_override?: string | null
           policy_number?: string | null
           process_number?: string | null
           promised_date?: string | null
           quote_id?: string | null
           ref?: string | null
+          replacement_end?: string | null
+          replacement_start?: string | null
+          replacement_vehicle?: string
           report_date?: string | null
           report_number?: string | null
+          requires_disassembly?: boolean
           salvage_value?: number | null
           shop_id?: string
           status?: string
+          storage_daily_rate?: number | null
           total_loss?: boolean
           total_loss_date?: string | null
           total_loss_notes?: string | null
@@ -10482,6 +10607,7 @@ export type Database = {
           slug: string | null
           state_registration: string | null
           status: string
+          storage_daily_rate: number | null
           stripe_connect_account_id: string | null
           stripe_connect_charges_enabled: boolean
           stripe_connect_onboarded: boolean
@@ -10526,6 +10652,7 @@ export type Database = {
           slug?: string | null
           state_registration?: string | null
           status?: string
+          storage_daily_rate?: number | null
           stripe_connect_account_id?: string | null
           stripe_connect_charges_enabled?: boolean
           stripe_connect_onboarded?: boolean
@@ -10570,6 +10697,7 @@ export type Database = {
           slug?: string | null
           state_registration?: string | null
           status?: string
+          storage_daily_rate?: number | null
           stripe_connect_account_id?: string | null
           stripe_connect_charges_enabled?: boolean
           stripe_connect_onboarded?: boolean

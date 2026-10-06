@@ -47,6 +47,8 @@ function lazyRetry(factory: () => Promise<any>) {
 const ResetPassword = lazyRetry(() => import("@/pages/ResetPassword"));
 const AcceptInvite = lazyRetry(() => import("@/pages/AcceptInvite"));
 const QuoteApproval = lazyRetry(() => import("@/pages/QuoteApproval"));
+const ClaimTrack = lazyRetry(() => import("@/pages/ClaimTrack"));
+const ClaimExpert = lazyRetry(() => import("@/pages/ClaimExpert"));
 import Layout from "@/components/Layout";
 import AdminLayout from "@/components/AdminLayout";
 import MarketLayout from "@/components/MarketLayout";
@@ -679,6 +681,8 @@ const publicRoutes = [
   { path: "/portal/:token", element: <ClientPortal /> },
   { path: "/inspection/:token", element: <PublicInspection /> },
   { path: "/invoice/:token", element: <PublicInvoice /> },
+  { path: "/acompanhar/:token", element: <Suspense fallback={<PageLoader />}><ClaimTrack /></Suspense> },
+  { path: "/perito/:token", element: <Suspense fallback={<PageLoader />}><ClaimExpert /></Suspense> },
   { path: "/book/:slug", element: <PublicBooking /> },
   { path: "/accept-invite", element: <Suspense fallback={<PageLoader />}><AcceptInvite /></Suspense> },
   { path: "/", element: <LandingPage /> },
@@ -1240,6 +1244,8 @@ function AppRoutes() {
             <Route path="/portal/:token" element={<ClientPortal />} />
             <Route path="/inspection/:token" element={<Suspense fallback={<PageLoader />}><PublicInspection /></Suspense>} />
             <Route path="/invoice/:token" element={<Suspense fallback={<PageLoader />}><PublicInvoice /></Suspense>} />
+            <Route path="/acompanhar/:token" element={<Suspense fallback={<PageLoader />}><ClaimTrack /></Suspense>} />
+            <Route path="/perito/:token" element={<Suspense fallback={<PageLoader />}><ClaimExpert /></Suspense>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/accept-invite" element={<Suspense fallback={<PageLoader />}><AcceptInvite /></Suspense>} />
             <Route path="/auth" element={<Auth />} />

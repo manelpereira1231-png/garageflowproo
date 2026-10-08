@@ -59,6 +59,7 @@ export function ClaimImmobilization({ claim, isBR, onSaved }: { claim: any; isBR
         <div className="grid gap-2 grid-cols-1">
           <div><Label>Entrada</Label><Input type="date" className="min-h-[44px]" value={f.vehicle_in_date || ""} onChange={(e) => setF({ ...f, vehicle_in_date: e.target.value })} /></div>
           <div><Label>Entrega prometida</Label><Input type="date" className="min-h-[44px]" value={f.promised_date || ""} onChange={(e) => setF({ ...f, promised_date: e.target.value })} /></div>
+          <p className="text-xs text-muted-foreground">A entrada e a entrega prometida aparecem automaticamente na <a href="/agenda" className="underline">Agenda</a>.</p>
           <div><Label>Saída</Label><Input type="date" className="min-h-[44px]" value={f.vehicle_out_date || ""} onChange={(e) => setF({ ...f, vehicle_out_date: e.target.value })} /></div>
           <div><Label>{isBR ? "Veículo de substituição" : "Viatura de substituição"}</Label>
             <Select value={f.replacement_vehicle || "nao"} onValueChange={(v) => setF({ ...f, replacement_vehicle: v })}>

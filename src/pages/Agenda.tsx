@@ -986,6 +986,9 @@ export default function Agenda() {
                             <div className="text-[10px] opacity-75 truncate">{app.client_name}</div>
                           )}
                           <div className="flex flex-wrap gap-1 mt-0.5">
+                            {app.claim_id && (
+                              <a href={`/claims/${app.claim_id}`} onClick={(e) => e.stopPropagation()} title="Abrir sinistro" className="text-[9px] bg-primary/10 text-primary px-1 rounded hover:bg-primary/20">Sinistro</a>
+                            )}
                             {app.status === "scheduled" && (
                               <button onClick={() => updateStatus(app.id, "confirmed")} className="text-[9px] bg-green-500/20 text-green-700 px-1 rounded hover:bg-green-500/30">✓</button>
                             )}

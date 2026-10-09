@@ -8,7 +8,7 @@
 - [x] Sinistros v2: verificar página única, gravação do essencial, autorizações, decisão de perda total, abertura da fatura, fotografias privadas e links expirados no navegador PT; 14 testes PT/BR aprovados; visual BR verificado com resposta de país simulada, sem mudar a oficina PT; dados temporários apagados.
 - [ ] Sinistros v2: emissão fiscal real e entrega real de emails/WhatsApp por confirmar; não executar cobranças/emissões nem contactar clientes durante os testes; teste integral numa oficina BR real pendente de contexto autorizado.
 
-- [x] Agenda mobile (lista por dia; falta testar gravação no ecrã)
+- [x] Agenda mobile (lista por dia; botão "Abrir sinistro" verificado no ecrã do telemóvel, abre a página do sinistro)
 - [x] Reorganizar ficha de Sinistros
 - [ ] Notas de crédito parciais: feitas, falta teste numa oficina Pro
 - [ ] Registar compatibilidade real de peças e pesquisar por veículo/referência

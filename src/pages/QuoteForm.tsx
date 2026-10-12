@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ClientCombobox from "@/components/ClientCombobox";
+import QuickClientForm from "@/components/QuickClientForm";
+import QuickVehicleForm from "@/components/QuickVehicleForm";
+import { LineOperationChips } from "@/components/quotes/LineOperationChips";
 import { MAX_LABOR_HOURS, MAX_LINE_QUANTITY, MAX_UNIT_PRICE } from "@/lib/sanityLimits";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, ArrowLeft, AlertTriangle, XCircle, Loader2 } from "lucide-react";
@@ -59,6 +62,8 @@ export default function QuoteForm() {
   const [lines, setLines] = useState<LineItem[]>([]);
   const [laborHours, setLaborHours] = useState("0");
   const [quoteStatus, setQuoteStatus] = useState("draft");
+  const [quickClient, setQuickClient] = useState(false);
+  const [quickVehicle, setQuickVehicle] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [sharePhotos, setSharePhotos] = useState(false);
   const [recDate, setRecDate] = useState("");
@@ -328,7 +333,10 @@ export default function QuoteForm() {
           <h3 className="font-semibold">{t('quotes.clientVehicle')}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label>{t('quotes.client')} *</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label>{t('quotes.client')} *</Label>
+                {!editId && !quickClient && <button type="button" className="text-xs text-primary underline min-h-[32px]" onClick={() => setQuickClient(true)}>+ Novo cliente</button>}
+              </div>
               <ClientCombobox
                 clients={clients}
                 value={clientId}
@@ -337,13 +345,30 @@ export default function QuoteForm() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t('quotes.vehicle')} *</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label>{t('quotes.vehicle')} *</Label>
+                {!editId && clientId && !quickVehicle && <button type="button" className="text-xs text-primary underline min-h-[32px]" onClick={() => setQuickVehicle(true)}>+ Nova viatura</button>}
+              </div>
               <Select value={vehicleId} onValueChange={setVehicleId} disabled={!clientId}>
-                <SelectTrigger><SelectValue placeholder={clientId ? t('quotes.selectVehicle') : t('quotes.selectClientFirst')} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={clientId ? (filteredVehicles.length ? t('quotes.selectVehicle') : 'Sem viaturas — use "+ Nova viatura"') : t('quotes.selectClientFirst')} /></SelectTrigger>
                 <SelectContent>{filteredVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.make} {v.model} — {v.plate}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>
+          {quickClient && activeShopId && (
+            <QuickClientForm shopId={activeShopId} onCancel={() => setQuickClient(false)} onCreated={(c) => {
+              setClients(prev => prev.some(x => x.id === c.id) ? prev : [...prev, c]);
+              setClientId(c.id); setQuickClient(false);
+              setQuickVehicle(!vehicles.some(v => v.client_id === c.id));
+            }} />
+          )}
+          {quickVehicle && clientId && activeShopId && (
+            <QuickVehicleForm shopId={activeShopId} clientId={clientId} onCancel={() => setQuickVehicle(false)} onCreated={(v) => {
+              pendingVehicleRef.current = v.id;
+              setVehicles(prev => prev.some(x => x.id === v.id) ? [...prev] : [...prev, { ...v, client_id: clientId }]);
+              setQuickVehicle(false);
+            }} />
+          )}
         </div>
 
 
@@ -470,11 +495,13 @@ export default function QuoteForm() {
               </div>
 
               {/* Editable fields */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">{t('line.description')} *</Label>
+                <Input className="h-10 text-sm" value={line.name} title={line.name} onChange={e => updateLine(line.id, 'name', e.target.value)} required />
+                {line.type === 'service' && <LineOperationChips name={line.name} onChange={(n) => updateLine(line.id, 'name', n)} />}
+              </div>
               <div className="grid grid-cols-12 gap-2 items-end">
-                <div className="col-span-12 sm:col-span-4">
-                  <Label className="text-xs">{t('line.description')} *</Label>
-                  <Input className="h-9 text-sm" value={line.name} onChange={e => updateLine(line.id, 'name', e.target.value)} required />
-                </div>
+                <div className="hidden sm:block sm:col-span-4" />
                 <div className="col-span-3 sm:col-span-1"><Label className="text-xs">{t('line.qty')}</Label><Input className="h-9 text-sm" type="number" inputMode="numeric" min={1} max={MAX_LINE_QUANTITY} placeholder="1" value={line.quantity === 0 ? "" : line.quantity} onChange={e => updateLine(line.id, 'quantity', e.target.value === "" ? 0 : +e.target.value)} /></div>
                 <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.price')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_price === 0 ? "" : line.unit_price} onChange={e => updateLine(line.id, 'unit_price', e.target.value === "" ? 0 : +e.target.value)} /></div>
                 <div className="col-span-5 sm:col-span-2"><Label className="text-xs">{t('line.cost')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_cost === 0 ? "" : line.unit_cost} onChange={e => updateLine(line.id, 'unit_cost', e.target.value === "" ? 0 : +e.target.value)} /></div>
@@ -493,7 +520,7 @@ export default function QuoteForm() {
                 className="h-9 text-sm"
                 type="number"
                 inputMode="decimal"
-                step="0.5"
+                step="0.1"
                 min={0}
                 max={MAX_LABOR_HOURS}
                 value={laborHours}

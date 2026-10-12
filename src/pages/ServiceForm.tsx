@@ -415,11 +415,13 @@ export default function ServiceForm() {
                 </Select>
               </div>
 
+              <div className="space-y-1.5">
+                <Label className="text-xs">{t('line.description')} *</Label>
+                <Input className="h-10 text-sm" value={line.name} title={line.name} onChange={e => updateLine(line.id, 'name', e.target.value)} required />
+                {line.type === 'service' && <LineOperationChips name={line.name} onChange={(n) => updateLine(line.id, 'name', n)} />}
+              </div>
               <div className="grid grid-cols-12 gap-2 items-end">
-                <div className="col-span-12 sm:col-span-4">
-                  <Label className="text-xs">{t('line.description')} *</Label>
-                  <Input className="h-9 text-sm" value={line.name} onChange={e => updateLine(line.id, 'name', e.target.value)} required />
-                </div>
+                <div className="hidden sm:block sm:col-span-4" />
                 <div className="col-span-3 sm:col-span-1"><Label className="text-xs">{t('line.qty')}</Label><Input className="h-9 text-sm" type="number" inputMode="numeric" min={1} max={MAX_LINE_QUANTITY} placeholder="1" value={line.quantity === 0 ? "" : line.quantity} onChange={e => updateLine(line.id, 'quantity', e.target.value === "" ? 0 : +e.target.value)} /></div>
                 <div className="col-span-4 sm:col-span-2"><Label className="text-xs">{t('line.price')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_price === 0 ? "" : line.unit_price} onChange={e => updateLine(line.id, 'unit_price', e.target.value === "" ? 0 : +e.target.value)} /></div>
                 <div className="col-span-5 sm:col-span-2"><Label className="text-xs">{t('line.cost')}</Label><Input className="h-9 text-sm" type="number" inputMode="decimal" step="0.01" placeholder="0.00" value={line.unit_cost === 0 ? "" : line.unit_cost} onChange={e => updateLine(line.id, 'unit_cost', e.target.value === "" ? 0 : +e.target.value)} /></div>
@@ -439,7 +441,7 @@ export default function ServiceForm() {
                 className={`h-9 text-sm ${(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS ? "border-destructive" : ""}`}
                 type="number"
                 inputMode="decimal"
-                step="0.5"
+                step="0.1"
                 min={0}
                 max={MAX_LABOR_HOURS}
                 value={laborHours}

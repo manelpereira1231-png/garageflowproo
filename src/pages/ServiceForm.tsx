@@ -1,5 +1,6 @@
 import { MAX_LABOR_HOURS, MAX_LINE_QUANTITY, MAX_UNIT_PRICE, MAX_MILEAGE } from "@/lib/sanityLimits";
 import { clientDisplayName } from "@/lib/clientDisplayName";
+import { LineOperationChips } from "@/components/quotes/LineOperationChips";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import LinkedClaimBanner from "@/components/LinkedClaimBanner";

@@ -62,6 +62,8 @@ export default function QuoteForm() {
   const [lines, setLines] = useState<LineItem[]>([]);
   const [laborHours, setLaborHours] = useState("0");
   const [quoteStatus, setQuoteStatus] = useState("draft");
+  const [quickClient, setQuickClient] = useState(false);
+  const [quickVehicle, setQuickVehicle] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [sharePhotos, setSharePhotos] = useState(false);
   const [recDate, setRecDate] = useState("");

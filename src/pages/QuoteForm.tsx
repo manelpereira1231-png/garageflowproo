@@ -493,7 +493,7 @@ export default function QuoteForm() {
                 className="h-9 text-sm"
                 type="number"
                 inputMode="decimal"
-                step="0.5"
+                step="0.1"
                 min={0}
                 max={MAX_LABOR_HOURS}
                 value={laborHours}

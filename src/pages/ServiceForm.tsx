@@ -439,7 +439,7 @@ export default function ServiceForm() {
                 className={`h-9 text-sm ${(parseFloat(laborHours) || 0) > MAX_LABOR_HOURS ? "border-destructive" : ""}`}
                 type="number"
                 inputMode="decimal"
-                step="0.5"
+                step="0.1"
                 min={0}
                 max={MAX_LABOR_HOURS}
                 value={laborHours}

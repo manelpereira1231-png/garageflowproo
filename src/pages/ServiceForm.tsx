@@ -50,6 +50,36 @@ export default function ServiceForm() {
   const [diagnosis, setDiagnosis] = useState("");
   const [laborHours, setLaborHours] = useState("0");
   const [technician, setTechnician] = useState("");
+  const [schedDate, setSchedDate] = useState("");
+  const [schedTime, setSchedTime] = useState("");
+  const [schedApptId, setSchedApptId] = useState<string | null>(null);
+
+  /** Cria/atualiza a única marcação da Agenda ligada a este serviço (nunca duplica). */
+  const syncServiceAppointment = async (woId: string, shopId: string) => {
+    if (!schedDate || !schedTime) return;
+    const payload: any = {
+      shop_id: shopId, work_order_id: woId, auto_kind: "service", client_id: clientId || null, vehicle_id: vehicleId || null,
+      service_type: (lines.find(l => l.type === "service")?.name || clientDescription || "Serviço").slice(0, 120),
+      date: schedDate, time: schedTime, duration_minutes: 60, status: "scheduled",
+    };
+    let id = schedApptId;
+    if (!id) {
+      const { data } = await supabase.from("appointments").select("id").eq("work_order_id", woId).eq("auto_kind", "service").maybeSingle();
+      id = data?.id || null;
+    }
+    if (id) {
+      const { status, ...upd } = payload;
+      const { error } = await supabase.from("appointments").update(upd).eq("id", id).eq("shop_id", shopId);
+      if (error) toast.error("Serviço guardado, mas a marcação na Agenda não foi atualizada.");
+      return;
+    }
+    const { data: ins, error } = await supabase.from("appointments").insert(payload).select("id").single();
+    if (error && (error as any).code === "23505") {
+      const { status, ...upd } = payload;
+      await supabase.from("appointments").update(upd).eq("work_order_id", woId).eq("auto_kind", "service");
+    } else if (error) toast.error("Serviço guardado, mas não foi possível criar a marcação na Agenda.");
+    else setSchedApptId(ins.id);
+  };
 
   const [notes, setNotes] = useState("");
   const [processType, setProcessType] = useState(() => new URLSearchParams(window.location.search).get("claim") ? "seguradora" : "particular");
@@ -99,6 +129,9 @@ export default function ServiceForm() {
           setEntryMileage(String(service.entry_mileage || 0));
           setClientDescription(service.client_description || "");
           setDiagnosis(service.diagnosis || "");
+          const { data: ap } = await supabase.from("appointments").select("id, date, time")
+            .eq("work_order_id", editId).eq("auto_kind", "service").eq("shop_id", activeShopId).maybeSingle();
+          if (ap) { setSchedApptId(ap.id); setSchedDate(ap.date || ""); setSchedTime(String(ap.time || "").slice(0, 5)); }
           setLaborHours(String(service.labor_hours || 0));
           setTechnician(service.technician || "");
           setNotes(service.notes || "");
@@ -182,6 +215,7 @@ export default function ServiceForm() {
         // Mantém o orçamento pendente (e o link já enviado ao cliente) alinhado
         // com as alterações feitas ao serviço.
         try { await syncQuoteFromWorkOrder(editId, shopId); } catch {}
+        await syncServiceAppointment(editId, shopId);
         toast.success(t('services.updated'));
         navigate("/services");
       }
@@ -213,6 +247,7 @@ export default function ServiceForm() {
             });
           }
         } catch {}
+        if (inserted?.id) await syncServiceAppointment(inserted.id, shopId);
         if (claimParam && inserted?.id) {
           await supabase.from("claims").update({ work_order_id: inserted.id }).eq("id", claimParam);
           navigate(`/claims/${claimParam}`);
@@ -299,8 +334,14 @@ export default function ServiceForm() {
                 )}
               </div>
             )}
-
-
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Marcação na Agenda (opcional)</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Input type="date" className="min-h-[44px]" aria-label="Data da marcação" value={schedDate} onChange={e => setSchedDate(e.target.value)} />
+                <Input type="time" className="min-h-[44px]" aria-label="Hora da marcação" value={schedTime} onChange={e => setSchedTime(e.target.value)} />
+              </div>
+              <p className="text-xs text-muted-foreground">Com data e hora, o serviço aparece na Agenda. Ao alterar aqui, a marcação existente é atualizada.</p>
+            </div>
           </div>
           <div className="space-y-1.5"><Label>{t('services.clientDescription')}</Label><Textarea value={clientDescription} onChange={e => setClientDescription(e.target.value)} placeholder={t('services.clientDescPlaceholder')} /></div>
           <div className="space-y-1.5"><Label>{t('services.diagnosis')}</Label><Textarea value={diagnosis} onChange={e => setDiagnosis(e.target.value)} placeholder={t('services.diagnosisPlaceholder')} /></div>

@@ -677,6 +677,7 @@ export default function QuoteApproval() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-muted/70">
+                      <th className="text-center p-2 sm:p-3 text-xs font-semibold text-muted-foreground uppercase w-8">#</th>
                       <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">{t('description')}</th>
                       <th className="text-center p-2 sm:p-3 text-xs font-semibold text-muted-foreground uppercase w-12 sm:w-16 whitespace-nowrap">{t('qty')}</th>
                       <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase hidden sm:table-cell whitespace-nowrap">{t('price')}</th>
@@ -686,6 +687,7 @@ export default function QuoteApproval() {
                   <tbody>
                     {lines.map((line: any, i: number) => (
                       <tr key={i} className="border-t border-border/50 hover:bg-muted/30 transition-colors">
+                        <td className="p-2 sm:p-3 text-center font-mono text-muted-foreground">{i + 1}</td>
                         <td className="p-2 sm:p-3 min-w-0">
                           <span className="font-medium break-words">{line.name}</span>
                           <Badge variant="outline" className="ml-2 text-[10px] py-0">
@@ -699,6 +701,7 @@ export default function QuoteApproval() {
                     ))}
                     {laborLine && (
                       <tr className="border-t border-border/50 bg-primary/5">
+                        <td className="p-2 sm:p-3 text-center font-mono text-muted-foreground">{lines.length + 1}</td>
                         <td className="p-2 sm:p-3 min-w-0">
                           <span className="font-medium break-words">{laborLine.name}</span>
                           <Badge variant="outline" className="ml-2 text-[10px] py-0">{t('service')}</Badge>

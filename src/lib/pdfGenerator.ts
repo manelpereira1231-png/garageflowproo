@@ -228,8 +228,10 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     : t === 'labor' ? tl('laborType')
     : t;
 
-  const woRows = (isWO ? linesForTable.filter(l => l.type !== 'labor') : []).map(l => [typeCell(l.type), l.name, String(l.quantity)]);
-  const tableData = linesForTable.map(l => [
+  // Numeração sequencial das linhas (apenas apresentação; não altera dados nem cálculos)
+  const woRows = (isWO ? linesForTable.filter(l => l.type !== 'labor') : []).map((l, i) => [String(i + 1), typeCell(l.type), l.name, String(l.quantity)]);
+  const tableData = linesForTable.map((l, i) => [
+    String(i + 1),
     typeCell(l.type),
     l.name,
     String(l.quantity),
@@ -241,27 +243,28 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   if (isWO) {
     autoTable(doc, {
       startY: tableY,
-      head: [[tl('type'), tl('description'), tl('qty')]],
+      head: [['#', tl('type'), tl('description'), tl('qty')]],
       body: woRows,
       theme: 'striped',
       headStyles: { fillColor: [38, 38, 38], textColor: [255, 180, 30], fontStyle: 'bold', fontSize: 8 },
       bodyStyles: { fontSize: 9 },
-      columnStyles: { 0: { cellWidth: 24 }, 2: { cellWidth: 18, halign: 'center' } },
+      columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 24 }, 3: { cellWidth: 18, halign: 'center' } },
       margin: { left: 14, right: 14 },
     });
   } else autoTable(doc, {
     startY: tableY,
-    head: [[tl('type'), tl('description'), tl('qty'), tl('price'), tl('vat'), tl('total')]],
+    head: [['#', tl('type'), tl('description'), tl('qty'), tl('price'), tl('vat'), tl('total')]],
     body: tableData,
     theme: 'striped',
     headStyles: { fillColor: [38, 38, 38], textColor: [255, 180, 30], fontStyle: 'bold', fontSize: 8 },
     bodyStyles: { fontSize: 8 },
     columnStyles: {
-      0: { cellWidth: 22 },
-      2: { cellWidth: 16, halign: 'center' },
-      3: { cellWidth: 26, halign: 'right' },
-      4: { cellWidth: 16, halign: 'center' },
-      5: { cellWidth: 28, halign: 'right' },
+      0: { cellWidth: 10, halign: 'center' },
+      1: { cellWidth: 22 },
+      3: { cellWidth: 16, halign: 'center' },
+      4: { cellWidth: 26, halign: 'right' },
+      5: { cellWidth: 16, halign: 'center' },
+      6: { cellWidth: 28, halign: 'right' },
     },
     margin: { left: 14, right: 14 },
   });

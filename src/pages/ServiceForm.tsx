@@ -532,7 +532,7 @@ export default function ServiceForm() {
           </div>
         </div>
 
-        <div className="space-y-1.5"><Label>{t('quotes.notes')}</Label><Textarea value={notes} onChange={e => setNotes(e.target.value)} /></div>
+        <div className="space-y-1.5"><Label>Observações</Label><Textarea rows={4} placeholder="Aparece na caixa «Obs.» da ordem de serviço" value={notes} onChange={e => setNotes(e.target.value)} /></div>
 
         <Button type="submit" className="w-full h-12 text-base" disabled={loading}>
           {loading ? (editId ? t('services.saving') : t('services.creating')) : (editId ? t('services.save') : t('services.create'))}

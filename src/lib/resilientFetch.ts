@@ -42,23 +42,35 @@ function emitHealth(next: BackendHealth) {
 // Auto-recovery: while degraded, probe the backend quietly so the banner
 // disappears by itself once the server answers again (no page reload needed).
 let probeTimer: ReturnType<typeof setTimeout> | null = null;
+let probeFails = 0;
+/**
+ * Só mostra o aviso em casos extremos: depois de falhas reais nos pedidos,
+ * confirma diretamente se o servidor responde. O aviso aparece apenas se o
+ * servidor não responder em 3 verificações seguidas (~15 s). Enquanto estiver
+ * em aviso, continua a verificar e esconde-o sozinho quando o servidor volta.
+ */
+async function serverAlive(): Promise<boolean> {
+  try {
+    const base = (import.meta as any).env?.VITE_SUPABASE_URL;
+    const key = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY;
+    if (!base) return true;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 6000);
+    const r = await fetch(`${base}/auth/v1/health`, { headers: key ? { apikey: key } : {}, cache: "no-store", signal: ctrl.signal });
+    clearTimeout(t);
+    return r.status < 500;
+  } catch { return false; }
+}
 function markDegraded() {
-  emitHealth("degraded");
   if (probeTimer) return;
   const probe = async () => {
     probeTimer = null;
-    if (currentHealth !== "degraded") return;
-    try {
-      const base = (import.meta as any).env?.VITE_SUPABASE_URL;
-      const key = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY;
-      if (base) {
-        const r = await fetch(`${base}/auth/v1/health`, { headers: key ? { apikey: key } : {}, cache: "no-store" });
-        if (r.status < 500) { consecutiveFailures = 0; emitHealth("ok"); return; }
-      }
-    } catch { /* still down */ }
-    probeTimer = setTimeout(probe, 8000);
+    if (await serverAlive()) { probeFails = 0; consecutiveFailures = 0; emitHealth("ok"); return; }
+    probeFails++;
+    if (probeFails >= 3) emitHealth("degraded");
+    probeTimer = setTimeout(probe, 5000);
   };
-  probeTimer = setTimeout(probe, 4000);
+  probeTimer = setTimeout(probe, 1000);
 }
 
 export function getBackendHealth(): BackendHealth {
@@ -144,7 +156,7 @@ export async function resilientFetch(input: RequestInfo | URL, init?: RequestIni
       }
 
       if (!isTimeout || retryable) consecutiveFailures++;
-      if (offline || consecutiveFailures >= 3) markDegraded();
+      if (consecutiveFailures >= 3) markDegraded();
 
       const wrapped = new Error(
         isTimeout

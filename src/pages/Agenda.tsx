@@ -41,6 +41,7 @@ interface Appointment {
   created_at: string;
   source?: string | null;
   claim_id?: string | null;
+  work_order_id?: string | null;
 }
 
 interface CatalogItem { id: string; name: string; default_time: number; default_price: number }
@@ -911,6 +912,11 @@ export default function Agenda() {
                         <a href={`/claims/${app.claim_id}`}>Abrir sinistro</a>
                       </Button>
                     )}
+                    {app.work_order_id && (
+                      <Button size="sm" variant="outline" className="h-10" asChild>
+                        <a href={`/services/edit/${app.work_order_id}`}>Abrir serviço</a>
+                      </Button>
+                    )}
                     {app.status === "scheduled" && (
                       <Button size="sm" variant="outline" className="h-10" onClick={() => updateStatus(app.id, "confirmed")}>
                         <CalendarCheck className="w-4 h-4 mr-1" />{t('agenda.confirmed')}
@@ -996,6 +1002,9 @@ export default function Agenda() {
                           <div className="flex flex-wrap gap-1 mt-0.5">
                             {app.claim_id && (
                               <a href={`/claims/${app.claim_id}`} onClick={(e) => e.stopPropagation()} title="Abrir sinistro" className="text-[9px] bg-primary/10 text-primary px-1 rounded hover:bg-primary/20">Sinistro</a>
+                            )}
+                            {app.work_order_id && (
+                              <a href={`/services/edit/${app.work_order_id}`} onClick={(e) => e.stopPropagation()} title="Abrir serviço" className="text-[9px] bg-primary/10 text-primary px-1 rounded hover:bg-primary/20">Serviço</a>
                             )}
                             {app.status === "scheduled" && (
                               <button onClick={() => updateStatus(app.id, "confirmed")} className="text-[9px] bg-green-500/20 text-green-700 px-1 rounded hover:bg-green-500/30">✓</button>

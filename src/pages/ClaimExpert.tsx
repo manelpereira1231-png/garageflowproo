@@ -90,7 +90,7 @@ export default function ClaimExpert() {
             <section className="rounded-[14px] border border-border bg-card p-4 text-sm">
               <p className="font-semibold mb-2">Linhas do orçamento</p>
               {d.lines.map((l: any, i: number) => (
-                <div key={i} className="flex justify-between gap-2 border-t border-border py-1.5"><span>{l.quantity} × {l.name}</span><span>{money(l.quantity * l.unit_price)}</span></div>
+                <div key={i} className="flex justify-between gap-2 border-t border-border py-1.5"><span><span className="font-mono text-muted-foreground">{i + 1}.</span> {l.quantity} × {l.name}</span><span>{money(l.quantity * l.unit_price)}</span></div>
               ))}
               <div className="flex justify-between font-semibold border-t-2 border-border pt-1.5"><span>Total</span><span>{money(lineTotal)}</span></div>
             </section>

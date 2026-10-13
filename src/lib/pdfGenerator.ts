@@ -326,8 +326,9 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   }
 
   if (isWO) {
-    finalY = finalY - 18; // sem bloco de totais
-    if (data.diagnosis) finalY += 6 + doc.splitTextToSize(data.diagnosis, pageW - 28).length * 4;
+    // sem bloco de totais: o texto seguinte começa logo depois do diagnóstico
+    const diagEnd = data.diagnosis ? finalY + 34 + doc.splitTextToSize(data.diagnosis, pageW - 28).length * 4.5 : finalY - 10;
+    finalY = diagEnd - 20;
   }
   // Notes
   if (data.notes) {

@@ -166,6 +166,7 @@ export default function ServiceForm() {
     if (!editId) {
       setFilteredVehicles(vehicles.filter(v => v.client_id === clientId));
       const pv = pendingVehicleRef.current;
+      console.log("DBGV", pv, clientId, vehicles.length, vehicles.some(v => v.id === pv));
       if (pv && vehicles.some(v => v.id === pv && v.client_id === clientId)) { setVehicleId(pv); pendingVehicleRef.current = null; }
       // Só limpa se a viatura escolhida não pertencer ao cliente (evita perder a pré-seleção quando a lista recarrega).
       else if (!pv) setVehicleId(cur => (cur && vehicles.some(v => v.id === cur && v.client_id === clientId)) ? cur : "");

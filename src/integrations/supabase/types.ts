@@ -690,6 +690,7 @@ export type Database = {
           status: string
           time: string
           vehicle_id: string | null
+          work_order_id: string | null
         }
         Insert: {
           assigned_to?: string | null
@@ -712,6 +713,7 @@ export type Database = {
           status?: string
           time: string
           vehicle_id?: string | null
+          work_order_id?: string | null
         }
         Update: {
           assigned_to?: string | null
@@ -734,6 +736,7 @@ export type Database = {
           status?: string
           time?: string
           vehicle_id?: string | null
+          work_order_id?: string | null
         }
         Relationships: [
           {
@@ -783,6 +786,20 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders_public"
             referencedColumns: ["id"]
           },
         ]
@@ -13036,6 +13053,7 @@ export type Database = {
         Args: { _key: string; _max?: number; _window_seconds?: number }
         Returns: boolean
       }
+      accept_my_pending_invitations: { Args: never; Returns: number }
       accept_team_invitation: {
         Args: { _token: string }
         Returns: {

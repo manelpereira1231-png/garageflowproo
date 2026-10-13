@@ -228,8 +228,10 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     : t === 'labor' ? tl('laborType')
     : t;
 
-  const woRows = (isWO ? linesForTable.filter(l => l.type !== 'labor') : []).map(l => [typeCell(l.type), l.name, String(l.quantity)]);
-  const tableData = linesForTable.map(l => [
+  // Numeração sequencial das linhas (apenas apresentação; não altera dados nem cálculos)
+  const woRows = (isWO ? linesForTable.filter(l => l.type !== 'labor') : []).map((l, i) => [String(i + 1), typeCell(l.type), l.name, String(l.quantity)]);
+  const tableData = linesForTable.map((l, i) => [
+    String(i + 1),
     typeCell(l.type),
     l.name,
     String(l.quantity),

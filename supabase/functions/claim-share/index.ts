@@ -134,6 +134,12 @@ Deno.serve(async (req) => {
       } else if (decision === "more_photos") {
         await admin.from("claim_supplements").update({ status: "no_perito", notes: `Perito pediu mais fotografias${notes ? `: ${notes}` : ""}` }).eq("id", sup.id);
         await admin.from("claim_events").insert({ claim_id: claim.id, shop_id: claim.shop_id, kind: "note", description: `Perito pediu mais fotografias para ${label}${notes ? ` — ${notes}` : ""}` });
+        const v: any = claim.vehicles;
+        await admin.from("notifications").insert({
+          shop_id: claim.shop_id, type: "claim", title: `Perito pede mais fotografias — ${claim.ref || "sinistro"}`,
+          message: `${label}${v?.plate ? ` · ${[v.make, v.model].filter(Boolean).join(" ")} ${v.plate}` : ""}${notes ? ` — ${notes}` : ""}`,
+          link: `/claims/${claim.id}`, data: { event: "claim_more_photos", claim_id: claim.id },
+        });
       } else return json({ error: "decision" }, 400);
       return json({ ok: true });
     }

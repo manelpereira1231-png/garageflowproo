@@ -69,7 +69,13 @@ export function ConnectivityBanner() {
         <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-destructive" />
         <p className="flex-1 text-xs leading-snug text-foreground">{offline ? t.offline : t.degraded}</p>
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => {
+            // Recarregar só se continuar sem resposta — evita perder o que está a ser escrito.
+            window.dispatchEvent(new Event("online"));
+            fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/health`, { headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY }, cache: "no-store" })
+              .then((r) => { if (r.status < 500) setHealth("ok"); else window.location.reload(); })
+              .catch(() => window.location.reload());
+          }}
           className="min-h-[36px] shrink-0 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground"
         >
           {t.retry}

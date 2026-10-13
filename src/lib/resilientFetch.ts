@@ -39,6 +39,28 @@ function emitHealth(next: BackendHealth) {
   }
 }
 
+// Auto-recovery: while degraded, probe the backend quietly so the banner
+// disappears by itself once the server answers again (no page reload needed).
+let probeTimer: ReturnType<typeof setTimeout> | null = null;
+function markDegraded() {
+  emitHealth("degraded");
+  if (probeTimer) return;
+  const probe = async () => {
+    probeTimer = null;
+    if (currentHealth !== "degraded") return;
+    try {
+      const base = (import.meta as any).env?.VITE_SUPABASE_URL;
+      const key = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (base) {
+        const r = await fetch(`${base}/auth/v1/health`, { headers: key ? { apikey: key } : {}, cache: "no-store" });
+        if (r.status < 500) { consecutiveFailures = 0; emitHealth("ok"); return; }
+      }
+    } catch { /* still down */ }
+    probeTimer = setTimeout(probe, 8000);
+  };
+  probeTimer = setTimeout(probe, 4000);
+}
+
 export function getBackendHealth(): BackendHealth {
   return currentHealth;
 }
@@ -100,9 +122,10 @@ export async function resilientFetch(input: RequestInfo | URL, init?: RequestIni
       }
 
       // 5xx still counts as a degraded backend even when we cannot retry.
-      if (response.status >= 500) {
+      // Edge functions return 5xx for their own business errors — not an outage.
+      if (response.status >= 500 && !url.includes("/functions/v1/")) {
         consecutiveFailures++;
-        if (consecutiveFailures >= 2) emitHealth("degraded");
+        if (consecutiveFailures >= 3) markDegraded();
       } else {
         consecutiveFailures = 0;
         emitHealth("ok");
@@ -120,8 +143,8 @@ export async function resilientFetch(input: RequestInfo | URL, init?: RequestIni
         continue;
       }
 
-      consecutiveFailures++;
-      if (consecutiveFailures >= 1) emitHealth("degraded");
+      if (!isTimeout || retryable) consecutiveFailures++;
+      if (offline || consecutiveFailures >= 3) markDegraded();
 
       const wrapped = new Error(
         isTimeout

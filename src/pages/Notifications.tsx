@@ -35,6 +35,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 
 function kindOf(n: Notif) {
   if (n.data?.event === "chat_message") return "chat";
+  if ((n.data as any)?.claim_id) return "claim";
   const txt = `${n.type || ""} ${n.title} ${n.message || ""}`.toLowerCase();
   if (txt.includes("servi") && (txt.includes("cancel") || txt.includes("cancelad"))) return "service_cancelled";
   if (txt.includes("aprov")) return "approved";
@@ -49,6 +50,7 @@ const KIND_META: Record<string, { icon: any; color: string; label: string }> = {
   quote: { icon: FileCheck2, color: "text-warning", label: "Orçamento" },
   rejected: { icon: FileX2, color: "text-destructive", label: "Orçamento rejeitado" },
   service_cancelled: { icon: XCircle, color: "text-destructive", label: "Serviço cancelado" },
+  claim: { icon: Info, color: "text-warning", label: "Sinistro" },
   chat: { icon: MessageSquare, color: "text-primary", label: "Nova mensagem" },
   payment: { icon: CreditCard, color: "text-success", label: "Pagamento" },
   other: { icon: Info, color: "text-info", label: "Evento" },

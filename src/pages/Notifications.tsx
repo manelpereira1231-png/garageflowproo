@@ -106,11 +106,17 @@ export default function Notifications() {
   // Realtime: novas notificações aparecem sem refresh manual.
   useEffect(() => {
     if (!shopIds.length) return;
-    const ch = supabase
-      .channel("gf-notifications-page")
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const ch = supabase.channel(`gf-notifications-page-${Math.random().toString(36).slice(2, 8)}`);
+    // Só as oficinas do utilizador, e recarga agrupada para não sobrecarregar o browser.
+    shopIds.forEach((id) =>
+      ch.on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `shop_id=eq.${id}` }, () => {
+        if (t) clearTimeout(t);
+        t = setTimeout(() => load(), 400);
+      }),
+    );
+    ch.subscribe();
+    return () => { if (t) clearTimeout(t); supabase.removeChannel(ch); };
   }, [idsKey, load]);
 
   // Marca como lida na base de dados — o estado persiste após refresh e logout.

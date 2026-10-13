@@ -62,12 +62,13 @@ vi.mock("@/lib/regionConfig", () => ({
 
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import VehiclePassport from "@/components/VehiclePassport";
+import { MemoryRouter } from "react-router-dom";
 
 const renderPassport = async () => {
   const el = document.createElement("div");
   document.body.appendChild(el);
   await act(async () => {
-    createRoot(el).render(<LanguageProvider><VehiclePassport vehicleId="v1" open onClose={() => {}} /></LanguageProvider>);
+    createRoot(el).render(<MemoryRouter><LanguageProvider><VehiclePassport vehicleId="v1" open onClose={() => {}} /></LanguageProvider></MemoryRouter>);
   });
 };
 

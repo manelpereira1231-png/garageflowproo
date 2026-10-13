@@ -888,7 +888,10 @@ export default function Agenda() {
           const apps = HOURS.flatMap(h => getFilteredAppsForDayHour(day, h));
           return (
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-foreground capitalize">{format(day, "EEEE, d MMMM", { locale })}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-foreground capitalize">{format(day, "EEEE, d MMMM", { locale })}</p>
+                <Button size="sm" variant="outline" className="min-h-[44px]" onClick={() => openCreate(day)}><Plus className="w-4 h-4 mr-1" />Marcar neste dia</Button>
+              </div>
               {apps.length === 0 && <p className="text-sm text-muted-foreground py-6 text-center">Sem marcações neste dia.</p>}
               {apps.map(app => (
                 <div key={app.id} className={`rounded-lg border p-3 ${STATUS_COLORS[app.status] || STATUS_COLORS.scheduled}`}>

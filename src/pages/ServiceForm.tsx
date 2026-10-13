@@ -56,7 +56,15 @@ export default function ServiceForm() {
 
   /** Cria/atualiza a única marcação da Agenda ligada a este serviço (nunca duplica). */
   const syncServiceAppointment = async (woId: string, shopId: string) => {
-    if (!schedDate || !schedTime) return;
+    if (!schedDate || !schedTime) {
+      // Data removida: apaga apenas a marcação criada por este serviço (nunca outras).
+      if (schedApptId) {
+        await supabase.from("appointments").delete()
+          .eq("id", schedApptId).eq("work_order_id", woId).eq("auto_kind", "service").eq("shop_id", shopId);
+        setSchedApptId(null);
+      }
+      return;
+    }
     const payload: any = {
       shop_id: shopId, work_order_id: woId, auto_kind: "service", client_id: clientId || null, vehicle_id: vehicleId || null,
       service_type: (lines.find(l => l.type === "service")?.name || clientDescription || "Serviço").slice(0, 120),

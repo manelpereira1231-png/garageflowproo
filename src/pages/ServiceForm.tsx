@@ -167,7 +167,8 @@ export default function ServiceForm() {
       setFilteredVehicles(vehicles.filter(v => v.client_id === clientId));
       const pv = pendingVehicleRef.current;
       if (pv && vehicles.some(v => v.id === pv && v.client_id === clientId)) { setVehicleId(pv); pendingVehicleRef.current = null; }
-      else setVehicleId("");
+      // Só limpa se a viatura escolhida não pertencer ao cliente (evita perder a pré-seleção quando a lista recarrega).
+      else if (!pv) setVehicleId(cur => (cur && vehicles.some(v => v.id === cur && v.client_id === clientId)) ? cur : "");
     } else {
       setFilteredVehicles(vehicles.filter(v => v.client_id === clientId));
     }
@@ -296,7 +297,7 @@ export default function ServiceForm() {
             </div>
             <div className="space-y-1.5">
               <Label>{t('quotes.vehicle')} *</Label>
-              <Select value={vehicleId} onValueChange={setVehicleId} disabled={!clientId}>
+              <Select value={vehicleId} onValueChange={(v) => { if (v) setVehicleId(v); }} disabled={!clientId}>
                 <SelectTrigger><SelectValue placeholder={clientId ? t('quotes.selectVehicle') : t('quotes.selectClientFirst')} /></SelectTrigger>
                 <SelectContent>{filteredVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.make} {v.model} — {v.plate}</SelectItem>)}</SelectContent>
               </Select>

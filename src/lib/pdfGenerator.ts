@@ -315,19 +315,20 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   }
 
   // Diagnosis
+  // Na ordem de serviço não há bloco de totais: o diagnóstico sobe para junto da tabela.
+  const diagOff = isWO ? -20 : 0;
   if (data.type === 'service' && data.diagnosis) {
     doc.setTextColor(38, 38, 38);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.text(tl('diagnosis'), 14, finalY + 28);
+    doc.text(tl('diagnosis'), 14, finalY + 28 + diagOff);
     doc.setFont("helvetica", "normal");
     const diagLines = doc.splitTextToSize(data.diagnosis, pageW - 28);
-    doc.text(diagLines, 14, finalY + 34);
+    doc.text(diagLines, 14, finalY + 34 + diagOff);
   }
 
   if (isWO) {
-    // sem bloco de totais: o texto seguinte começa logo depois do diagnóstico
-    const diagEnd = data.diagnosis ? finalY + 34 + doc.splitTextToSize(data.diagnosis, pageW - 28).length * 4.5 : finalY - 10;
+    const diagEnd = data.diagnosis ? finalY + 34 + diagOff + doc.splitTextToSize(data.diagnosis, pageW - 28).length * 4.5 : finalY - 10;
     finalY = diagEnd - 20;
   }
   // Notes
@@ -346,8 +347,9 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   if (isWO) {
     const pageH0 = doc.internal.pageSize.getHeight();
     let oy = finalY + (data.notes ? 28 + 6 + doc.splitTextToSize(data.notes, pageW - 28).length * 4 + 6 : 28);
-    const boxH = 45;
-    if (oy + boxH > pageH0 - 32) { doc.addPage(); oy = 20; }
+    if (oy + 45 > pageH0 - 32) { doc.addPage(); oy = 20; }
+    // Ocupa o espaço livre até ao aviso legal (mín. 45 mm, máx. 90 mm)
+    const boxH = Math.max(45, Math.min(90, pageH0 - 34 - (oy + 3)));
     doc.setTextColor(38, 38, 38); doc.setFontSize(9); doc.setFont("helvetica", "bold");
     doc.text('Obs.', 14, oy);
     doc.setDrawColor(150, 150, 150); doc.setLineWidth(0.3);

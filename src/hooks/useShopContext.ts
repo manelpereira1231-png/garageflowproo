@@ -90,6 +90,12 @@ export function useShopContext() {
         timeoutResult({ data: [] }),
       ]);
 
+      // Convidado que confirmou o email mas não voltou ao link do convite:
+      // aceita no servidor os convites válidos para o seu email (idempotente).
+      if (!(groupShops || []).length && !(directOwnedShops || []).length) {
+        try { await Promise.race([supabase.rpc("accept_my_pending_invitations" as any), timeoutResult({})]); } catch { /* sem convites */ }
+      }
+
       // Get shops where user is a team member
       const { data: memberEntries } = await Promise.race([
         supabase

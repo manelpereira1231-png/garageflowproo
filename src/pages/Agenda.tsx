@@ -1,3 +1,4 @@
+import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -340,7 +341,7 @@ export default function Agenda() {
         .gte("date", format(weekStart, "yyyy-MM-dd"))
         .lte("date", format(weekEnd, "yyyy-MM-dd"))
         .order("time"),
-      supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),
+      supabase.from("clients").select("id, name, company, nif, phone, email").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),
       supabase.from("vehicles").select("id, plate, make, model, client_id").eq("shop_id", activeShopId).is("deleted_at", null).limit(1000),
       supabase.from("shops").select("slug, opening_hours, name, phone").eq("id", activeShopId).maybeSingle(),
       supabase.from("service_catalog").select("id, name, default_time, default_price").eq("shop_id", activeShopId).eq("active", true).order("name"),
@@ -412,9 +413,10 @@ export default function Agenda() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agendaParams, activeShopId]);
 
-  const openCreate = () => {
+  const openCreate = (date?: Date, hour?: number) => {
     setEditingAppt(null);
     resetForm();
+    if (date) setForm(f => ({ ...f, date: format(date, "yyyy-MM-dd"), time: hour != null ? `${String(hour).padStart(2, "0")}:00` : f.time }));
     setSuggestions([]);
     setDialogOpen(true);
   };
@@ -615,7 +617,7 @@ export default function Agenda() {
               <Copy className="w-4 h-4 mr-1" /> {t('agenda.copyLink')}
             </Button>
           )}
-          <Button size="sm" onClick={openCreate}><Plus className="w-4 h-4 mr-1" /> {t('agenda.new')}</Button>
+          <Button size="sm" onClick={() => openCreate()}><Plus className="w-4 h-4 mr-1" /> {t('agenda.new')}</Button>
         </div>
       </div>
 
@@ -886,7 +888,10 @@ export default function Agenda() {
           const apps = HOURS.flatMap(h => getFilteredAppsForDayHour(day, h));
           return (
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-foreground capitalize">{format(day, "EEEE, d MMMM", { locale })}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-foreground capitalize">{format(day, "EEEE, d MMMM", { locale })}</p>
+                <Button size="sm" variant="outline" className="min-h-[44px]" onClick={() => openCreate(day)}><Plus className="w-4 h-4 mr-1" />Marcar neste dia</Button>
+              </div>
               {apps.length === 0 && <p className="text-sm text-muted-foreground py-6 text-center">Sem marcações neste dia.</p>}
               {apps.map(app => (
                 <div key={app.id} className={`rounded-lg border p-3 ${STATUS_COLORS[app.status] || STATUS_COLORS.scheduled}`}>
@@ -968,12 +973,15 @@ export default function Agenda() {
                       onDragOver={(e) => { if (dragId) { e.preventDefault(); setDropKey(`${di}-${hour}`); } }}
                       onDragLeave={() => setDropKey(k => (k === `${di}-${hour}` ? null : k))}
                       onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/plain") || dragId; setDropKey(null); setDragId(null); if (id) moveAppointment(id, day, hour); }}
-                      className={`border-l border-border/50 p-0.5 transition-colors ${isToday ? 'bg-primary/[0.02]' : ''} ${dropKey === `${di}-${hour}` ? 'bg-primary/15 ring-1 ring-inset ring-primary' : ''}`}>
+                      onClick={(e) => { if (e.target === e.currentTarget) openCreate(day, hour); }}
+                      title="Clique para marcar neste dia e hora"
+                      className={`border-l border-border/50 p-0.5 cursor-pointer hover:bg-primary/5 transition-colors ${isToday ? 'bg-primary/[0.02]' : ''} ${dropKey === `${di}-${hour}` ? 'bg-primary/15 ring-1 ring-inset ring-primary' : ''}`}>
                       {apps.map(app => (
                         <div key={app.id}
                           draggable={app.status !== "completed" && app.status !== "cancelled"}
                           onDragStart={(e) => { e.dataTransfer.setData("text/plain", app.id); e.dataTransfer.effectAllowed = "move"; setDragId(app.id); }}
                           onDragEnd={() => { setDragId(null); setDropKey(null); }}
+                          onClick={(e) => { if ((e.target as HTMLElement).closest('button,a')) return; openEdit(app); }}
                           title="Arraste para outro dia ou hora"
                           className={`text-[11px] rounded px-1.5 py-1 mb-0.5 border cursor-grab active:cursor-grabbing hover:opacity-80 transition-opacity ${dragId === app.id ? 'opacity-40' : ''} ${STATUS_COLORS[app.status] || STATUS_COLORS.scheduled}`}>
                           <div className="font-medium truncate">{app.service_type}</div>
@@ -1111,7 +1119,13 @@ export default function Agenda() {
               <Select value={form.client_id} onValueChange={v => setForm({ ...form, client_id: v, vehicle_id: "" })}>
                 <SelectTrigger><SelectValue placeholder={t('agenda.selectClient')} /></SelectTrigger>
                 <SelectContent>
-                  {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  {clients.map(c => {
+                    const label = clientDisplayName(c as any);
+                    const same = clients.filter(o => clientDisplayName(o as any).trim().toLowerCase() === label.trim().toLowerCase()).length > 1;
+                    const extra = (c as any).company && (c as any).name && (c as any).name !== (c as any).company ? `Contacto: ${(c as any).name}` : "";
+                    const disamb = same ? ((c as any).nif || (c as any).phone || (c as any).email || "") : "";
+                    return <SelectItem key={c.id} value={c.id}>{label}{extra || disamb ? <span className="text-muted-foreground"> · {[extra, disamb].filter(Boolean).join(" · ")}</span> : null}</SelectItem>;
+                  })}
                 </SelectContent>
               </Select>
             </div>

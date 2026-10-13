@@ -44,6 +44,8 @@ interface PdfData {
   currency: string;
   plan?: string;
   language?: string;
+  entryDate?: string;
+  exitDate?: string;
 }
 
 async function loadImage(url: string): Promise<string | null> {
@@ -159,8 +161,10 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   doc.setFont("helvetica", "normal");
   doc.text(`${tl('date')}: ${data.date}`, pageW - 14, 34, { align: "right" });
 
-  // Client info
+  const isWO = data.type === 'service';
+  // Client info (a ordem de serviço não mostra dados do cliente)
   let y = 50;
+  if (!isWO) {
   doc.setTextColor(38, 38, 38);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
@@ -172,6 +176,14 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   if (data.clientNif) { y += 5; doc.text(`NIF: ${data.clientNif}`, 14, y); }
   if (data.clientEmail) { y += 5; doc.text(data.clientEmail, 14, y); }
   if (data.clientPhone) { y += 5; doc.text(data.clientPhone, 14, y); }
+  } else {
+    doc.setTextColor(38, 38, 38);
+    doc.setFontSize(10); doc.setFont("helvetica", "bold");
+    doc.text('DATAS', 14, y);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+    y += 6; doc.text(`Entrada da viatura: ${data.entryDate || '____/____/________'}`, 14, y);
+    y += 6; doc.text(`Saída da viatura: ${data.exitDate || '____/____/________'}`, 14, y);
+  }
 
   // Vehicle info
   doc.setFont("helvetica", "bold");
@@ -216,6 +228,7 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     : t === 'labor' ? tl('laborType')
     : t;
 
+  const woRows = (isWO ? linesForTable.filter(l => l.type !== 'labor') : []).map(l => [typeCell(l.type), l.name, String(l.quantity)]);
   const tableData = linesForTable.map(l => [
     typeCell(l.type),
     l.name,
@@ -225,7 +238,18 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     `${cur} ${(l.quantity * l.unit_price).toFixed(2)}`,
   ]);
 
-  autoTable(doc, {
+  if (isWO) {
+    autoTable(doc, {
+      startY: tableY,
+      head: [[tl('type'), tl('description'), tl('qty')]],
+      body: woRows,
+      theme: 'striped',
+      headStyles: { fillColor: [38, 38, 38], textColor: [255, 180, 30], fontStyle: 'bold', fontSize: 8 },
+      bodyStyles: { fontSize: 9 },
+      columnStyles: { 0: { cellWidth: 24 }, 2: { cellWidth: 18, halign: 'center' } },
+      margin: { left: 14, right: 14 },
+    });
+  } else autoTable(doc, {
     startY: tableY,
     head: [[tl('type'), tl('description'), tl('qty'), tl('price'), tl('vat'), tl('total')]],
     body: tableData,
@@ -256,9 +280,10 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   if (laborSum > 0) summaryLines.push([tl('laborSubtotal'), laborSum]);
 
 
-  // Totals
   let finalY = (doc as any).lastAutoTable.finalY + 10;
   const totalsX = pageW - 14;
+  if (!isWO) {
+  // Totals
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
@@ -287,6 +312,8 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
   doc.setFont("helvetica", "bold");
   doc.text(`TOTAL: ${cur} ${data.total.toFixed(2)}`, totalsX, finalY + 16, { align: "right" });
 
+  }
+
   // Diagnosis
   if (data.type === 'service' && data.diagnosis) {
     doc.setTextColor(38, 38, 38);
@@ -298,9 +325,14 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     doc.text(diagLines, 14, finalY + 34);
   }
 
+  if (isWO) {
+    // sem bloco de totais: o texto seguinte começa logo depois do diagnóstico
+    const diagEnd = data.diagnosis ? finalY + 34 + doc.splitTextToSize(data.diagnosis, pageW - 28).length * 4.5 : finalY - 10;
+    finalY = diagEnd - 20;
+  }
   // Notes
   if (data.notes) {
-    const notesY = data.diagnosis ? finalY + 46 : finalY + 28;
+    const notesY = isWO ? finalY + 28 : data.diagnosis ? finalY + 46 : finalY + 28;
     doc.setTextColor(38, 38, 38);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
@@ -308,6 +340,18 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     doc.setFont("helvetica", "normal");
     const noteLines = doc.splitTextToSize(data.notes, pageW - 28);
     doc.text(noteLines, 14, notesY + 6);
+  }
+
+  // Caixa "Obs." em branco para preenchimento manual (só na ordem de serviço)
+  if (isWO) {
+    const pageH0 = doc.internal.pageSize.getHeight();
+    let oy = finalY + (data.notes ? 28 + 6 + doc.splitTextToSize(data.notes, pageW - 28).length * 4 + 6 : 28);
+    const boxH = 45;
+    if (oy + boxH > pageH0 - 32) { doc.addPage(); oy = 20; }
+    doc.setTextColor(38, 38, 38); doc.setFontSize(9); doc.setFont("helvetica", "bold");
+    doc.text('Obs.', 14, oy);
+    doc.setDrawColor(150, 150, 150); doc.setLineWidth(0.3);
+    doc.rect(14, oy + 3, pageW - 28, boxH);
   }
 
   // Watermark for FREE plan only

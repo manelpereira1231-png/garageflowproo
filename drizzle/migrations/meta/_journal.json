@@ -246,6 +246,13 @@
       "when": 1791310401463,
       "tag": "0034_claims_agenda_notes_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791849875235,
+      "tag": "0035_team_invite_autoaccept_and_service_agenda",
+      "breakpoints": true
     }
   ]
 }

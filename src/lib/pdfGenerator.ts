@@ -335,8 +335,8 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     finalY = diagEnd - 20;
   }
   // Notes
-  if (data.notes) {
-    const notesY = isWO ? finalY + 28 : data.diagnosis ? finalY + 46 : finalY + 28;
+  if (data.notes && !isWO) {
+    const notesY = data.diagnosis ? finalY + 46 : finalY + 28;
     doc.setTextColor(38, 38, 38);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
@@ -346,10 +346,10 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     doc.text(noteLines, 14, notesY + 6);
   }
 
-  // Caixa "Obs." em branco para preenchimento manual (só na ordem de serviço)
+  // Caixa "Obs." da ordem de serviço — mostra as observações guardadas (vazia se não houver)
   if (isWO) {
     const pageH0 = doc.internal.pageSize.getHeight();
-    let oy = finalY + (data.notes ? 28 + 6 + doc.splitTextToSize(data.notes, pageW - 28).length * 4 + 6 : 28);
+    let oy = finalY + 28;
     if (oy + 45 > pageH0 - 32) { doc.addPage(); oy = 20; }
     // Ocupa o espaço livre até ao aviso legal (mín. 45 mm, máx. 90 mm)
     const boxH = Math.max(45, Math.min(90, pageH0 - 34 - (oy + 3)));
@@ -357,6 +357,13 @@ export async function generatePdf(data: PdfData, watermark: boolean): Promise<js
     doc.text('Obs.', 14, oy);
     doc.setDrawColor(150, 150, 150); doc.setLineWidth(0.3);
     doc.rect(14, oy + 3, pageW - 28, boxH);
+    const obs = (data.notes || "").trim();
+    if (obs) {
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+      const maxLines = Math.floor((boxH - 4) / 4);
+      const lines = doc.splitTextToSize(obs, pageW - 34).slice(0, maxLines);
+      doc.text(lines, 17, oy + 8);
+    }
   }
 
   // Watermark for FREE plan only

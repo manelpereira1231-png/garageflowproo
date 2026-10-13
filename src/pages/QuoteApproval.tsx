@@ -701,6 +701,7 @@ export default function QuoteApproval() {
                     ))}
                     {laborLine && (
                       <tr className="border-t border-border/50 bg-primary/5">
+                        <td className="p-2 sm:p-3 text-center font-mono text-muted-foreground">{lines.length + 1}</td>
                         <td className="p-2 sm:p-3 min-w-0">
                           <span className="font-medium break-words">{laborLine.name}</span>
                           <Badge variant="outline" className="ml-2 text-[10px] py-0">{t('service')}</Badge>

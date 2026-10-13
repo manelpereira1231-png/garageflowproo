@@ -341,7 +341,7 @@ export default function Agenda() {
         .gte("date", format(weekStart, "yyyy-MM-dd"))
         .lte("date", format(weekEnd, "yyyy-MM-dd"))
         .order("time"),
-      supabase.from("clients").select("id, name").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),
+      supabase.from("clients").select("id, name, company, nif, phone, email").eq("shop_id", activeShopId).is("deleted_at", null).order("name").limit(1000),
       supabase.from("vehicles").select("id, plate, make, model, client_id").eq("shop_id", activeShopId).is("deleted_at", null).limit(1000),
       supabase.from("shops").select("slug, opening_hours, name, phone").eq("id", activeShopId).maybeSingle(),
       supabase.from("service_catalog").select("id, name, default_time, default_price").eq("shop_id", activeShopId).eq("active", true).order("name"),

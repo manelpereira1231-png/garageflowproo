@@ -32,6 +32,7 @@ const q = (v: string) => encodeURIComponent(v.trim());
 
 export function resolveNotificationLink(notification: NotificationLinkInput): string | null {
   const d = notification.data || {};
+  if ((d as any).claim_id) return `/claims/${(d as any).claim_id}`;
 
   // Orçamentos — abrir o orçamento exato pelo número real (ORC-0042).
   const quoteNumber = d.quote_number?.trim();

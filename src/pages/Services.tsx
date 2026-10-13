@@ -569,6 +569,7 @@ export default function Services() {
       vehiclePlate: (s.vehicles as any)?.plate || '', lines, subtotal: s.subtotal, vatTotal: s.vat_total,
       total: s.total, profit: s.profit, notes: s.notes, technician: s.technician, diagnosis: s.diagnosis,
       laborHours: s.labor_hours, laborRate: shop.labor_rate, currency: shop.currency || 'EUR', plan: plan,
+      entryDate: formatLocalDate(s.created_at), exitDate: s.delivered_at ? formatLocalDate(s.delivered_at) : undefined,
     }, limits.pdfWatermark);
   };
 

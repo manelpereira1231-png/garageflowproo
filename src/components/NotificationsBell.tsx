@@ -51,11 +51,18 @@ export default function NotificationsBell() {
 
   useEffect(() => {
     if (!ids.length) return;
-    const ch = supabase
-      .channel("gf-notifications-bell")
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    let t: ReturnType<typeof setTimeout> | null = null;
+    // Nome único: reutilizar o mesmo nome fazia os ouvintes acumularem a cada
+    // mudança de página. Só escuta as oficinas do utilizador e agrupa rajadas.
+    const ch = supabase.channel(`gf-notifications-bell-${Math.random().toString(36).slice(2, 8)}`);
+    ids.forEach((id) =>
+      ch.on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `shop_id=eq.${id}` }, () => {
+        if (t) clearTimeout(t);
+        t = setTimeout(() => load(), 400);
+      }),
+    );
+    ch.subscribe();
+    return () => { if (t) clearTimeout(t); supabase.removeChannel(ch); };
   }, [ids.join(","), load]);
 
   const markRead = async (id: string) => {

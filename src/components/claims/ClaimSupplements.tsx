@@ -153,7 +153,7 @@ export function ClaimSupplements({ claim, shopId, sups, quotes, isBR, onChanged,
             <div><Label>Descrição</Label><Input className="min-h-[44px]" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} placeholder="Ex.: suporte do para-choques partido" /></div>
             <div><Label>Valor ({isBR ? "R$" : "€"})</Label><Input className="min-h-[44px]" type="number" step="0.01" inputMode="decimal" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} /></div>
             <div><Label>Orçamento associado (opcional)</Label>
-              <Select value={f.quote_id || "none"} onValueChange={(v) => setF({ ...f, quote_id: v === "none" ? "" : v })}>
+              <Select value={f.quote_id || "none"} onValueChange={(v) => { const q = quotes.find((x) => x.id === v); setF({ ...f, quote_id: v === "none" ? "" : v, amount: q ? String(q.total ?? "") : f.amount }); }}>
                 <SelectTrigger className="min-h-[44px]"><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="none">Nenhum</SelectItem>{quotes.map((q) => <SelectItem key={q.id} value={q.id}>{q.number} — {formatMoney(Number(q.total))}</SelectItem>)}</SelectContent>
               </Select>

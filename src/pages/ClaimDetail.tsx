@@ -7,6 +7,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { useShopCountry } from "@/hooks/useShopCountry";
 import { supabase } from "@/integrations/supabase/client";
+import { useCoalescedReload } from "@/hooks/useCoalescedReload";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { InsurerPicker, resolveInsurerId, type InsurerSelection } from "@/components/InsurerPicker";
 import { Button } from "@/components/ui/button";

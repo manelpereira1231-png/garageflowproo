@@ -3,6 +3,7 @@ import { clientDisplayName } from "@/lib/clientDisplayName";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useActiveShopId } from "@/hooks/useActiveShopId";
 import { supabase } from "@/integrations/supabase/client";
+import { useCoalescedReload } from "@/hooks/useCoalescedReload";
 import { useRealtimeTable } from "@/hooks/useRealtimeTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -158,15 +158,18 @@ export default function ClaimDetail() {
   useEffect(() => { load(); }, [load]);
 
   // Live: same claim edited by another user (owner/technician) shows up here.
-  const liveOpts = { onChange: () => { void load(); }, enabled: !!id, debounceMs: 400 };
+  // Um único recarregamento agrupado para todos os eventos (um "guardar" mexe em várias tabelas).
+  const liveReload = useCoalescedReload(load, 600);
+  const liveFin = useCoalescedReload(loadFin, 600);
+  const liveOpts = { onChange: liveReload, enabled: !!id, debounceMs: 400 };
   useRealtimeTable("claims", { ...liveOpts, filter: `id=eq.${id}`, event: "UPDATE" });
   useRealtimeTable("claim_events", { ...liveOpts, filter: `claim_id=eq.${id}` });
   useRealtimeTable("claim_communications", { ...liveOpts, filter: `claim_id=eq.${id}` });
   useRealtimeTable("claim_documents", { ...liveOpts, filter: `claim_id=eq.${id}` });
   useRealtimeTable("claim_supplements", { ...liveOpts, filter: `claim_id=eq.${id}` });
   useRealtimeTable("work_orders", { ...liveOpts, filter: `id=eq.${claim?.work_order_id}`, enabled: !!claim?.work_order_id });
-  useRealtimeTable("invoices", { ...liveOpts, filter: `claim_id=eq.${id}`, onChange: () => { void loadFin(); void load(); } });
-  useRealtimeTable("payments", { ...liveOpts, shopId: activeShopId, onChange: () => { void loadFin(); } });
+  useRealtimeTable("invoices", { ...liveOpts, filter: `claim_id=eq.${id}`, onChange: () => { liveFin(); liveReload(); } });
+  useRealtimeTable("payments", { ...liveOpts, shopId: activeShopId, onChange: liveFin });
 
   const set = (patch: Record<string, any>) => setClaim((c: any) => ({ ...c, ...patch }));
 

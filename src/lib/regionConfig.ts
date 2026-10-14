@@ -255,7 +255,15 @@ export async function detectCountryByIP(): Promise<void> {
       // A browser that remembered the OTHER country: reload once so every
       // static illustration/price picks the new country (no mixed content).
       // Safe from loops: on the next load stored === detected.
-      if (previous) {
+      // Só para visitantes sem sessão e no máximo uma vez por separador:
+      // impede que país da oficina vs país do IP recarregue a página em ciclo.
+      let signedIn = false, reloadedOnce = false;
+      try {
+        signedIn = Object.keys(localStorage).some((k) => k.startsWith("sb-") && k.endsWith("-auth-token"));
+        reloadedOnce = sessionStorage.getItem("gf_country_reload") === "1";
+      } catch {}
+      if (previous && !signedIn && !reloadedOnce) {
+        try { sessionStorage.setItem("gf_country_reload", "1"); } catch {}
         try {
           const lang = localStorage.getItem('garageflow_language');
           if ((lang === 'pt' || lang === 'pt-BR') && (j.country === 'BR' || j.country === 'PT')) {

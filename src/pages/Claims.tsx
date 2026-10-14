@@ -117,10 +117,12 @@ export default function Claims() {
 
   useEffect(() => { load(); }, [load]);
   // Live: claims changed by any user of this shop refresh the list/counters.
-  useRealtimeTable("claims", { shopId: activeShopId, onChange: () => { void load(); } });
-  useRealtimeTable("claim_supplements", { shopId: activeShopId, onChange: () => { void load(); } });
-  useRealtimeTable("invoices", { shopId: activeShopId, onChange: () => { void load(); } });
-  useRealtimeTable("payments", { shopId: activeShopId, onChange: () => { void load(); } });
+  // Todos os eventos partilham um único recarregamento agrupado (evita rajadas de consultas).
+  const liveReload = useCoalescedReload(load, 800);
+  useRealtimeTable("claims", { shopId: activeShopId, onChange: liveReload });
+  useRealtimeTable("claim_supplements", { shopId: activeShopId, onChange: liveReload });
+  useRealtimeTable("invoices", { shopId: activeShopId, onChange: liveReload });
+  useRealtimeTable("payments", { shopId: activeShopId, onChange: liveReload });
 
   // Pré-preenchimento vindo da Ordem de Serviço (/claims?wo=<id>)
   useEffect(() => {

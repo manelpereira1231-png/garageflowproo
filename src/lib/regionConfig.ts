@@ -259,7 +259,7 @@ export async function detectCountryByIP(): Promise<void> {
       // impede que país da oficina vs país do IP recarregue a página em ciclo.
       let signedIn = false, reloadedOnce = false;
       try {
-        signedIn = Object.keys(localStorage).some((k) => k.startsWith("sb-") && k.endsWith("-auth-token"));
+        signedIn = Object.keys(localStorage).some((k) => k.startsWith("sb-") && k.endsWith("-auth-token")) || !!localStorage.getItem("garageflow_session_uid");
         reloadedOnce = sessionStorage.getItem("gf_country_reload") === "1";
       } catch {}
       if (previous && !signedIn && !reloadedOnce) {

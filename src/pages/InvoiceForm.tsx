@@ -173,7 +173,9 @@ export default function InvoiceForm() {
     load();
   }, [fromQuote, fromWorkOrder, fromClaim]);
 
-  const clientVehicles = vehicles.filter(v => v.client_id === clientId);
+  // Claim invoices keep the claim's vehicle visible even when the recipient
+  // is the insurer (the vehicle belongs to the claim's client, not the payer).
+  const clientVehicles = vehicles.filter(v => v.client_id === clientId || (vehicleId && v.id === vehicleId));
 
   const addItem = () => {
     setItems([...items, { id: crypto.randomUUID(), description: "", quantity: 1, unit_price: 0, vat_rate: shop?.vat_rate || 23 }]);

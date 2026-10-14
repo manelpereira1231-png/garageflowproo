@@ -302,10 +302,11 @@ export default function InvoiceForm() {
             </Select>
           </div>
           <div>
-            <Label>{t('quotes.vehicle')}</Label>
-            <Select value={vehicleId} onValueChange={setVehicleId}>
+            <Label>{t('quotes.vehicle')} <span className="text-muted-foreground font-normal text-xs">({t('common.optional')})</span></Label>
+            <Select value={vehicleId || (clientId ? "__none__" : "")} onValueChange={(v) => setVehicleId(v === "__none__" ? "" : v)}>
               <SelectTrigger><SelectValue placeholder={t('invoices.selectVehicle')} /></SelectTrigger>
               <SelectContent>
+                <SelectItem value="__none__">{t('invoices.noVehicle')}</SelectItem>
                 {clientVehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.make} {v.model} — {v.plate}</SelectItem>)}
               </SelectContent>
             </Select>

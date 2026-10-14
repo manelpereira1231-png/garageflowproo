@@ -17,8 +17,16 @@ const ACTIVE_SHOP_KEY = "garageflow_active_shop";
 
 let cache: { code: CountryCode; config: CountryConfig } | null = null;
 const listeners = new Set<(v: { code: CountryCode; config: CountryConfig }) => void>();
+let lastKey: string | null = null; // `${shopId}|${code}` já anunciado
+let inflight: Promise<{ code: CountryCode; config: CountryConfig }> | null = null;
 
-async function loadShopCountry(): Promise<{ code: CountryCode; config: CountryConfig }> {
+// Várias partes da página pedem o país ao mesmo tempo: partilha um só pedido.
+function loadShopCountry(): Promise<{ code: CountryCode; config: CountryConfig }> {
+  if (!inflight) inflight = doLoadShopCountry().finally(() => { inflight = null; });
+  return inflight;
+}
+
+async function doLoadShopCountry(): Promise<{ code: CountryCode; config: CountryConfig }> {
   const fallback = { code: "PT" as CountryCode, config: getCountryConfig("PT") };
   try {
     const activeShopId = localStorage.getItem(ACTIVE_SHOP_KEY);

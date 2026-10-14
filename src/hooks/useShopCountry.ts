@@ -17,8 +17,16 @@ const ACTIVE_SHOP_KEY = "garageflow_active_shop";
 
 let cache: { code: CountryCode; config: CountryConfig } | null = null;
 const listeners = new Set<(v: { code: CountryCode; config: CountryConfig }) => void>();
+let lastKey: string | null = null; // `${shopId}|${code}` já anunciado
+let inflight: Promise<{ code: CountryCode; config: CountryConfig }> | null = null;
 
-async function loadShopCountry(): Promise<{ code: CountryCode; config: CountryConfig }> {
+// Várias partes da página pedem o país ao mesmo tempo: partilha um só pedido.
+function loadShopCountry(): Promise<{ code: CountryCode; config: CountryConfig }> {
+  if (!inflight) inflight = doLoadShopCountry().finally(() => { inflight = null; });
+  return inflight;
+}
+
+async function doLoadShopCountry(): Promise<{ code: CountryCode; config: CountryConfig }> {
   const fallback = { code: "PT" as CountryCode, config: getCountryConfig("PT") };
   try {
     const activeShopId = localStorage.getItem(ACTIVE_SHOP_KEY);
@@ -40,6 +48,14 @@ async function loadShopCountry(): Promise<{ code: CountryCode; config: CountryCo
     // / getDefaultTimezone) — and consequently InvoiceXpress vs eNotas, EUR
     // vs BRL, IVA vs Impostos, Europe/Lisbon vs America/Sao_Paulo — resolves
     // from the ACTIVE SHOP's country, not from the browser timezone/IP.
+    //
+    // Só anuncia quando a oficina ou o país mudam de facto. Este hook também
+    // escuta "pricing-updated"; anunciar sempre criava um ciclo infinito
+    // (centenas de pedidos por minuto) que congelava a página e fazia
+    // aparecer o aviso de servidor.
+    const key = `${activeShopId}|${code}`;
+    if (key === lastKey) return value;
+    lastKey = key;
     try {
       setCountryCode(code);
       window.dispatchEvent(new CustomEvent("garageflow:pricing-updated"));

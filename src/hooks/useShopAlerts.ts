@@ -566,7 +566,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
     const next = status ?? "pending";
     setRows((prev) => prev.map((a) => (a.id === alert.id ? { ...a, status: next } : a)));
     const { error } = await supabase.from("alerts").update({ status: next } as any).eq("id", alert.id);
-    if (error) void load();
+    if (error) { invalidateAlertsCache(); void load(ALERTS_EVENT_MS); }
     notifyAlertSync();
   }, [load, persistDerived]);
 
@@ -603,7 +603,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
     countsByPriority,
     pendingCount: alerts.filter((a) => a.status === "pending").length,
     loading,
-    reload: load,
+    reload: () => { invalidateAlertsCache(); return load(ALERTS_EVENT_MS); },
     markRead,
     markAllRead,
     resolve: (a: UnifiedAlert) => setStatus(a, "resolved"),

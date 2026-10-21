@@ -165,6 +165,249 @@ function notifyAlertSync() {
 }
 
 
+/** Lê da base de dados tudo o que é preciso para calcular os alertas das oficinas indicadas. */
+async function fetchAlertsData(ids: string[]): Promise<AlertsData> {
+  const [alertsRes, partsRes, overdueRes, apptRes, ordersRes, quotesRes] = await Promise.all([
+    supabase
+      .from("alerts")
+      .select("*, clients(name, company, phone, email), vehicles(make, model, plate)")
+      .in("shop_id", ids)
+      .order("created_at", { ascending: false })
+      .limit(300),
+    supabase
+      .from("parts")
+      .select("id, shop_id, name, reference, stock_quantity, min_stock")
+      .in("shop_id", ids)
+      .eq("active", true),
+    supabase
+      .from("invoices")
+      .select("id, shop_id, number, total, due_date, clients(name, company)")
+      .in("shop_id", ids)
+      .in("status", ["issued", "partial"])
+      .lt("due_date", today()),
+    supabase
+      .from("appointments")
+      .select("id, shop_id, date, time, service_type, status, source, client_name, clients(name, company)")
+      .in("shop_id", ids)
+      .eq("status", "pending")
+      .order("date", { ascending: true })
+      .limit(30),
+    supabase
+      .from("work_orders")
+      .select("id, shop_id, number, status, created_at, completed_at, delivered_at, quote_id, clients(name, company), vehicles(make, model, plate)")
+      .in("shop_id", ids)
+      .in("status", ["in_progress", "waiting_parts", "completed"])
+      .limit(200),
+    supabase
+      .from("quotes")
+      .select("id, shop_id, number, status, total, date, created_at, clients(name, company)")
+      .in("shop_id", ids)
+      .in("status", ["sent", "approved"])
+      .limit(200),
+  ]);
+
+  const dbAlerts = ((alertsRes.data as any[]) || []).map(mapRow);
+
+  const out: UnifiedAlert[] = [];
+  // Dedupe por SITUAÇÃO concreta (tipo + título), nunca por tipo inteiro:
+  // um alerta guardado não pode apagar todos os derivados da mesma família.
+  const openDbKeys = new Set(
+    dbAlerts
+      .filter((a) => a.status === "pending" || a.status === "sent")
+      .map((a) => `${a.type}|${(a.title || "").toLowerCase()}`),
+  );
+
+  // ---- STOCK: um alerta por peça, com link para a peça ----
+  for (const p of ((partsRes.data as any[]) || [])) {
+    const min = Number(p.min_stock || 0);
+    const qty = Number(p.stock_quantity || 0);
+    if (min <= 0 || qty > min) continue;
+    const rupture = qty <= 0;
+    out.push(
+      derivedAlert({
+        id: `derived:part:${p.id}`,
+        shopId: p.shop_id,
+        type: rupture ? "stock_out" : "stock_low",
+        title: rupture ? `Rutura de stock — ${p.name}` : `Stock abaixo do mínimo — ${p.name}`,
+        subtitle: p.reference ? `Ref. ${p.reference}` : null,
+        message: `Stock atual: ${qty} · mínimo: ${min}`,
+        priority: rupture ? "critical" : "high",
+        link: `/stock?search=${encodeURIComponent(p.reference || p.name)}`,
+      }),
+    );
+  }
+
+  // ---- FINANCEIRO: um alerta por fatura vencida, com link para a fatura ----
+  for (const inv of ((overdueRes.data as any[]) || [])) {
+    const late = daysSince(inv.due_date);
+    out.push(
+      derivedAlert({
+        id: `derived:invoice:${inv.id}`,
+        shopId: inv.shop_id,
+        type: "invoice_overdue",
+        title: `Fatura ${inv.number} vencida`,
+        subtitle: clientDisplayName(inv.clients as any) || null,
+        message: `${money(inv.total)} · vencida ${dayLabel(late)}`,
+        priority: late >= 30 ? "critical" : "high",
+        dueDate: inv.due_date,
+        link: `/invoices?search=${encodeURIComponent(inv.number)}`,
+      }),
+    );
+  }
+
+  // ---- MARCAÇÕES: pedidos por responder, com link para a marcação ----
+  for (const ap of ((apptRes.data as any[]) || [])) {
+    const name = clientDisplayName(ap.clients as any) || ap.client_name || "Cliente";
+    const when = `${new Date(ap.date).toLocaleDateString("pt-PT")} às ${String(ap.time).slice(0, 5)}`;
+    out.push(
+      derivedAlert({
+        id: `derived:appointment:${ap.id}`,
+        shopId: ap.shop_id,
+        type: "appointment_new",
+        title: "Nova marcação recebida",
+        subtitle: name,
+        message: `${when}${ap.service_type ? ` · ${ap.service_type}` : ""}`,
+        priority: "high",
+        dueDate: ap.date,
+        link: `/agenda?appointment=${ap.id}`,
+      }),
+    );
+  }
+
+  // ---- SERVIÇOS: atrasados e veículos prontos por levantar ----
+  const orders = (ordersRes.data as any[]) || [];
+  const convertedQuoteIds = new Set(orders.map((o) => o.quote_id).filter(Boolean));
+  for (const o of orders) {
+    const veh = (o.vehicles as any) || null;
+    const vehLabel = veh ? `${veh.make || ""} ${veh.model || ""} — ${veh.plate || ""}`.trim() : null;
+    const subtitle = [clientDisplayName(o.clients as any), vehLabel].filter(Boolean).join(" · ") || null;
+
+    // Veículo já entregue = situação encerrada, sem alerta.
+    if (o.delivered_at) continue;
+    if (o.status === "completed") {
+      // Só depois de 2 dias — evita alertar logo após marcar como pronto.
+      const waiting = daysSince(o.completed_at || o.created_at);
+      if (waiting >= 2) {
+        out.push(
+          derivedAlert({
+            id: `derived:pickup:${o.id}`,
+            shopId: o.shop_id,
+            type: "vehicle_ready",
+            title: `Veículo pronto por levantar — ${o.number}`,
+            subtitle,
+            message: `Concluído ${dayLabel(waiting)}`,
+            priority: waiting >= 7 ? "critical" : "high",
+            link: `/services?search=${encodeURIComponent(o.number)}`,
+          }),
+        );
+      }
+      continue;
+    }
+
+    const running = daysSince(o.created_at);
+    if (running >= 7) {
+      out.push(
+        derivedAlert({
+          id: `derived:late-order:${o.id}`,
+          shopId: o.shop_id,
+          type: "service_late",
+          title: `Serviço atrasado — ${o.number}`,
+          subtitle,
+          message: `Em curso ${dayLabel(running)}`,
+          priority: running >= 14 ? "critical" : "high",
+          link: `/services?search=${encodeURIComponent(o.number)}`,
+        }),
+      );
+    }
+  }
+
+  // ---- ORÇAMENTOS: aprovados sem ação e enviados sem resposta ----
+  for (const q of ((quotesRes.data as any[]) || [])) {
+    const clientName = clientDisplayName(q.clients as any) || null;
+    if (q.status === "approved") {
+      // Já convertido em serviço = ação tratada, não gera alerta.
+      if (convertedQuoteIds.has(q.id)) continue;
+      out.push(
+        derivedAlert({
+          id: `derived:quote-approved:${q.id}`,
+          shopId: q.shop_id,
+          type: "quote_approved",
+          title: `Orçamento ${q.number} aprovado`,
+          subtitle: clientName,
+          message: `${money(q.total)} · falta abrir o serviço`,
+          priority: "high",
+          link: `/quotes?search=${encodeURIComponent(q.number)}`,
+        }),
+      );
+      continue;
+    }
+    const sentDays = daysSince(q.created_at || q.date);
+    if (sentDays >= 3) {
+      out.push(
+        derivedAlert({
+          id: `derived:quote-pending:${q.id}`,
+          shopId: q.shop_id,
+          type: "quote_pending",
+          title: `Orçamento ${q.number} aguarda aprovação`,
+          subtitle: clientName,
+          message: `${money(q.total)} · enviado ${dayLabel(sentDays)}`,
+          priority: "low",
+          link: `/quotes?search=${encodeURIComponent(q.number)}`,
+        }),
+      );
+    }
+  }
+
+  const visible = out
+    .filter((a) => !openDbKeys.has(`${a.type}|${a.title.toLowerCase()}`))
+    // Assinatura = estado concreto da situação. Se mudar (novo valor,
+    // mais dias de atraso, outra prioridade) o alerta reabre sozinho.
+    .map((a) => ({ ...a, signature: `${a.priority}|${a.message ?? ""}` }));
+
+  // Estado guardado (lido/resolvido) dos alertas calculados.
+  const keys = visible.map((a) => a.id);
+  if (keys.length) {
+    const { data: states } = await supabase
+      .from("alert_states")
+      .select("alert_key, signature, read_at, resolved_at")
+      .in("shop_id", ids)
+      .in("alert_key", keys);
+    const map: Record<string, DerivedState> = {};
+    for (const s of ((states as any[]) || [])) {
+      map[s.alert_key] = {
+        signature: s.signature ?? null,
+        read_at: s.read_at ?? null,
+        resolved_at: s.resolved_at ?? null,
+        status: s.resolved_at ? "resolved" : null,
+      };
+    }
+    return { rows: dbAlerts, visible, states: map };
+  }
+  return { rows: dbAlerts, visible, states: {} as Record<string, DerivedState> };
+}
+
+type AlertsData = { rows: UnifiedAlert[]; visible: UnifiedAlert[]; states: Record<string, DerivedState> };
+
+/**
+ * Partilha de leituras entre todos os sítios que mostram alertas (contador do
+ * menu, dashboard, página de alertas). Antes, cada sítio e cada evento em tempo
+ * real faziam a sua própria leitura completa (6 consultas) — com isto, leituras
+ * pedidas ao mesmo tempo para as mesmas oficinas usam um único pedido.
+ */
+const ALERTS_TTL_MS = 30_000;      // ao abrir uma página: reutiliza leitura recente
+const ALERTS_EVENT_MS = 1_500;     // após um evento: junta os pedidos simultâneos
+const alertsCache = new Map<string, { at: number; promise: Promise<AlertsData> }>();
+function sharedAlertsFetch(key: string, maxAgeMs: number, run: () => Promise<AlertsData>) {
+  const hit = alertsCache.get(key);
+  if (hit && Date.now() - hit.at < maxAgeMs) return hit.promise;
+  const promise = run();
+  const entry = { at: Date.now(), promise };
+  alertsCache.set(key, entry);
+  promise.catch(() => { if (alertsCache.get(key) === entry) alertsCache.delete(key); });
+  return promise;
+}
+function invalidateAlertsCache() { alertsCache.clear(); }
+
 export function useShopAlerts(options?: { shopIds?: string[] | null }) {
   const { activeShopId, shops } = useShopContext();
   const contextIds = useMemo(
@@ -179,236 +422,23 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
   const [loading, setLoading] = useState(true);
   const [derivedState, setDerivedState] = useState<Record<string, DerivedState>>({});
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (maxAgeMs: number = ALERTS_TTL_MS) => {
     const ids = idsKey ? idsKey.split(",") : [];
     if (!ids.length) {
       setRows([]);
       setDerived([]);
+      setDerivedState({});
       setLoading(false);
       return;
     }
-
-    const [alertsRes, partsRes, overdueRes, apptRes, ordersRes, quotesRes] = await Promise.all([
-      supabase
-        .from("alerts")
-        .select("*, clients(name, company, phone, email), vehicles(make, model, plate)")
-        .in("shop_id", ids)
-        .order("created_at", { ascending: false })
-        .limit(300),
-      supabase
-        .from("parts")
-        .select("id, shop_id, name, reference, stock_quantity, min_stock")
-        .in("shop_id", ids)
-        .eq("active", true),
-      supabase
-        .from("invoices")
-        .select("id, shop_id, number, total, due_date, clients(name, company)")
-        .in("shop_id", ids)
-        .in("status", ["issued", "partial"])
-        .lt("due_date", today()),
-      supabase
-        .from("appointments")
-        .select("id, shop_id, date, time, service_type, status, source, client_name, clients(name, company)")
-        .in("shop_id", ids)
-        .eq("status", "pending")
-        .order("date", { ascending: true })
-        .limit(30),
-      supabase
-        .from("work_orders")
-        .select("id, shop_id, number, status, created_at, completed_at, delivered_at, quote_id, clients(name, company), vehicles(make, model, plate)")
-        .in("shop_id", ids)
-        .in("status", ["in_progress", "waiting_parts", "completed"])
-        .limit(200),
-      supabase
-        .from("quotes")
-        .select("id, shop_id, number, status, total, date, created_at, clients(name, company)")
-        .in("shop_id", ids)
-        .in("status", ["sent", "approved"])
-        .limit(200),
-    ]);
-
-    const dbAlerts = ((alertsRes.data as any[]) || []).map(mapRow);
-    setRows(dbAlerts);
-
-    const out: UnifiedAlert[] = [];
-    // Dedupe por SITUAÇÃO concreta (tipo + título), nunca por tipo inteiro:
-    // um alerta guardado não pode apagar todos os derivados da mesma família.
-    const openDbKeys = new Set(
-      dbAlerts
-        .filter((a) => a.status === "pending" || a.status === "sent")
-        .map((a) => `${a.type}|${(a.title || "").toLowerCase()}`),
-    );
-
-    // ---- STOCK: um alerta por peça, com link para a peça ----
-    for (const p of ((partsRes.data as any[]) || [])) {
-      const min = Number(p.min_stock || 0);
-      const qty = Number(p.stock_quantity || 0);
-      if (min <= 0 || qty > min) continue;
-      const rupture = qty <= 0;
-      out.push(
-        derivedAlert({
-          id: `derived:part:${p.id}`,
-          shopId: p.shop_id,
-          type: rupture ? "stock_out" : "stock_low",
-          title: rupture ? `Rutura de stock — ${p.name}` : `Stock abaixo do mínimo — ${p.name}`,
-          subtitle: p.reference ? `Ref. ${p.reference}` : null,
-          message: `Stock atual: ${qty} · mínimo: ${min}`,
-          priority: rupture ? "critical" : "high",
-          link: `/stock?search=${encodeURIComponent(p.reference || p.name)}`,
-        }),
-      );
+    try {
+      const res = await sharedAlertsFetch(idsKey, maxAgeMs, () => fetchAlertsData(ids));
+      setRows(res.rows);
+      setDerived(res.visible);
+      setDerivedState(res.states);
+    } finally {
+      setLoading(false);
     }
-
-    // ---- FINANCEIRO: um alerta por fatura vencida, com link para a fatura ----
-    for (const inv of ((overdueRes.data as any[]) || [])) {
-      const late = daysSince(inv.due_date);
-      out.push(
-        derivedAlert({
-          id: `derived:invoice:${inv.id}`,
-          shopId: inv.shop_id,
-          type: "invoice_overdue",
-          title: `Fatura ${inv.number} vencida`,
-          subtitle: clientDisplayName(inv.clients as any) || null,
-          message: `${money(inv.total)} · vencida ${dayLabel(late)}`,
-          priority: late >= 30 ? "critical" : "high",
-          dueDate: inv.due_date,
-          link: `/invoices?search=${encodeURIComponent(inv.number)}`,
-        }),
-      );
-    }
-
-    // ---- MARCAÇÕES: pedidos por responder, com link para a marcação ----
-    for (const ap of ((apptRes.data as any[]) || [])) {
-      const name = clientDisplayName(ap.clients as any) || ap.client_name || "Cliente";
-      const when = `${new Date(ap.date).toLocaleDateString("pt-PT")} às ${String(ap.time).slice(0, 5)}`;
-      out.push(
-        derivedAlert({
-          id: `derived:appointment:${ap.id}`,
-          shopId: ap.shop_id,
-          type: "appointment_new",
-          title: "Nova marcação recebida",
-          subtitle: name,
-          message: `${when}${ap.service_type ? ` · ${ap.service_type}` : ""}`,
-          priority: "high",
-          dueDate: ap.date,
-          link: `/agenda?appointment=${ap.id}`,
-        }),
-      );
-    }
-
-    // ---- SERVIÇOS: atrasados e veículos prontos por levantar ----
-    const orders = (ordersRes.data as any[]) || [];
-    const convertedQuoteIds = new Set(orders.map((o) => o.quote_id).filter(Boolean));
-    for (const o of orders) {
-      const veh = (o.vehicles as any) || null;
-      const vehLabel = veh ? `${veh.make || ""} ${veh.model || ""} — ${veh.plate || ""}`.trim() : null;
-      const subtitle = [clientDisplayName(o.clients as any), vehLabel].filter(Boolean).join(" · ") || null;
-
-      // Veículo já entregue = situação encerrada, sem alerta.
-      if (o.delivered_at) continue;
-      if (o.status === "completed") {
-        // Só depois de 2 dias — evita alertar logo após marcar como pronto.
-        const waiting = daysSince(o.completed_at || o.created_at);
-        if (waiting >= 2) {
-          out.push(
-            derivedAlert({
-              id: `derived:pickup:${o.id}`,
-              shopId: o.shop_id,
-              type: "vehicle_ready",
-              title: `Veículo pronto por levantar — ${o.number}`,
-              subtitle,
-              message: `Concluído ${dayLabel(waiting)}`,
-              priority: waiting >= 7 ? "critical" : "high",
-              link: `/services?search=${encodeURIComponent(o.number)}`,
-            }),
-          );
-        }
-        continue;
-      }
-
-      const running = daysSince(o.created_at);
-      if (running >= 7) {
-        out.push(
-          derivedAlert({
-            id: `derived:late-order:${o.id}`,
-            shopId: o.shop_id,
-            type: "service_late",
-            title: `Serviço atrasado — ${o.number}`,
-            subtitle,
-            message: `Em curso ${dayLabel(running)}`,
-            priority: running >= 14 ? "critical" : "high",
-            link: `/services?search=${encodeURIComponent(o.number)}`,
-          }),
-        );
-      }
-    }
-
-    // ---- ORÇAMENTOS: aprovados sem ação e enviados sem resposta ----
-    for (const q of ((quotesRes.data as any[]) || [])) {
-      const clientName = clientDisplayName(q.clients as any) || null;
-      if (q.status === "approved") {
-        // Já convertido em serviço = ação tratada, não gera alerta.
-        if (convertedQuoteIds.has(q.id)) continue;
-        out.push(
-          derivedAlert({
-            id: `derived:quote-approved:${q.id}`,
-            shopId: q.shop_id,
-            type: "quote_approved",
-            title: `Orçamento ${q.number} aprovado`,
-            subtitle: clientName,
-            message: `${money(q.total)} · falta abrir o serviço`,
-            priority: "high",
-            link: `/quotes?search=${encodeURIComponent(q.number)}`,
-          }),
-        );
-        continue;
-      }
-      const sentDays = daysSince(q.created_at || q.date);
-      if (sentDays >= 3) {
-        out.push(
-          derivedAlert({
-            id: `derived:quote-pending:${q.id}`,
-            shopId: q.shop_id,
-            type: "quote_pending",
-            title: `Orçamento ${q.number} aguarda aprovação`,
-            subtitle: clientName,
-            message: `${money(q.total)} · enviado ${dayLabel(sentDays)}`,
-            priority: "low",
-            link: `/quotes?search=${encodeURIComponent(q.number)}`,
-          }),
-        );
-      }
-    }
-
-    const visible = out
-      .filter((a) => !openDbKeys.has(`${a.type}|${a.title.toLowerCase()}`))
-      // Assinatura = estado concreto da situação. Se mudar (novo valor,
-      // mais dias de atraso, outra prioridade) o alerta reabre sozinho.
-      .map((a) => ({ ...a, signature: `${a.priority}|${a.message ?? ""}` }));
-    setDerived(visible);
-
-    // Estado guardado (lido/resolvido) dos alertas calculados.
-    const keys = visible.map((a) => a.id);
-    if (keys.length) {
-      const { data: states } = await supabase
-        .from("alert_states")
-        .select("alert_key, signature, read_at, resolved_at")
-        .in("shop_id", ids)
-        .in("alert_key", keys);
-      const map: Record<string, DerivedState> = {};
-      for (const s of ((states as any[]) || [])) {
-        map[s.alert_key] = {
-          signature: s.signature ?? null,
-          read_at: s.read_at ?? null,
-          resolved_at: s.resolved_at ?? null,
-          status: s.resolved_at ? "resolved" : null,
-        };
-      }
-      setDerivedState(map);
-    } else {
-      setDerivedState({});
-    }
-    setLoading(false);
   }, [idsKey]);
 
 

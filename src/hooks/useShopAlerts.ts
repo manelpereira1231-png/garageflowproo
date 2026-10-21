@@ -161,6 +161,9 @@ const today = () => new Date().toISOString().slice(0, 10);
  */
 const alertSyncListeners = new Set<() => void>();
 function notifyAlertSync() {
+  // Depois de gravar, a leitura anterior já não serve: o primeiro sítio lê de
+  // novo e os restantes reutilizam essa mesma leitura.
+  invalidateAlertsCache();
   for (const fn of Array.from(alertSyncListeners)) fn();
 }
 
@@ -445,7 +448,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
   useEffect(() => { void load(); }, [load]);
   // Quando o país da oficina é confirmado (ex.: BR → R$), recalcula os valores.
   useEffect(() => {
-    const onCountry = () => { void load(); };
+    const onCountry = () => { invalidateAlertsCache(); void load(ALERTS_EVENT_MS); };
     window.addEventListener("garageflow:pricing-updated", onCountry);
     return () => window.removeEventListener("garageflow:pricing-updated", onCountry);
   }, [load]);
@@ -453,16 +456,21 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
   // Tempo real: além dos alertas guardados, escutamos as origens reais para
   // que um alerta desapareça sozinho quando a situação é resolvida
   // (fatura paga, stock reposto, marcação tratada, serviço entregue).
+  // Só escutamos as oficinas deste utilizador (filtro por oficina): alterações
+  // noutras oficinas deixam de provocar novas leituras.
   useEffect(() => {
     if (!idsKey) return;
     let timer: any;
     const schedule = () => {
       clearTimeout(timer);
-      timer = setTimeout(() => void load(), 600);
+      timer = setTimeout(() => void load(ALERTS_EVENT_MS), 600);
     };
-    let ch = supabase.channel(`gf-alerts-${idsKey}`);
-    for (const table of ["alerts", "alert_states", "parts", "invoices", "appointments", "work_orders", "quotes"]) {
-      ch = ch.on("postgres_changes", { event: "*", schema: "public", table }, schedule);
+    const suffix = Math.random().toString(36).slice(2, 8);
+    let ch = supabase.channel(`gf-alerts-${idsKey}-${suffix}`);
+    for (const id of idsKey.split(",")) {
+      for (const table of ["alerts", "alert_states", "parts", "invoices", "appointments", "work_orders", "quotes"]) {
+        ch = ch.on("postgres_changes", { event: "*", schema: "public", table, filter: `shop_id=eq.${id}` }, schedule);
+      }
     }
     ch.subscribe();
     return () => { clearTimeout(timer); supabase.removeChannel(ch); };
@@ -471,7 +479,7 @@ export function useShopAlerts(options?: { shopIds?: string[] | null }) {
   // Sincronização instantânea entre o contador do menu, o dashboard e a página
   // de alertas: ler/resolver num sítio atualiza os outros no mesmo instante.
   useEffect(() => {
-    const listener = () => { void load(); };
+    const listener = () => { void load(ALERTS_EVENT_MS); };
     alertSyncListeners.add(listener);
     return () => { alertSyncListeners.delete(listener); };
   }, [load]);

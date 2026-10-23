@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthReady } from "@/hooks/useAuthReady";
+import { SHOP_CONTEXT_EVENT } from "@/lib/shopContextSync";
 
 export interface OwnedShop {
   id: string;
@@ -57,6 +58,16 @@ export function invalidateOwnedShops() {
 
 export function useOwnedShops() {
   const { isReady, user } = useAuthReady();
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    const refresh = (event: Event) => {
+      if ((event as CustomEvent).detail?.reason !== "branding-updated") return;
+      invalidateOwnedShops();
+      setRevision(v => v + 1);
+    };
+    window.addEventListener(SHOP_CONTEXT_EVENT, refresh);
+    return () => window.removeEventListener(SHOP_CONTEXT_EVENT, refresh);
+  }, []);
   const [shops, setShops] = useState<OwnedShop[]>(() =>
     user && cache?.userId === user.id ? cache.shops : [],
   );
@@ -73,7 +84,7 @@ export function useOwnedShops() {
       setLoading(false);
     })();
     return () => { alive = false; };
-  }, [isReady, user]);
+  }, [isReady, user, revision]);
 
   const primaryShopId = shops[0]?.id ?? null;
   return { shops, primaryShopId, loading };

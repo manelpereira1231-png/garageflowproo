@@ -13,6 +13,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { VAT_RATES } from "@/types/garage";
 import type { Language } from "@/i18n/translations";
 import { useShopContext } from "@/hooks/useShopContext";
+import { uploadShopLogo, validateShopLogo, confirmShopLogo, refreshShopBranding } from "@/lib/shopLogo";
 import { setActiveShopAndSync } from "@/lib/shopContextSync";
 import { getDefaultTimezone, getCountryConfig, getCountryCode as getActiveCountryCode, getTaxLabel } from "@/lib/regionConfig";
 
@@ -128,22 +129,9 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error(t('error.maxFileSize'));
-      return;
-    }
+    try { validateShopLogo(file); } catch (error) { toast.error(error instanceof Error ? error.message : "Imagem inválida."); return; }
     setLogoFile(file);
     setLogoPreview(URL.createObjectURL(file));
-  };
-
-  const uploadLogo = async (shopId: string): Promise<string | null> => {
-    if (!logoFile) return null;
-    const ext = logoFile.name.split('.').pop();
-    const path = `${shopId}/logo.${ext}`;
-    const { error } = await supabase.storage.from("shop-logos").upload(path, logoFile, { upsert: true });
-    if (error) { console.error(error); return null; }
-    const { data } = supabase.storage.from("shop-logos").getPublicUrl(path);
-    return data.publicUrl;
   };
 
   const friendlyError = (raw: string | undefined): string => {
@@ -216,8 +204,9 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
         shop = newShop as any;
       }
 
-      // Upload logo if provided
-      const logoUrl = await uploadLogo(shop!.id);
+      if (!shop) throw new Error("Oficina não encontrada.");
+      // Upload must succeed before onboarding can be confirmed.
+      const logoUrl = logoFile ? await uploadShopLogo(shop.id, logoFile) : null;
 
       // Build update payload. Only include country/currency when they haven't
       // been set yet on the shop row — the DB trigger blocks changes after
@@ -234,8 +223,8 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
         address: form.address,
         timezone: form.timezone,
       };
-      if (!shop!.country) updatePayload.country = form.country;
-      if (!shop!.currency) updatePayload.currency = form.currency;
+      if (!shop.country) updatePayload.country = form.country;
+      if (!shop.currency) updatePayload.currency = form.currency;
       if (logoUrl) updatePayload.logo_url = logoUrl;
       // Fonte de verdade única: só aqui, após guardar com sucesso, o onboarding
       // é marcado como concluído no backend. Se este update falhar, o wizard
@@ -243,13 +232,16 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
       updatePayload.onboarding_completed_at = new Date().toISOString();
 
 
-      console.info("[onboarding] shop update payload", { shopId: shop!.id, updatePayload });
-      const { error } = await supabase.from("shops").update(updatePayload).eq("id", shop!.id);
-      if (error) {
-        logOnboardingError("shop update failed", error, { shopId: shop!.id, updatePayload });
-        toast.error(friendlyError(error.message));
+      console.info("[onboarding] shop update payload", { shopId: shop.id, updatePayload });
+      const { data: savedShop, error } = await supabase.from("shops").update(updatePayload).eq("id", shop.id).select("id, logo_url").single();
+      if (error || !savedShop) {
+        logOnboardingError("shop update failed", error, { shopId: shop.id, updatePayload });
+        toast.error(friendlyError(error?.message));
         return;
       }
+
+      if (logoUrl) await confirmShopLogo(shop.id, logoUrl);
+      refreshShopBranding();
 
       // Create default alerts
       const alertTypes = [];
@@ -259,13 +251,13 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
 
       if (alertTypes.length > 0) {
         await supabase.from("alerts").insert(
-          alertTypes.map(a => ({ ...a, shop_id: shop!.id, status: "pending" }))
+          alertTypes.map(a => ({ ...a, shop_id: shop.id, status: "pending" }))
         );
       }
 
       // Official primitive: writes localStorage + broadcasts to every live
       // useShopContext instance in a single, ordered operation.
-      await setActiveShopAndSync(shop!.id, { reason: "onboarding-complete" });
+      await setActiveShopAndSync(shop.id, { reason: "onboarding-complete" });
       setLanguage(form.language as Language);
 
       // Rehydrate THIS instance too (the wizard's own hook copy), so any
@@ -440,7 +432,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                     </div>
                   )}
                 </div>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+                <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={handleLogoChange} />
                 <p className="text-xs text-muted-foreground">PNG, JPG, SVG · max 2MB</p>
               </div>
               {/* PDF Preview hint */}

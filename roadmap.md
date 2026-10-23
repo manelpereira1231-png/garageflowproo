@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Auditar e corrigir persistência do logótipo da oficina, com confirmação de gravação e atualização da identidade visual.
+- [ ] Auditar e integrar próximas revisões na oficina e portal existente, com marcos 14/7/1 dias, deduplicação e testes reais seguros.
+
 - [x] Compactar filtros da lista de Sinistros e ligar seguradoras aos seus processos e ações existentes; verificado no computador e telemóvel com respostas simuladas, sem alterar dados; contexto de orçamento/serviço e seguradora pré-selecionada confirmados; 16 testes PT/BR aprovados.
 
 - [x] Simplificar o fluxo dos Sinistros com divulgação progressiva e ação direta para preparar o pedido ao perito; identidade da viatura no pacote; 16 testes PT/BR aprovados e vistas desktop/mobile verificadas com dados simulados, sem gravações ou envios reais.

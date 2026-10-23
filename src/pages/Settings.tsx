@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { invalidateOwnedShops } from "@/hooks/useOwnedShops";
+import { uploadShopLogo, validateShopLogo, confirmShopLogo, refreshShopBranding } from "@/lib/shopLogo";
+import { getCurrentUser } from "@/hooks/useAuthUser";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +45,10 @@ export default function SettingsPage() {
   const { isChildShop } = useIsChildShop();
   const activeShopId = useActiveShopId();
   const [loading, setLoading] = useState(false);
+  const [loadingShop, setLoadingShop] = useState(true);
+  const persistedLogo = useRef<string | null>(null);
+  const previewObject = useRef<string | null>(null);
+  const saving = useRef(false);
   const [shopId, setShopId] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -72,6 +78,9 @@ export default function SettingsPage() {
   const [openingHours, setOpeningHours] = useState<OpeningHours>(DEFAULT_OPENING_HOURS);
 
   useEffect(() => {
+    let alive = true;
+    setLoadingShop(true);
+    setShopId(null);
     const load = async () => {
       let shopData: any = null;
       if (activeShopId) {
@@ -89,6 +98,7 @@ export default function SettingsPage() {
         shopData = (data || []).find((s: any) => (s.name || "").trim().length > 0) ?? data?.[0];
       }
 
+      if (!alive) return;
       if (shopData) {
         const cc = (shopData.country_code || "PT").toUpperCase();
         const cfg = getCountryConfig(cc);
@@ -106,37 +116,38 @@ export default function SettingsPage() {
           nif: shopData.nif || "", address: shopData.address || "", state_registration: (shopData as any).state_registration || "", municipal_registration: (shopData as any).municipal_registration || "", tax_regime: (shopData as any).tax_regime || "",
           timezone: shopData.timezone || getDefaultTimezone(cc),
         });
-        setLogoPreview(shopData.logo_url || null);
+        persistedLogo.current = shopData.logo_url || null;
+        setLogoPreview(persistedLogo.current);
         if (shopData.opening_hours) setOpeningHours(shopData.opening_hours as OpeningHours);
       }
     };
-    load();
+    void load().catch(() => { if (alive) toast.error("Não foi possível carregar a oficina."); }).finally(() => { if (alive) setLoadingShop(false); });
+    return () => { alive = false; };
   }, [activeShopId]);
+
+  useEffect(() => () => { if (previewObject.current) URL.revokeObjectURL(previewObject.current); }, []);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { toast.error(t('error.maxFileSize')); return; }
+    try { validateShopLogo(file); } catch (error) { toast.error(error instanceof Error ? error.message : "Imagem inválida."); return; }
+    if (previewObject.current) URL.revokeObjectURL(previewObject.current);
+    previewObject.current = URL.createObjectURL(file);
     setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
+    setLogoPreview(previewObject.current);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving.current || loadingShop || (activeShopId && shopId !== activeShopId)) return;
+    saving.current = true;
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { toast.error(t('common.sessionExpired')); setLoading(false); return; }
-
-    let logoUrl: string | undefined;
-    if (logoFile && shopId) {
-      const ext = logoFile.name.split('.').pop();
-      const path = `${shopId}/logo.${ext}`;
-      const { error: upErr } = await supabase.storage.from("shop-logos").upload(path, logoFile, { upsert: true });
-      if (!upErr) {
-        const { data: urlData } = supabase.storage.from("shop-logos").getPublicUrl(path);
-        logoUrl = urlData.publicUrl;
-      }
-    }
+    const targetShopId = shopId;
+    try {
+      const user = await getCurrentUser();
+      if (!user) throw new Error(t('common.sessionExpired'));
+      let logoUrl: string | undefined;
+      if (logoFile && targetShopId) logoUrl = await uploadShopLogo(targetShopId, logoFile);
 
     // NOTE: `country`, `country_code` and `currency` are intentionally
     // omitted here — the shop's country is fixed at creation and can only
@@ -150,26 +161,44 @@ export default function SettingsPage() {
     };
     if (logoUrl) payload.logo_url = logoUrl;
 
-    if (shopId) {
-      const { error } = await supabase.from("shops").update(payload).eq("id", shopId);
-      if (error) toast.error(error.message);
-      else {
+    if (targetShopId) {
+      const { data, error } = await supabase.from("shops").update(payload).eq("id", targetShopId).select("id, logo_url").single();
+      if (error || !data) throw error || new Error("Não foi possível guardar a oficina.");
+      if (logoUrl) await confirmShopLogo(targetShopId, logoUrl);
+      persistedLogo.current = data.logo_url;
+      if (!activeShopId || localStorage.getItem("garageflow_active_shop") === targetShopId) {
+        setLogoPreview(data.logo_url);
+        setLogoFile(null);
         setLanguage(form.language as Language);
-        toast.success(t('settings.saved'));
       }
+      refreshShopBranding();
+      toast.success(t('settings.saved'));
     } else {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error(t('common.sessionExpired') || "Sessão expirada"); setLoading(false); return; }
       const { data, error } = await supabase.from("shops").insert({ ...payload, user_id: user.id }).select().single();
-      invalidateOwnedShops();
-      if (error) toast.error(error.message);
-      else {
-        setShopId(data.id);
-        setLanguage(form.language as Language);
-        toast.success(t('settings.configured'));
+      if (error || !data) throw error || new Error("Não foi possível criar a oficina.");
+      // A selected logo also works when a shop is created from this screen.
+      if (logoFile) {
+        const createdLogo = await uploadShopLogo(data.id, logoFile);
+        const { error: logoError } = await supabase.from("shops").update({ logo_url: createdLogo }).eq("id", data.id).select("id").single();
+        if (logoError) throw logoError;
+        await confirmShopLogo(data.id, createdLogo);
+        persistedLogo.current = createdLogo;
+        setLogoPreview(createdLogo);
+        setLogoFile(null);
       }
+      setShopId(data.id);
+      invalidateOwnedShops();
+      refreshShopBranding();
+      setLanguage(form.language as Language);
+      toast.success(t('settings.configured'));
     }
-    setLoading(false);
+    } catch (error) {
+      setLogoPreview(persistedLogo.current);
+      toast.error(error instanceof Error ? error.message : "Não foi possível guardar. O logótipo anterior foi mantido.");
+    } finally {
+      saving.current = false;
+      setLoading(false);
+    }
   };
 
   const bookingUrl = shopSlug ? `https://garageflow.pt/book/${shopSlug}` : "";
@@ -236,6 +265,7 @@ export default function SettingsPage() {
       </Card>
 
       <form onSubmit={handleSave} className="space-y-5">
+        <fieldset disabled={loading || loadingShop} className="space-y-5">
         {/* Logo & Branding */}
         <Card>
           <CardHeader className="pb-3">
@@ -258,7 +288,7 @@ export default function SettingsPage() {
               <div>
                 <p className="text-sm font-medium">{t('settings.shopLogo')}</p>
                 <p className="text-xs text-muted-foreground">{t('settings.logoDescription')}</p>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+                <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={handleLogoChange} />
               </div>
             </div>
             {!isChildShop && (
@@ -523,6 +553,7 @@ export default function SettingsPage() {
         <Button type="submit" className="w-full" disabled={loading} size="lg">
           {loading ? t('settings.saving') : t('settings.save')}
         </Button>
+        </fieldset>
       </form>
     </div>
   );

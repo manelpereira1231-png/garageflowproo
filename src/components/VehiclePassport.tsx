@@ -13,6 +13,13 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { formatMoney } from "@/lib/money";
 import { autoFormatPlate, detectRegionFromCurrency, canonicalPlate } from "@/lib/plateFormat";
 import { getLocaleForCurrency } from "@/lib/regionLabels";
+import NextServiceSummary from '@/components/NextServiceSummary';
+import { parseReminderKm } from '@/lib/serviceReminder';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useShopRole } from '@/hooks/useShopRole';
+import { toast } from 'sonner';
 
 interface VehiclePassportProps {
   vehicleId: string;
@@ -72,6 +79,10 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
   const [quotesByWo, setQuotesByWo] = useState<Record<string, { id: string; number: string }>>({});
   const [attachments, setAttachments] = useState<any[]>([]);
   const [reminders, setReminders] = useState<any[]>([]);
+  const { can } = useShopRole();
+  const [reminderEdit, setReminderEdit] = useState<any>(null);
+  const [reminderBusy, setReminderBusy] = useState(false);
+  const [reminderRevision, setReminderRevision] = useState(0);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [warranties, setWarranties] = useState<any[]>([]);
   const [timesByWo, setTimesByWo] = useState<Record<string, number>>({});
@@ -86,7 +97,7 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
         supabase.from("vehicles").select("*, clients(name, company, nif)").eq("id", vehicleId).maybeSingle(),
         supabase.from("vehicle_global_history").select("*").eq("vehicle_id", vehicleId).order("event_date", { ascending: false }).limit(200),
         supabase.from("work_orders").select("id, number, status, total, created_at, completed_at, entry_mileage, technician, diagnosis, client_description, notes, lines, quote_id").eq("vehicle_id", vehicleId).order("created_at", { ascending: false }).limit(50),
-        supabase.from("service_reminders").select("id, service_type, next_service_date, next_service_km, status").eq("vehicle_id", vehicleId).eq("status", "pending").order("next_service_date", { ascending: true }).limit(10),
+        supabase.from("service_reminders").select("id, service_type, next_service_date, next_service_km, status, client_id, work_order_id").eq("vehicle_id", vehicleId).eq("status", "pending").order("next_service_date", { ascending: true }).limit(10),
         // Garantias — relação direta existente (warranties.vehicle_id). Sem tabela nova.
         supabase.from("warranties").select("id, type, description, start_date, end_date, status, work_order_id").eq("vehicle_id", vehicleId).order("start_date", { ascending: false }).limit(20),
       ]);
@@ -169,7 +180,28 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
       setLoading(false);
     };
     load();
-  }, [open, vehicleId]);
+  }, [open, vehicleId, reminderRevision]);
+
+  const saveReminder = async (cancel = false) => {
+    if (!reminderEdit || !vehicle || reminderBusy) return;
+    setReminderBusy(true);
+    try {
+      if (cancel && reminderEdit.id) {
+        const { error } = await supabase.from('service_reminders').update({ status: 'cancelled' }).eq('id', reminderEdit.id).eq('shop_id', vehicle.shop_id).select('id').single();
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.rpc('save_service_reminder', {
+          _shop_id: vehicle.shop_id, _vehicle_id: vehicleId, _client_id: vehicle.client_id,
+          _work_order_id: reminderEdit.work_order_id || null, _date: reminderEdit.next_service_date || null,
+          _km: parseReminderKm(reminderEdit.km), _service_type: reminderEdit.service_type || 'revision',
+        });
+        if (error) throw error;
+      }
+      setReminderEdit(null); setReminderRevision(v => v + 1);
+      toast.success(cancel ? 'Revisão cancelada' : 'Próxima revisão guardada');
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Não foi possível guardar a revisão.'); }
+    finally { setReminderBusy(false); }
+  };
 
   // ─── Formatação regional (PT / BR / ES / …) — reutiliza a lógica global ───
   const numberLocale = getLocaleForCurrency(shopMeta?.currency);
@@ -410,6 +442,23 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
               )}
 
               {/* Próxima manutenção — apenas registos reais (service_reminders). */}
+              {uniqueReminders.length === 0 && <NextServiceSummary language={language} />}
+              {can('clients.edit') && <div className="space-y-3">
+                {!reminderEdit ? <Button variant="outline" onClick={() => {
+                  const r = uniqueReminders[0];
+                  setReminderEdit({ ...r, next_service_date: r?.next_service_date || '', km: r?.next_service_km == null ? '' : String(r.next_service_km) });
+                }}>{uniqueReminders.length ? 'Alterar próxima revisão' : 'Agendar próxima revisão'}</Button> : <div className="space-y-3">
+                  <Label htmlFor="next-revision-date">Data da próxima revisão</Label>
+                  <Input id="next-revision-date" type="date" value={reminderEdit.next_service_date} onChange={e => setReminderEdit({ ...reminderEdit, next_service_date: e.target.value })} />
+                  <Label htmlFor="next-revision-km">Quilometragem (opcional)</Label>
+                  <Input id="next-revision-km" type="number" min={0} max={600000} value={reminderEdit.km} onChange={e => setReminderEdit({ ...reminderEdit, km: e.target.value })} />
+                  <div className="flex flex-wrap gap-2">
+                    <Button disabled={reminderBusy || (!reminderEdit.next_service_date && !reminderEdit.km)} onClick={() => saveReminder()}>Guardar</Button>
+                    {reminderEdit.id && <Button variant="destructive" disabled={reminderBusy} onClick={() => saveReminder(true)}>Cancelar revisão</Button>}
+                    <Button variant="outline" disabled={reminderBusy} onClick={() => setReminderEdit(null)}>Fechar</Button>
+                  </div>
+                </div>}
+              </div>}
               {uniqueReminders.length > 0 && (
                 <div>
                   <SectionTitle>{t("passport.nextService", "Próxima manutenção")}</SectionTitle>

@@ -23,71 +23,17 @@ serve(async (req: Request) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceRoleKey) throw new Error('Missing server configuration');
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Find reminders due within the next 7 days that haven't been notified
-    const inSevenDays = new Date();
-    inSevenDays.setDate(inSevenDays.getDate() + 7);
-    const today = new Date().toISOString().split("T")[0];
-    const futureDate = inSevenDays.toISOString().split("T")[0];
-
-    const { data: reminders, error: fetchError } = await supabase
-      .from("service_reminders")
-      .select("*, vehicles(make, model, plate, mileage), clients(name, email, phone)")
-      .eq("status", "pending")
-      .is("notified_at", null)
-      .lte("next_service_date", futureDate)
-      .gte("next_service_date", today);
-
-    if (fetchError) {
-      console.error("Error fetching reminders:", fetchError);
-      return new Response(JSON.stringify({ error: fetchError.message }), {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
-
-    let alertsCreated = 0;
-
-    for (const reminder of reminders || []) {
-      const client = reminder.clients as any;
-      const vehicle = reminder.vehicles as any;
-      const clientName = client?.name || "Cliente";
-      const vehicleInfo = vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.plate})` : "";
-      const daysUntil = Math.ceil(
-        (new Date(reminder.next_service_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-      );
-
-      // Create alert for the shop
-      const { error: alertError } = await supabase.from("alerts").insert({
-        shop_id: reminder.shop_id,
-        client_id: reminder.client_id,
-        vehicle_id: reminder.vehicle_id,
-        type: "revision",
-        priority: daysUntil <= 3 ? "high" : "medium",
-        title: `${clientName} – Revisão em ${daysUntil} dias`,
-        message: `O veículo ${vehicleInfo} tem revisão agendada para ${reminder.next_service_date}.${reminder.next_service_km ? ` Próxima revisão aos ${reminder.next_service_km} km.` : ""}`,
-        status: "pending",
-      });
-
-      if (!alertError) {
-        // Mark as notified
-        await supabase
-          .from("service_reminders")
-          .update({ notified_at: new Date().toISOString() })
-          .eq("id", reminder.id);
-        alertsCreated++;
-      } else {
-        console.error("Error creating alert for reminder", reminder.id, alertError);
-      }
-    }
-
-    console.log(`check-reminders: processed ${reminders?.length || 0} reminders, created ${alertsCreated} alerts`);
+    // One transaction locks each reminder and records both the notice and its milestone.
+    const { data: notificationsCreated, error } = await supabase.rpc('process_service_reminders');
+    if (error) throw error;
 
     return new Response(
-      JSON.stringify({ success: true, processed: reminders?.length || 0, alertsCreated }),
+      JSON.stringify({ success: true, notificationsCreated }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {

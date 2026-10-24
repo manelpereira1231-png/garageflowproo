@@ -62,6 +62,8 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [planLabel, setPlanLabel] = useState<string>("Start");
   const fileRef = useRef<HTMLInputElement>(null);
+  const logoObjectUrl = useRef<string | null>(null);
+  useEffect(() => () => { if (logoObjectUrl.current) URL.revokeObjectURL(logoObjectUrl.current); }, []);
   const initialCountryCfg = getCountryConfig();
   const [form, setForm] = useState({
     name: "", email: "", phone: "",
@@ -128,10 +130,13 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
     try { validateShopLogo(file); } catch (error) { toast.error(error instanceof Error ? error.message : "Imagem inválida."); return; }
     setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
+    if (logoObjectUrl.current) URL.revokeObjectURL(logoObjectUrl.current);
+    logoObjectUrl.current = URL.createObjectURL(file);
+    setLogoPreview(logoObjectUrl.current);
   };
 
   const friendlyError = (raw: string | undefined): string => {
@@ -240,8 +245,10 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
         return;
       }
 
-      if (logoUrl) await confirmShopLogo(shop.id, logoUrl);
+      setLogoPreview(savedShop.logo_url);
+      setLogoFile(null);
       refreshShopBranding();
+      if (logoUrl) await confirmShopLogo(shop.id, logoUrl);
 
       // Create default alerts
       const alertTypes = [];

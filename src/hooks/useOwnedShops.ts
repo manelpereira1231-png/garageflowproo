@@ -36,14 +36,17 @@ async function fetchOwnedShops(userId: string): Promise<OwnedShop[]> {
   if (cache && cache.userId === userId && Date.now() - cache.at < CACHE_TTL_MS) return cache.shops;
   if (inflight && inflight.userId === userId) return inflight.p;
   const p = (async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("shops")
       .select("id, name, address, currency, logo_url, created_at")
       .eq("group_owner_id", userId)
       .order("created_at", { ascending: true });
+    if (error) throw error;
     const list = ((data as OwnedShop[]) ?? []).filter((s) => (s.name || "").trim().length > 0);
-    cache = { userId, at: Date.now(), shops: list };
-    inflight = null;
+    if (inflight?.p === p) {
+      cache = { userId, at: Date.now(), shops: list };
+      inflight = null;
+    }
     return list;
   })();
   inflight = { userId, p };
@@ -78,10 +81,14 @@ export function useOwnedShops() {
     if (!user) { setShops([]); setLoading(false); return; }
     let alive = true;
     (async () => {
-      const list = await fetchOwnedShops(user.id);
-      if (!alive) return;
-      setShops(list);
-      setLoading(false);
+      try {
+        const list = await fetchOwnedShops(user.id);
+        if (alive) setShops(list);
+      } catch {
+        if (inflight?.userId === user.id) inflight = null;
+      } finally {
+        if (alive) setLoading(false);
+      }
     })();
     return () => { alive = false; };
   }, [isReady, user, revision]);

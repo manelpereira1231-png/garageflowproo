@@ -19,6 +19,8 @@ import { PortalPushToggle } from "@/components/PortalPushToggle";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { sendEmail } from "@/lib/emailService";
+import NextServiceSummary from '@/components/NextServiceSummary';
+import { activeReminderMilestones, type ServiceReminder } from '@/lib/serviceReminder';
 
 const translations: Record<string, Record<string, string>> = {
   pt: {
@@ -371,6 +373,7 @@ export default function ClientPortal() {
   const [quotes, setQuotes] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
+  const [reminders, setReminders] = useState<ServiceReminder[]>([]);
   const [inspections, setInspections] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -455,6 +458,9 @@ export default function ClientPortal() {
       setQuotes(normalizeWithVehicle(payload.quotes || []));
       setInvoices(normalizeWithVehicle(payload.invoices || []));
       setVehicles(payload.vehicles || []);
+      const { data: reminderData, error: reminderError } = await supabase.rpc('get_client_portal_reminders', { _token: token });
+      if (!reminderError && Array.isArray(reminderData)) setReminders(reminderData as unknown as ServiceReminder[]);
+      else if (reminderError) toast.error('Não foi possível carregar as próximas revisões.');
       // Inspeções feitas em Modo Oficina (checklists) associadas a este cliente
       setInspections(
         (payload.inspections || []).map((i: any) => ({
@@ -735,6 +741,13 @@ export default function ClientPortal() {
         </div>
 
         {/* Tabs */}
+        {reminders.filter(r => activeReminderMilestones(r, new Date().toLocaleDateString('en-CA')).length > 0).map(r => {
+          const v = vehicles.find(v => v.id === r.vehicle_id);
+          return <div key={r.id} className="border-l-2 border-primary py-2 px-3 mb-4 text-sm">
+            <p className="font-medium">{t('notifications')} · {v?.make} {v?.model} · {v?.plate}</p>
+            <NextServiceSummary reminder={r} language={lang} />
+          </div>;
+        })}
         <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
           {tabs.map(tab => (
             <button
@@ -981,6 +994,7 @@ export default function ClientPortal() {
                       <p className="text-xs text-muted-foreground">{vServices.length} {t('serviceHistory').toLowerCase()}</p>
                     </div>
                   </div>
+                  <NextServiceSummary reminder={reminders.find(r => r.vehicle_id === v.id)} language={lang} />
                 </div>
               );
             })

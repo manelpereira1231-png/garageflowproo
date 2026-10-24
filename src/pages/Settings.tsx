@@ -129,6 +129,7 @@ export default function SettingsPage() {
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
     try { validateShopLogo(file); } catch (error) { toast.error(error instanceof Error ? error.message : "Imagem inválida."); return; }
     if (previewObject.current) URL.revokeObjectURL(previewObject.current);
@@ -164,8 +165,13 @@ export default function SettingsPage() {
     if (targetShopId) {
       const { data, error } = await supabase.from("shops").update(payload).eq("id", targetShopId).select("id, logo_url").single();
       if (error || !data) throw error || new Error("Não foi possível guardar a oficina.");
+      if (localStorage.getItem("garageflow_active_shop") === targetShopId) {
+        persistedLogo.current = data.logo_url;
+        setLogoPreview(data.logo_url);
+        setLogoFile(null);
+      }
+      refreshShopBranding();
       if (logoUrl) await confirmShopLogo(targetShopId, logoUrl);
-      persistedLogo.current = data.logo_url;
       if (!activeShopId || localStorage.getItem("garageflow_active_shop") === targetShopId) {
         setLogoPreview(data.logo_url);
         setLogoFile(null);
@@ -193,8 +199,11 @@ export default function SettingsPage() {
       toast.success(t('settings.configured'));
     }
     } catch (error) {
-      setLogoPreview(persistedLogo.current);
-      toast.error(error instanceof Error ? error.message : "Não foi possível guardar. O logótipo anterior foi mantido.");
+      if (!targetShopId || localStorage.getItem("garageflow_active_shop") === targetShopId) {
+        setLogoPreview(persistedLogo.current);
+        setLogoFile(null);
+      }
+      toast.error(error instanceof Error ? error.message : "Não foi possível confirmar a gravação. Volte a tentar.");
     } finally {
       saving.current = false;
       setLoading(false);

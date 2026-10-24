@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Auditar e corrigir persistência do logótipo da oficina, com confirmação de gravação e atualização da identidade visual.
-- [ ] Auditar e integrar próximas revisões na oficina e portal existente, com marcos 14/7/1 dias, deduplicação e testes reais seguros.
+- [ ] Retomar e validar as correções existentes do logótipo (upload, erros, persistência e nova sessão).
+- [ ] Completar próximas revisões no portal e oficina, reutilizando registos e job diário, com marcos 14/7/1 dias e testes de isolamento/idempotência.
 
 - [x] Compactar filtros da lista de Sinistros e ligar seguradoras aos seus processos e ações existentes; verificado no computador e telemóvel com respostas simuladas, sem alterar dados; contexto de orçamento/serviço e seguradora pré-selecionada confirmados; 16 testes PT/BR aprovados.
 

@@ -10043,6 +10043,7 @@ export type Database = {
           next_service_date: string | null
           next_service_km: number | null
           notified_at: string | null
+          reminder_days_sent: number[]
           service_type: string
           shop_id: string
           status: string
@@ -10056,6 +10057,7 @@ export type Database = {
           next_service_date?: string | null
           next_service_km?: number | null
           notified_at?: string | null
+          reminder_days_sent?: number[]
           service_type?: string
           shop_id: string
           status?: string
@@ -10069,6 +10071,7 @@ export type Database = {
           next_service_date?: string | null
           next_service_km?: number | null
           notified_at?: string | null
+          reminder_days_sent?: number[]
           service_type?: string
           shop_id?: string
           status?: string
@@ -13386,6 +13389,7 @@ export type Database = {
       get_ai_global_status: { Args: never; Returns: Json }
       get_ai_usage: { Args: { _shop_id: string }; Returns: Json }
       get_client_portal_data: { Args: { _token: string }; Returns: Json }
+      get_client_portal_reminders: { Args: { _token: string }; Returns: Json }
       get_country_config: {
         Args: { _code: string }
         Returns: {
@@ -13822,6 +13826,7 @@ export type Database = {
         }
         Returns: Json
       }
+      process_service_reminders: { Args: never; Returns: number }
       purge_old_rate_limits: { Args: never; Returns: undefined }
       purge_old_signup_attempts: { Args: never; Returns: undefined }
       purge_old_stripe_webhook_events: { Args: never; Returns: undefined }
@@ -13894,6 +13899,37 @@ export type Database = {
       review_marketplace_activation: {
         Args: { _approve: boolean; _notes?: string; _request_id: string }
         Returns: Json
+      }
+      save_service_reminder: {
+        Args: {
+          _client_id: string
+          _date: string
+          _km?: number
+          _service_type?: string
+          _shop_id: string
+          _vehicle_id: string
+          _work_order_id: string
+        }
+        Returns: {
+          client_id: string
+          created_at: string
+          id: string
+          next_service_date: string | null
+          next_service_km: number | null
+          notified_at: string | null
+          reminder_days_sent: number[]
+          service_type: string
+          shop_id: string
+          status: string
+          vehicle_id: string
+          work_order_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "service_reminders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       seed_email_templates_for_shop: {
         Args: { _shop_id: string }

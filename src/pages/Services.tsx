@@ -40,6 +40,7 @@ import { useShopRole } from "@/hooks/useShopRole";
 import ClientCommsDialog from "@/components/workshop/ClientCommsDialog";
 import { formatMoney } from "@/lib/money";
 import { getTaxLabel } from "@/lib/regionConfig";
+import { parseReminderKm } from "@/lib/serviceReminder";
 
 const statusColors: Record<ServiceStatus, string> = {
   open: "bg-info/10 text-info",
@@ -145,6 +146,7 @@ export default function Services() {
   const [clientOptions, setClientOptions] = useState<[string, string][]>([]);
   const [reminderDialog, setReminderDialog] = useState<any>(null);
   const [reminderDate, setReminderDate] = useState("");
+  const [reminderSaving, setReminderSaving] = useState(false);
   const [reminderKm, setReminderKm] = useState("");
   const [cancelTarget, setCancelTarget] = useState<any>(null);
   const [cancelReason, setCancelReason] = useState("");
@@ -453,9 +455,7 @@ export default function Services() {
 
     if (nextStatus === 'completed') {
       setReminderDialog(service);
-      const defaultDate = new Date();
-      defaultDate.setMonth(defaultDate.getMonth() + 6);
-      setReminderDate(defaultDate.toISOString().split('T')[0]);
+      setReminderDate("");
       setReminderKm("");
       return;
     }
@@ -468,10 +468,15 @@ export default function Services() {
   };
 
   const completeWithReminder = async (createReminder: boolean) => {
-    if (!reminderDialog) return;
+    if (!reminderDialog || reminderSaving || !activeShopId) return;
+    let km: number | null = null;
+    try { if (createReminder) km = parseReminderKm(reminderKm); }
+    catch (error) { toast.error(error instanceof Error ? error.message : 'Quilometragem inválida'); return; }
+    setReminderSaving(true);
+    try {
     const service = reminderDialog;
     const updates: any = { status: 'completed', completed_at: new Date().toISOString() };
-    const { error } = await supabase.from("work_orders").update(updates).eq("id", service.id);
+    const { error } = await supabase.from("work_orders").update(updates).eq("id", service.id).eq("shop_id", activeShopId).select('id').single();
     if (error) { toastError(error, "Não foi possível concluir o serviço"); return; }
 
     // Descontar peças do stock — fluxo oficial partilhado (idempotente por OS).
@@ -503,21 +508,24 @@ export default function Services() {
     }
 
     if (createReminder && reminderDate) {
-      const activeId = localStorage.getItem("garageflow_active_shop");
-      await supabase.from("service_reminders").insert({
-        shop_id: activeId,
-        vehicle_id: service.vehicle_id,
-        client_id: service.client_id,
-        work_order_id: service.id,
-        next_service_date: reminderDate,
-        next_service_km: reminderKm ? parseInt(reminderKm) : null,
-      } as any);
-      toast.success(t('reminders.created'));
+      try {
+        const { error: reminderError } = await supabase.rpc('save_service_reminder', {
+          _shop_id: activeShopId, _vehicle_id: service.vehicle_id, _client_id: service.client_id,
+          _work_order_id: service.id, _date: reminderDate || null, _km: km,
+        });
+        if (reminderError) throw reminderError;
+        toast.success(t('reminders.created'));
+      } catch {
+        toast.error('Serviço concluído. Não foi possível guardar a próxima revisão; pode agendá-la na ficha da viatura.');
+      }
     } else {
       toast.success(t('service.completed'));
     }
     setReminderDialog(null);
     fetchServices();
+    } catch (error) {
+      toastError(error, 'Não foi possível confirmar a operação. Verifique o estado do serviço.');
+    } finally { setReminderSaving(false); }
   };
 
   const cancelService = async (id: string, reason?: string) => {
@@ -1010,7 +1018,7 @@ export default function Services() {
       )}
 
       {/* Reminder Dialog */}
-      <Dialog open={!!reminderDialog} onOpenChange={(o) => !o && setReminderDialog(null)}>
+      <Dialog open={!!reminderDialog} onOpenChange={(o) => !o && !reminderSaving && setReminderDialog(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1030,10 +1038,10 @@ export default function Services() {
             </div>
           </div>
           <DialogFooter className="gap-2 mt-4">
-            <Button variant="outline" onClick={() => completeWithReminder(false)}>
+            <Button variant="outline" disabled={reminderSaving} onClick={() => completeWithReminder(false)}>
               {t('reminders.skipReminder')}
             </Button>
-            <Button onClick={() => completeWithReminder(true)} disabled={!reminderDate}>
+            <Button onClick={() => completeWithReminder(true)} disabled={reminderSaving || (!reminderDate && !reminderKm)}>
               <CalendarClock className="w-4 h-4 mr-2" />
               {t('reminders.createReminder')}
             </Button>

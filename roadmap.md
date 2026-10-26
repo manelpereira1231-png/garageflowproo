@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Melhorar SEO comprovado sem alterar fluxos: remover datas de atualização artificiais do sitemap e impedir indexação do portal privado; testar e preservar o domínio garageflow.pt.
+
 - [x] Corrigir logótipo invisível no portal; imagem real e recarga verificadas em desktop/mobile; upload autenticado e leitura numa sessão pública nova confirmados na oficina de teste.
 - [x] Completar revisões por data/km e avisos no portal; 17 testes aprovados e teste SQL com rollback confirmou marcos 14/7/1, quilometragem, idempotência, isolamento, alteração/cancelamento e reabertura.
 - [ ] Validar upload pelo seletor de Definições e edição de revisão na ficha da viatura: oficina de teste com avaliação expirada; não alterar subscrição para contornar o bloqueio.

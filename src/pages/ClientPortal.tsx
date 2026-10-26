@@ -20,7 +20,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { sendEmail } from "@/lib/emailService";
 import NextServiceSummary from '@/components/NextServiceSummary';
-import { activeReminderMilestones, type ServiceReminder } from '@/lib/serviceReminder';
+import { hasActiveReminderNotice, type ServiceReminder } from '@/lib/serviceReminder';
 
 const translations: Record<string, Record<string, string>> = {
   pt: {
@@ -655,9 +655,9 @@ export default function ClientPortal() {
       <div className="bg-foreground">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <div className="flex items-start justify-between gap-4">
-            <div>
+            <div className="min-w-0 flex-1">
               {shop?.logo_url && (
-                <img src={shop.logo_url} alt={shop.name} className="max-h-10 mb-3 brightness-200 contrast-0 invert" />
+                <img src={shop.logo_url} alt={shop.name} className="h-16 w-44 max-w-full object-contain object-left mb-3 rounded bg-background p-2" />
               )}
               <h1 className="text-lg sm:text-xl font-bold text-background">{shop?.name}</h1>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-background/60">
@@ -741,7 +741,7 @@ export default function ClientPortal() {
         </div>
 
         {/* Tabs */}
-        {reminders.filter(r => activeReminderMilestones(r, new Date().toLocaleDateString('en-CA')).length > 0).map(r => {
+        {reminders.filter(r => hasActiveReminderNotice(r, new Date().toLocaleDateString('en-CA'))).map(r => {
           const v = vehicles.find(v => v.id === r.vehicle_id);
           return <div key={r.id} className="border-l-2 border-primary py-2 px-3 mb-4 text-sm">
             <p className="font-medium">{t('notifications')} · {v?.make} {v?.model} · {v?.plate}</p>
@@ -1085,7 +1085,7 @@ export default function ClientPortal() {
         {/* Footer */}
 
         <div className="text-center py-6 border-t border-border">
-          {shop?.logo_url && <img src={shop.logo_url} alt={shop.name} className="max-h-6 mx-auto mb-2 opacity-50" />}
+          {shop?.logo_url && <img src={shop.logo_url} alt={shop.name} className="h-12 w-36 max-w-full object-contain mx-auto mb-2" />}
           <p className="text-xs text-muted-foreground">{shop?.name} · {t('footer')}</p>
           <p className="text-[10px] text-muted-foreground/50 mt-1">Powered by GarageFlow</p>
         </div>

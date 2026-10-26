@@ -10040,6 +10040,7 @@ export type Database = {
           client_id: string
           created_at: string
           id: string
+          km_notified: boolean
           next_service_date: string | null
           next_service_km: number | null
           notified_at: string | null
@@ -10054,6 +10055,7 @@ export type Database = {
           client_id: string
           created_at?: string
           id?: string
+          km_notified?: boolean
           next_service_date?: string | null
           next_service_km?: number | null
           notified_at?: string | null
@@ -10068,6 +10070,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           id?: string
+          km_notified?: boolean
           next_service_date?: string | null
           next_service_km?: number | null
           notified_at?: string | null
@@ -13914,6 +13917,7 @@ export type Database = {
           client_id: string
           created_at: string
           id: string
+          km_notified: boolean
           next_service_date: string | null
           next_service_km: number | null
           notified_at: string | null

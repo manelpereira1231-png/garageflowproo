@@ -507,7 +507,7 @@ export default function Services() {
       toast.success("Fatura criada automaticamente");
     }
 
-    if (createReminder && reminderDate) {
+    if (createReminder && (reminderDate || km !== null)) {
       try {
         const { error: reminderError } = await supabase.rpc('save_service_reminder', {
           _shop_id: activeShopId, _vehicle_id: service.vehicle_id, _client_id: service.client_id,

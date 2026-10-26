@@ -267,6 +267,13 @@
       "when": 1793015912481,
       "tag": "0037_complete_reminder_mileage_and_portal_notices",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793024249324,
+      "tag": "0038_reminder_notifications_open_passport",
+      "breakpoints": true
     }
   ]
 }

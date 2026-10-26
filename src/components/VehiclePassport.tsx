@@ -5,7 +5,6 @@ import VehicleTechData from "@/components/VehicleTechData";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Car, Wrench, ClipboardCheck, FileText, Receipt, AlertTriangle, TrendingDown, Shield, Image as ImageIcon, Paperclip } from "lucide-react";
 import { format } from "date-fns";
 import { pt, ptBR, enUS, es, hi } from "date-fns/locale";
@@ -753,7 +752,7 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
               {/* ─── Histórico de sinistros ─── */}
               <ClaimsHistory vehicleId={vehicleId} title="Histórico de sinistros" />
             </div>
-          </ScrollArea>
+          </div>
         ) : (
           <p className="text-sm text-muted-foreground text-center py-8">{t("passport.loadError", "Não foi possível carregar o passaporte deste veículo.")}</p>
         )}

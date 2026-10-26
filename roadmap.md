@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Retomar e validar as correções existentes do logótipo (upload, erros, persistência e nova sessão).
+- [ ] Corrigir logótipo invisível no portal do cliente e validar imagem real, persistência e nova sessão.
 - [ ] Completar próximas revisões no portal e oficina, reutilizando registos e job diário, com marcos 14/7/1 dias e testes de isolamento/idempotência.
 
 - [x] Compactar filtros da lista de Sinistros e ligar seguradoras aos seus processos e ações existentes; verificado no computador e telemóvel com respostas simuladas, sem alterar dados; contexto de orçamento/serviço e seguradora pré-selecionada confirmados; 16 testes PT/BR aprovados.

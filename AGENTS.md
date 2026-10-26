@@ -1,6 +1,7 @@
 # Architecture rules
 
 - ERP sitemaps keep the existing prerender mechanism and only emit page-specific authoritative lastmod timestamps; private client portals set noindex and no-referrer before loading customer data to avoid advertising secret links.
+- Article structured data only emits dateModified from an authoritative content modification timestamp, never from publication time, to avoid unsupported freshness claims.
 
 - Workshop branding uses immutable storage paths and confirmed row updates; cache invalidations discard superseded requests to prevent stale identities.
 - Next-service scheduling reuses service_reminders and its pending uniqueness index; a validating atomic RPC preserves shop/client/vehicle coherence.

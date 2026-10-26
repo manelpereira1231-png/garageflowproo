@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Retirar a moldura e largura artificial do logótipo do portal, verificar computador/telemóvel e rever apenas defeitos SEO comprovados.
+- [x] Retirada moldura e largura artificial do logótipo; portal real da oficina da imagem verificado em computador/telemóvel sem alterações de dados. SEO: removida dataModified inferida da publicação nos artigos e prerender; 14 testes aprovados e compilação sem erros. Publicação pendente.
 
 - [x] SEO: revisão básica atual com 9 verificações aprovadas; removidas datas artificiais do sitemap mantendo 299 URLs e 6 datas reais de artigos; portal privado com noindex/no-referrer verificado no navegador; 14 testes aprovados, domínio e fluxos preservados. Publicação pendente.
 

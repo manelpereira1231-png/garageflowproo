@@ -8,10 +8,15 @@ export interface ServiceReminder {
   next_service_date: string | null;
   next_service_km: number | null;
   reminder_days_sent?: number[];
+  km_notified?: boolean;
+  local_date?: string;
 }
 export function activeReminderMilestones(reminder: ServiceReminder, localDate: string): number[] {
-  if (!reminder.next_service_date || reminder.next_service_date < localDate) return [];
+  if (!reminder.next_service_date || reminder.next_service_date < (reminder.local_date || localDate)) return [];
   return (reminder.reminder_days_sent || []).filter(d => REMINDER_DAYS.some(day => day === d));
+}
+export function hasActiveReminderNotice(reminder: ServiceReminder, localDate: string): boolean {
+  return reminder.km_notified === true || activeReminderMilestones(reminder, localDate).length > 0;
 }
 export function parseReminderKm(value: string): number | null {
   if (!value.trim()) return null;

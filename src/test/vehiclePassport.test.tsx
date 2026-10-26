@@ -29,6 +29,8 @@ const invoices = [{ id: "i1", number: "FAT-2026-0024", status: "issued", total: 
 
 let shopMeta: any = { currency: "EUR", country: "PT" };
 
+vi.mock("@/hooks/useShopRole", () => ({ useShopRole: () => ({ can: () => false }) }));
+
 vi.mock("@/integrations/supabase/client", () => {
   const result = (table: string) => {
     if (table === "vehicles") return { data: vehicle };

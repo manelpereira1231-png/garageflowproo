@@ -20,7 +20,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { sendEmail } from "@/lib/emailService";
 import NextServiceSummary from '@/components/NextServiceSummary';
-import { activeReminderMilestones, type ServiceReminder } from '@/lib/serviceReminder';
+import { hasActiveReminderNotice, type ServiceReminder } from '@/lib/serviceReminder';
 
 const translations: Record<string, Record<string, string>> = {
   pt: {
@@ -741,7 +741,7 @@ export default function ClientPortal() {
         </div>
 
         {/* Tabs */}
-        {reminders.filter(r => activeReminderMilestones(r, new Date().toLocaleDateString('en-CA')).length > 0).map(r => {
+        {reminders.filter(r => hasActiveReminderNotice(r, new Date().toLocaleDateString('en-CA'))).map(r => {
           const v = vehicles.find(v => v.id === r.vehicle_id);
           return <div key={r.id} className="border-l-2 border-primary py-2 px-3 mb-4 text-sm">
             <p className="font-medium">{t('notifications')} · {v?.make} {v?.model} · {v?.plate}</p>

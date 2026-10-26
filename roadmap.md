@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] SEO: revisão básica atual com 9 verificações aprovadas; removidas datas artificiais do sitemap mantendo 299 URLs e 6 datas reais de artigos; portal privado com noindex/no-referrer verificado no navegador; 14 testes aprovados, domínio e fluxos preservados. Publicação pendente.
+
 - [x] Corrigir logótipo invisível no portal; imagem real e recarga verificadas em desktop/mobile; upload autenticado e leitura numa sessão pública nova confirmados na oficina de teste.
 - [x] Completar revisões por data/km e avisos no portal; 17 testes aprovados e teste SQL com rollback confirmou marcos 14/7/1, quilometragem, idempotência, isolamento, alteração/cancelamento e reabertura.
 - [ ] Validar upload pelo seletor de Definições e edição de revisão na ficha da viatura: oficina de teste com avaliação expirada; não alterar subscrição para contornar o bloqueio.

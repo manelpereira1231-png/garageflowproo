@@ -1,5 +1,7 @@
 # Architecture rules
 
+- ERP sitemaps keep the existing prerender mechanism and only emit page-specific authoritative lastmod timestamps; private client portals set noindex and no-referrer before loading customer data to avoid advertising secret links.
+
 - Workshop branding uses immutable storage paths and confirmed row updates; cache invalidations discard superseded requests to prevent stale identities.
 - Next-service scheduling reuses service_reminders and its pending uniqueness index; a validating atomic RPC preserves shop/client/vehicle coherence.
 - The existing daily check-reminders job invokes a transactionally locked date/mileage processor; client portal notices and shop-local dates derive from its recorded milestones through existing secret-token access, not a new client account model.

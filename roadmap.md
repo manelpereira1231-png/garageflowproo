@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Revisões: reutilizar ícones email/WhatsApp e janela de mensagens para envio manual pela oficina; avisos nos portais continuam automáticos, com prazo claro. Sem novos canais ou envios externos automáticos. Validar pré-visualização, contactos e isolamento; execução HTTP diária ainda por confirmar.
+- [x] Revisões: ícones email/WhatsApp na próxima revisão da ficha da viatura, reutilizando janela de mensagens e canais existentes com envio manual; contexto lido por oficina ativa e data real, sem novos fornecedores. Portal apresenta prazo atual e acesso às viaturas; avisos continuam a depender do processor automático existente. 19 testes aprovados e compilação sem erros.
+- [ ] Validar a nova pré-visualização de revisão ponta a ponta e envio externo autorizado: conta autenticada de verificação sem revisão futura acessível; nenhum email/WhatsApp enviado. Execução HTTP diária ainda por confirmar.
 
 - [x] Retirada moldura e largura artificial do logótipo; portal real da oficina da imagem verificado em computador/telemóvel sem alterações de dados. SEO: removida dataModified inferida da publicação nos artigos e prerender; 14 testes aprovados e compilação sem erros. Publicação pendente.
 

@@ -1,7 +1,9 @@
 # Roadmap
 
-- [ ] Corrigir logótipo invisível no portal do cliente e validar imagem real, persistência e nova sessão.
-- [ ] Completar próximas revisões no portal e oficina, reutilizando registos e job diário, com marcos 14/7/1 dias e testes de isolamento/idempotência.
+- [x] Corrigir logótipo invisível no portal; imagem real e recarga verificadas em desktop/mobile; upload autenticado e leitura numa sessão pública nova confirmados na oficina de teste.
+- [x] Completar revisões por data/km e avisos no portal; 17 testes aprovados e teste SQL com rollback confirmou marcos 14/7/1, quilometragem, idempotência, isolamento, alteração/cancelamento e reabertura.
+- [ ] Validar upload pelo seletor de Definições e edição de revisão na ficha da viatura: oficina de teste com avaliação expirada; não alterar subscrição para contornar o bloqueio.
+- [ ] Confirmar a próxima execução automática HTTP do job diário após atualização: aguarda o horário das 08:00 UTC; execução do processor já testada com rollback.
 
 - [x] Compactar filtros da lista de Sinistros e ligar seguradoras aos seus processos e ações existentes; verificado no computador e telemóvel com respostas simuladas, sem alterar dados; contexto de orçamento/serviço e seguradora pré-selecionada confirmados; 16 testes PT/BR aprovados.
 

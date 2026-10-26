@@ -32,4 +32,14 @@ Alterações aditivas: metadados de processamento na tabela de revisões existen
 
 ## Testes e estado final
 
-A preencher apenas com verificações efetivamente executadas; a análise do código não conta como teste aprovado.
+Verificação de 26 de outubro de 2026:
+
+- Portal real da Oficina Henriques: imagem carregada no cabeçalho e rodapé, sem filtros que a tornem invisível; nova leitura após recarregar confirmada. Vistas 1280 px e 390 px verificadas, sem transbordamento horizontal. O ficheiro guardado por esta oficina é uma imagem vertical; não foi substituído nem recortado.
+- Oficina isolada de teste `dd`: upload real pelo helper da aplicação, caminho imutável, atualização e confirmação de leitura; nova sessão pública mostrou o mesmo logótipo. Revisão gravada pela RPC autenticada com data 09/11/2026 e 120 000 km, visível no portal numa sessão nova. Registos temporários removidos e logótipo anterior (vazio) restaurado; nenhum cliente real alterado.
+- 17 testes automáticos aprovados: validação de imagem, marcos 14/7/1, ausência de valores inventados, data local da oficina, aviso confirmado de quilometragem e passaporte PT/BR/ES. Corrigido o ambiente dos testes do passaporte para os hooks novos.
+- Teste SQL transacional executado com rollback: marcos 14/7/1, datas fora dos marcos/passadas, limiar de km real, segunda execução sem duplicações, token inválido, isolamento entre clientes/oficinas, alteração de data, cancelamento e reabertura da OS. As asserções levantam erro se falharem; execução devolvida sem erro. Confirmado zero registos temporários após rollback.
+- Falha corrigida: conclusão com revisão apenas por km ignorava a gravação; processor agora compara a quilometragem efetivamente registada, guarda aviso único e apresenta o mesmo aviso no portal. Cancelamento/alteração invalidam também o marco de km.
+- Job diário existente ativo às 08:00 UTC, última execução SQL observada em 26/10 com estado succeeded. `check-reminders` atualizado e colocado no servidor; não foi criado outro job. Isto não comprova uma futura execução HTTP do job, que só acontece no horário seguinte.
+- Compilação automática sem erros. Não foram enviados emails ou push durante os testes; os avisos implementados são persistidos para oficina e portal, não uma promessa de entrega por canais externos.
+
+Limitações: a oficina de teste tem avaliação expirada. Não se alterou a subscrição para ultrapassar essa restrição; upload pelo seletor de Definições e edição através da ficha da viatura não foram validados ponta a ponta nesta conta. Foram validados a gravação autenticada real e a leitura no portal. As alterações visuais continuam a precisar de publicação.

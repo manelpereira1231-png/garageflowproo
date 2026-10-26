@@ -14,6 +14,7 @@ import { formatMoney } from "@/lib/money";
 import { autoFormatPlate, detectRegionFromCurrency, canonicalPlate } from "@/lib/plateFormat";
 import { getLocaleForCurrency } from "@/lib/regionLabels";
 import NextServiceSummary from '@/components/NextServiceSummary';
+import ServiceReminderComms from '@/components/ServiceReminderComms';
 import { parseReminderKm } from '@/lib/serviceReminder';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -487,6 +488,7 @@ export default function VehiclePassport({ vehicleId, open, onClose }: VehiclePas
                           <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">{t("passport.state", "Estado")}</span>
                           <Badge variant="outline" className="text-[10px]">{statusLabel(r.status)}</Badge>
                         </div>
+                        {r.next_service_date && can('clients.edit') && <ServiceReminderComms reminderId={r.id} vehicleId={vehicleId} />}
                       </li>
                     ))}
                   </ul>

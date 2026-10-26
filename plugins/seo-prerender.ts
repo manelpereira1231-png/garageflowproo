@@ -506,7 +506,7 @@ function renderHtml(template: string, doc: PageDoc): string {
   return html;
 }
 
-function sitemapXml(entries: { loc: string; lastmod: string; priority: string }[]) {
+export function sitemapXml(entries: { loc: string; lastmod?: string; priority: string }[]) {
   return [
     `<?xml version="1.0" encoding="UTF-8"?>`,
     `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`,
@@ -514,7 +514,7 @@ function sitemapXml(entries: { loc: string; lastmod: string; priority: string }[
       [
         `  <url>`,
         `    <loc>${e.loc}</loc>`,
-        `    <lastmod>${e.lastmod}</lastmod>`,
+        ...(e.lastmod ? [`    <lastmod>${esc(e.lastmod)}</lastmod>`] : []),
         `    <priority>${e.priority}</priority>`,
         `  </url>`,
       ].join("\n"),
@@ -563,16 +563,14 @@ export default function seoPrerender(): Plugin {
       }
 
       // ---------- sitemaps ----------
-      const today = new Date().toISOString().slice(0, 10);
       const rawEntries = [
         ...docs.map((d) => ({
           loc: `${SITE}/${d.route}`,
-          lastmod: d.lastmod ?? today,
+          lastmod: d.lastmod,
           priority: d.priority,
         })),
         ...CORE_ROUTES.map((r) => ({
           loc: `${SITE}${r.path}`,
-          lastmod: today,
           priority: r.priority,
         })),
       ];
@@ -586,8 +584,8 @@ export default function seoPrerender(): Plugin {
       const index = [
         `<?xml version="1.0" encoding="UTF-8"?>`,
         `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`,
-        `  <sitemap>\n    <loc>${SITE}/sitemap-erp.xml</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>`,
-        `  <sitemap>\n    <loc>${SITE}/sitemap-market.xml</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>`,
+        `  <sitemap>\n    <loc>${SITE}/sitemap-erp.xml</loc>\n  </sitemap>`,
+        `  <sitemap>\n    <loc>${SITE}/sitemap-market.xml</loc>\n  </sitemap>`,
         `</sitemapindex>`,
       ].join("\n");
       writeFileSync(path.join(dist, "sitemap.xml"), index, "utf8");

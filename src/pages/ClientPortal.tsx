@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -366,6 +367,19 @@ function ServiceTimeline({ status }: { status: string }) {
 }
 
 export default function ClientPortal() {
+  return <>
+    <Helmet>
+      <title>Portal do cliente | GarageFlow</title>
+      <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+      <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
+      <meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet" />
+      <meta name="referrer" content="no-referrer" />
+    </Helmet>
+    <ClientPortalContent />
+  </>;
+}
+
+function ClientPortalContent() {
   const { token } = useParams<{ token: string }>();
   const [client, setClient] = useState<any>(null);
   const [shop, setShop] = useState<any>(null);

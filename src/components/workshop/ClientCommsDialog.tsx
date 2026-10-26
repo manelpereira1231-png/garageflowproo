@@ -12,6 +12,7 @@ import { isValidEmail } from "@/lib/emailService";
 import {
   getCommsPresets, defaultPresetIdForStatus, sendWorkOrderEmail, sendWorkOrderWhatsApp,
   type WorkOrderCommsContext,
+  type CommsPreset,
 } from "@/lib/clientComms";
 
 /**
@@ -20,13 +21,17 @@ import {
  * Nunca altera o estado da Ordem de Serviço.
  */
 export default function ClientCommsDialog({
-  open, onOpenChange, ctx,
+  open, onOpenChange, ctx, presetsOverride, description, onEmail, onWhatsApp,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   ctx: WorkOrderCommsContext;
+  presetsOverride?: CommsPreset[];
+  description?: string;
+  onEmail?: (subject: string, body: string) => Promise<void>;
+  onWhatsApp?: (body: string) => Promise<boolean>;
 }) {
-  const presets = useMemo(() => getCommsPresets(ctx), [ctx]);
+  const presets = useMemo(() => presetsOverride ?? getCommsPresets(ctx), [ctx, presetsOverride]);
   const initial = presets.find((p) => p.id === defaultPresetIdForStatus(ctx.status)) || presets[0];
   const [presetId, setPresetId] = useState(initial?.id || "");
   const [subject, setSubject] = useState(initial?.subject || "");
@@ -47,7 +52,8 @@ export default function ClientCommsDialog({
   const handleEmail = async () => {
     setSending("email");
     try {
-      await sendWorkOrderEmail(ctx, subject.trim() || "Ordem de Serviço", body);
+      if (onEmail) await onEmail(subject.trim() || "Próxima revisão", body);
+      else await sendWorkOrderEmail(ctx, subject.trim() || "Ordem de Serviço", body);
       toast.success("Email enviado ao cliente.");
       onOpenChange(false);
     } catch (e: any) {
@@ -60,7 +66,8 @@ export default function ClientCommsDialog({
   const handleWhatsApp = async () => {
     setSending("wa");
     try {
-      await sendWorkOrderWhatsApp(ctx, body);
+      const opened = onWhatsApp ? await onWhatsApp(body) : await sendWorkOrderWhatsApp(ctx, body);
+      if (!opened) throw new Error("Não foi possível abrir o WhatsApp. Tente novamente.");
       onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message || "Não foi possível abrir o WhatsApp.");
@@ -75,7 +82,7 @@ export default function ClientCommsDialog({
         <DialogHeader>
           <DialogTitle>Comunicar com o cliente</DialogTitle>
           <DialogDescription>
-            {ctx.clientName || "Cliente"} — OS {ctx.number}. A mensagem não altera o estado do serviço.
+            {description ?? `${ctx.clientName || "Cliente"} — OS ${ctx.number}. A mensagem não altera o estado do serviço.`}
           </DialogDescription>
         </DialogHeader>
 

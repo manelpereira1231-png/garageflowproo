@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { sendEmail } from "@/lib/emailService";
 import NextServiceSummary from '@/components/NextServiceSummary';
 import { hasActiveReminderNotice, type ServiceReminder } from '@/lib/serviceReminder';
+import { reminderDaysUntil } from '@/lib/serviceReminderMessage';
 
 const translations: Record<string, Record<string, string>> = {
   pt: {
@@ -759,7 +760,15 @@ function ClientPortalContent() {
           const v = vehicles.find(v => v.id === r.vehicle_id);
           return <div key={r.id} className="border-l-2 border-primary py-2 px-3 mb-4 text-sm">
             <p className="font-medium">{t('notifications')} · {v?.make} {v?.model} · {v?.plate}</p>
+            {r.next_service_date && <p className="text-muted-foreground">{(() => {
+              const days = reminderDaysUntil(r.next_service_date, r.local_date || new Date().toLocaleDateString('en-CA'));
+              if (days === null || days < 0) return null;
+              if (lang === 'en') return days === 0 ? 'Next service is today' : days === 1 ? 'Next service is tomorrow' : `Next service in ${days} days`;
+              if (lang === 'es') return days === 0 ? 'La próxima revisión es hoy' : days === 1 ? 'La próxima revisión es mañana' : `Próxima revisión dentro de ${days} días`;
+              return days === 0 ? 'A próxima revisão é hoje' : days === 1 ? 'A próxima revisão é amanhã' : `Faltam ${days} dias para a próxima revisão`;
+            })()}</p>}
             <NextServiceSummary reminder={r} language={lang} />
+            <Button size="sm" variant="outline" className="mt-2 min-h-11" onClick={() => setActiveTab('vehicles')}><Car className="h-4 w-4 mr-2" />{t('vehicles')}</Button>
           </div>;
         })}
         <div className="flex gap-1 mb-4 overflow-x-auto pb-1">

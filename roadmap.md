@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Documento completo de lembretes: falta ligar email automático e estados independentes por destinatário/canal; WhatsApp automático depende de configuração/consentimento/templates verificados; portal ainda não tem avisos individuais 14/7/1 com leitura. Auditoria de 26/10: processor interno confirmado e 17 testes aprovados; job diário ativo, mas execução SQL succeeded não confirma resposta HTTP.
+
 - [x] Retirada moldura e largura artificial do logótipo; portal real da oficina da imagem verificado em computador/telemóvel sem alterações de dados. SEO: removida dataModified inferida da publicação nos artigos e prerender; 14 testes aprovados e compilação sem erros. Publicação pendente.
 
 - [x] SEO: revisão básica atual com 9 verificações aprovadas; removidas datas artificiais do sitemap mantendo 299 URLs e 6 datas reais de artigos; portal privado com noindex/no-referrer verificado no navegador; 14 testes aprovados, domínio e fluxos preservados. Publicação pendente.

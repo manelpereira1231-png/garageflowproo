@@ -226,7 +226,6 @@ export default function SeoBlogPost() {
       description: desc,
       image: [image],
       datePublished: p.published_at,
-      dateModified: p.published_at,
       author: p.author
         ? { "@type": "Person", name: p.author }
         : { "@type": "Organization", name: "GarageFlow" },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sitemapXml } from "./seo-prerender";
+import { sitemapXml } from "../../plugins/seo-prerender";
 
 describe("ERP sitemap page timestamps", () => {
   it("omits lastmod when a page has no authoritative timestamp", () => {

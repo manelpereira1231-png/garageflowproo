@@ -1,5 +1,5 @@
-// @vitest-environment node
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+vi.mock("esbuild", () => ({ build: vi.fn() }));
 import { sitemapXml } from "../../plugins/seo-prerender";
 
 describe("ERP sitemap page timestamps", () => {

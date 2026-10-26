@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Retirada moldura e largura artificial do logótipo; portal real da oficina da imagem verificado em computador/telemóvel sem alterações de dados. SEO: removida dataModified inferida da publicação nos artigos e prerender; 14 testes aprovados e compilação sem erros. Publicação pendente.
+
 - [x] SEO: revisão básica atual com 9 verificações aprovadas; removidas datas artificiais do sitemap mantendo 299 URLs e 6 datas reais de artigos; portal privado com noindex/no-referrer verificado no navegador; 14 testes aprovados, domínio e fluxos preservados. Publicação pendente.
 
 - [x] Corrigir logótipo invisível no portal; imagem real e recarga verificadas em desktop/mobile; upload autenticado e leitura numa sessão pública nova confirmados na oficina de teste.

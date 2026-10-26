@@ -671,7 +671,7 @@ function ClientPortalContent() {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
               {shop?.logo_url && (
-                <img src={shop.logo_url} alt={shop.name} className="h-16 w-44 max-w-full object-contain object-left mb-3 rounded bg-background p-2" />
+                <img src={shop.logo_url} alt={shop.name} className="block h-16 w-auto max-w-full object-contain object-left mb-3" />
               )}
               <h1 className="text-lg sm:text-xl font-bold text-background">{shop?.name}</h1>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-background/60">
@@ -1099,7 +1099,7 @@ function ClientPortalContent() {
         {/* Footer */}
 
         <div className="text-center py-6 border-t border-border">
-          {shop?.logo_url && <img src={shop.logo_url} alt={shop.name} className="h-12 w-36 max-w-full object-contain mx-auto mb-2" />}
+          {shop?.logo_url && <img src={shop.logo_url} alt={shop.name} className="block h-12 w-auto max-w-full object-contain mx-auto mb-2" />}
           <p className="text-xs text-muted-foreground">{shop?.name} · {t('footer')}</p>
           <p className="text-[10px] text-muted-foreground/50 mt-1">Powered by GarageFlow</p>
         </div>

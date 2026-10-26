@@ -300,7 +300,6 @@ function buildDocs(data: Awaited<ReturnType<typeof loadData>>): PageDoc[] {
           description: b.description,
           articleSection: b.category,
           datePublished: b.publishedAt,
-          dateModified: b.publishedAt,
           wordCount: b.sections.reduce(
             (n: number, s: any) => n + s.body.join(" ").split(/\s+/).length,
             0,

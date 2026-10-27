@@ -80,6 +80,7 @@ const FinancialReports = lazyRetry(() => import("@/pages/FinancialReports"));
 const Opportunities = lazyRetry(() => import("@/pages/Opportunities"));
 const PublicBooking = lazyRetry(() => import("@/pages/PublicBooking"));
 const ClientPortal = lazyRetry(() => import("@/pages/ClientPortal"));
+const ClientApp = lazyRetry(() => import("@/pages/ClientApp"));
 const PublicInspection = lazyRetry(() => import("@/pages/PublicInspection"));
 const PublicInvoice = lazyRetry(() => import("@/pages/PublicInvoice"));
 const ServiceCatalog = lazyRetry(() => import("@/pages/ServiceCatalog"));
@@ -679,6 +680,7 @@ const marketAuthedRoutes = [
 const publicRoutes = [
   { path: "/quote/:token", element: <QuoteApproval /> },
   { path: "/portal/:token", element: <ClientPortal /> },
+  { path: "/app-clientes", element: <ClientApp /> },
   { path: "/inspection/:token", element: <PublicInspection /> },
   { path: "/invoice/:token", element: <PublicInvoice /> },
   { path: "/acompanhar/:token", element: <Suspense fallback={<PageLoader />}><ClaimTrack /></Suspense> },
@@ -1242,6 +1244,7 @@ function AppRoutes() {
             <Route path="/free" element={<Navigate to="/gratis-3-meses" replace />} />
             <Route path="/quote/:token" element={<QuoteApproval />} />
             <Route path="/portal/:token" element={<ClientPortal />} />
+            <Route path="/app-clientes" element={<Suspense fallback={<PageLoader />}><ClientApp /></Suspense>} />
             <Route path="/inspection/:token" element={<Suspense fallback={<PageLoader />}><PublicInspection /></Suspense>} />
             <Route path="/invoice/:token" element={<Suspense fallback={<PageLoader />}><PublicInvoice /></Suspense>} />
             <Route path="/acompanhar/:token" element={<Suspense fallback={<PageLoader />}><ClaimTrack /></Suspense>} />

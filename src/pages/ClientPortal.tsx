@@ -20,6 +20,8 @@ import { PortalPushToggle } from "@/components/PortalPushToggle";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { sendEmail } from "@/lib/emailService";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { MessageCircle, RefreshCw, PackageCheck } from "lucide-react";
 import NextServiceSummary from '@/components/NextServiceSummary';
 import { hasActiveReminderNotice, type ServiceReminder } from '@/lib/serviceReminder';
 import { reminderDaysUntil } from '@/lib/serviceReminderMessage';
@@ -398,6 +400,9 @@ function ClientPortalContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [quoteDecision, setQuoteDecision] = useState<{ quote: any; action: 'approved' | 'rejected' } | null>(null);
   const [decisionLoading, setDecisionLoading] = useState(false);
   const [decisionNote, setDecisionNote] = useState("");
@@ -497,11 +502,24 @@ function ClientPortalContent() {
           work_orders: { number: i.work_order_number, vehicles: i.vehicle || null },
         })),
       );
+      const { data: apptData } = await supabase.rpc('get_client_portal_appointments' as any, { _token: token });
+      setAppointments(Array.isArray(apptData) ? apptData : []);
       setPayments([]);
+      setLastUpdated(new Date());
+      setRefreshing(false);
       setLoading(false);
     };
     load();
   }, [token, reloadKey]);
+
+  // Mantém o portal atualizado sem o cliente ter de ligar: a cada 60 s com a página visível e ao voltar à página.
+  useEffect(() => {
+    if (!token) return;
+    const refresh = () => { if (document.visibilityState === 'visible') setReloadKey(k => k + 1); };
+    const id = window.setInterval(refresh, 60000);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { window.clearInterval(id); document.removeEventListener('visibilitychange', refresh); };
+  }, [token]);
 
   // Confirmação do pagamento online no regresso do Stripe
   useEffect(() => {
@@ -780,6 +798,79 @@ function ClientPortalContent() {
             }}
           />
         </div>
+
+        {/* Ponto de situação — tudo o que está a acontecer agora */}
+        {(() => {
+          const L = lang === 'en'
+            ? { now: 'Right now', inShop: 'In the workshop', ready: 'Ready for pickup', readyMsg: 'Your vehicle is ready. You can pick it up.', upcoming: 'Upcoming appointments', updated: 'Updated at', call: 'Call', email: 'Email', nothing: 'No vehicle in the workshop at the moment.', at: 'at', dropoff: 'Vehicle drop-off', pickup: 'Vehicle pickup', pendingConf: 'Awaiting confirmation', step: 'Step', of: 'of', open: 'Details' }
+            : lang === 'es'
+            ? { now: 'Ahora mismo', inShop: 'En el taller', ready: 'Listo para recoger', readyMsg: 'Su vehículo está listo. Puede recogerlo.', upcoming: 'Próximas citas', updated: 'Actualizado a las', call: 'Llamar', email: 'Email', nothing: 'Ningún vehículo en el taller en este momento.', at: 'a las', dropoff: 'Entrega del vehículo', pickup: 'Recogida del vehículo', pendingConf: 'Pendiente de confirmación', step: 'Paso', of: 'de', open: 'Detalle' }
+            : { now: 'Ponto de situação', inShop: 'Na oficina', ready: 'Pronto para levantar', readyMsg: lang === 'pt-BR' ? 'Seu veículo está pronto. Já pode retirar.' : 'A sua viatura está pronta. Já pode levantar.', upcoming: 'Próximas marcações', updated: 'Atualizado às', call: 'Ligar', email: 'Email', nothing: lang === 'pt-BR' ? 'Nenhum veículo na oficina neste momento.' : 'Nenhuma viatura na oficina neste momento.', at: 'às', dropoff: lang === 'pt-BR' ? 'Entrega do veículo' : 'Entrega da viatura', pickup: lang === 'pt-BR' ? 'Retirada do veículo' : 'Levantamento da viatura', pendingConf: 'A aguardar confirmação', step: 'Passo', of: 'de', open: 'Detalhe' };
+          const active = services.filter(sv => !['completed', 'delivered', 'cancelled'].includes(sv.status));
+          const ready = services.filter(sv => sv.status === 'completed' && !sv.delivered_at);
+          const waUrl = shop?.phone ? buildWhatsAppUrl({ phone: shop.phone, type: 'client', customMessage: `${client.name ? `Olá, sou ${client.name}. ` : 'Olá. '}` } as any) : null;
+          const vLabel = (v: any) => v ? `${v.make || ''} ${v.model || ''}${v.plate ? ` — ${v.plate}` : ''}`.trim() : '';
+          const fmtD = (d: string) => { const [y, m, dd] = String(d).split('-'); return dd ? `${dd}/${m}/${y}` : d; };
+          return (
+            <div className="bg-card border border-border rounded-xl p-4 mb-4 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-bold">{L.now}</h3>
+                <button type="button" onClick={() => { setRefreshing(true); setReloadKey(k => k + 1); }} className="flex items-center gap-1 text-[11px] text-muted-foreground min-h-9 px-1" aria-label="refresh">
+                  <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+                  {lastUpdated ? `${L.updated} ${format(lastUpdated, 'HH:mm')}` : ''}
+                </button>
+              </div>
+
+              {ready.map(sv => (
+                <button key={sv.id} type="button" onClick={() => setSelectedService(sv)} className="w-full text-left rounded-lg border border-success/40 bg-success/10 p-3">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-success"><PackageCheck className="h-4 w-4" />{L.ready}</p>
+                  <p className="text-xs mt-0.5">{vLabel(sv.vehicles)} · <span className="font-mono">{sv.number}</span></p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{L.readyMsg}</p>
+                </button>
+              ))}
+
+              {active.map(sv => {
+                const idx = Math.max(0, statusFlow.indexOf(sv.status));
+                return (
+                  <button key={sv.id} type="button" onClick={() => setSelectedService(sv)} className="w-full text-left rounded-lg border border-primary/30 bg-primary/5 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="flex items-center gap-2 text-sm font-semibold"><Wrench className="h-4 w-4 text-primary" />{L.inShop}</p>
+                      <Badge variant="secondary" className={serviceStatusColors[sv.status] || ''}>{t(sv.status)}</Badge>
+                    </div>
+                    <p className="text-xs mt-0.5">{vLabel(sv.vehicles)} · <span className="font-mono">{sv.number}</span></p>
+                    <ServiceTimeline status={sv.status} />
+                    <p className="text-[11px] text-muted-foreground mt-1">{L.step} {idx + 1} {L.of} {statusFlow.length} · {L.open} <ChevronRight className="inline h-3 w-3" /></p>
+                  </button>
+                );
+              })}
+
+              {!active.length && !ready.length && <p className="text-xs text-muted-foreground">{L.nothing}</p>}
+
+              {appointments.length > 0 && (
+                <div className="space-y-1.5 pt-2 border-t border-border">
+                  <p className="text-xs font-semibold flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{L.upcoming}</p>
+                  {appointments.slice(0, 5).map(a => (
+                    <div key={a.id} className="flex items-start justify-between gap-2 text-xs">
+                      <div className="min-w-0">
+                        <p className="font-medium">{fmtD(a.date)} {L.at} {String(a.time).slice(0, 5)}</p>
+                        <p className="text-muted-foreground truncate">{(a.auto_kind === 'reception' || a.auto_kind === 'claim_in') ? L.dropoff : (a.auto_kind === 'delivery' || a.auto_kind === 'claim_out') ? L.pickup : (({ revision: lang === 'en' ? 'Service' : lang === 'es' ? 'Revisión' : 'Revisão', maintenance: lang === 'en' ? 'Maintenance' : 'Manutenção', inspection: lang === 'en' ? 'Inspection' : 'Inspeção', repair: lang === 'en' ? 'Repair' : 'Reparação' } as Record<string, string>)[a.service_type] || a.service_type)}{a.vehicle ? ` · ${vLabel(a.vehicle)}` : ''}</p>
+                      </div>
+                      {a.status === 'pending' && <Badge variant="secondary" className="shrink-0 bg-warning/10 text-warning">{L.pendingConf}</Badge>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(shop?.phone || shop?.email) && (
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+                  {shop?.phone && <Button asChild size="sm" variant="outline" className="min-h-11 flex-1"><a href={`tel:${shop.phone}`}><Phone className="h-4 w-4 mr-1.5" />{L.call}</a></Button>}
+                  {waUrl && <Button asChild size="sm" variant="outline" className="min-h-11 flex-1"><a href={waUrl} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4 mr-1.5" />WhatsApp</a></Button>}
+                  {shop?.email && <Button asChild size="sm" variant="outline" className="min-h-11 flex-1"><a href={`mailto:${shop.email}`}><Mail className="h-4 w-4 mr-1.5" />{L.email}</a></Button>}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Tabs */}
         {reminders.filter(r => hasActiveReminderNotice(r, new Date().toLocaleDateString('en-CA'))).map(r => {

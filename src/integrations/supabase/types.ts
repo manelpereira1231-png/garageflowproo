@@ -13391,6 +13391,10 @@ export type Database = {
       get_ai_admin_stats: { Args: never; Returns: Json }
       get_ai_global_status: { Args: never; Returns: Json }
       get_ai_usage: { Args: { _shop_id: string }; Returns: Json }
+      get_client_portal_appointments: {
+        Args: { _token: string }
+        Returns: Json
+      }
       get_client_portal_data: { Args: { _token: string }; Returns: Json }
       get_client_portal_reminders: { Args: { _token: string }; Returns: Json }
       get_client_portal_services: {

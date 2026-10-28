@@ -572,8 +572,8 @@ export default function Agenda() {
       toast({ title: "Marcação concluída ou cancelada não pode ser movida", variant: "destructive" });
       return;
     }
-    // Online bookings: open the reschedule dialog pre-filled so the client is notified.
-    if (app.source === "portal" || app.source === "public") {
+    // Open the reschedule dialog pre-filled so the client can be notified.
+    if (app.client_id || app.client_email || app.client_phone || app.source === "portal" || app.source === "public") {
       await openReschedule(app);
       setRescheduleData({ date: newDate, time: newTime });
       return;

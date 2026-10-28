@@ -63,6 +63,7 @@ const translations: Record<string, Record<string, string>> = {
     selectDate: "Selecionar Data",
     selectTime: "Selecionar Hora",
     serviceType: "Tipo de Serviço",
+    describeService: "Descreva o serviço de que precisa",
     notes: "Notas",
     submit: "Submeter",
     cancel: "Cancelar",
@@ -119,6 +120,7 @@ const translations: Record<string, Record<string, string>> = {
     selectDate: "Select Date",
     selectTime: "Select Time",
     serviceType: "Service Type",
+    describeService: "Describe the service you need",
     notes: "Notes",
     submit: "Submit",
     cancel: "Cancel",
@@ -175,6 +177,7 @@ const translations: Record<string, Record<string, string>> = {
     selectDate: "Seleccionar Fecha",
     selectTime: "Seleccionar Hora",
     serviceType: "Tipo de Servicio",
+    describeService: "Describa el servicio que necesita",
     notes: "Notas",
     submit: "Enviar",
     cancel: "Cancelar",
@@ -231,6 +234,7 @@ const translations: Record<string, Record<string, string>> = {
     selectDate: "Selecionar Data",
     selectTime: "Selecionar Hora",
     serviceType: "Tipo de Serviço",
+    describeService: "Descreva o serviço de que precisa",
     notes: "Notas",
     submit: "Enviar",
     cancel: "Cancelar",
@@ -601,7 +605,7 @@ function ClientPortalContent() {
 
   const handleBooking = async () => {
 
-    if (!bookingData.vehicle_id || !bookingData.date || !bookingData.time || !bookingData.service_id) return;
+    if (!bookingData.vehicle_id || !bookingData.date || !bookingData.time || (!bookingData.service_id && !bookingData.service_type.trim())) return;
     setBookingLoading(true);
     try {
       const { error } = await supabase.from("appointments").insert({
@@ -613,7 +617,7 @@ function ClientPortalContent() {
         vehicle_id: bookingData.vehicle_id,
         date: bookingData.date,
         time: bookingData.time,
-        service_type: bookingData.service_type,
+        service_type: bookingData.service_type.trim(),
         service_id: bookingData.service_id || null,
         notes: bookingData.notes,
         status: 'pending',
@@ -1260,7 +1264,7 @@ function ClientPortalContent() {
               {portalServices === null ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /></div>
               ) : portalServices.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{({ pt: 'A oficina ainda não tem serviços disponíveis para marcação. Contacte a oficina.', en: 'The workshop has no services available for booking yet. Please contact the workshop.', es: 'El taller aún no tiene servicios disponibles para reservar. Contacte con el taller.' } as Record<string, string>)[lang] || 'A oficina ainda não tem serviços disponíveis para agendamento. Entre em contato com a oficina.'}</p>
+                <Input value={bookingData.service_type} onChange={e => setBookingData(prev => ({ ...prev, service_type: e.target.value }))} placeholder={t('describeService')} />
               ) : (
                 <Select value={bookingData.service_id} onValueChange={v => setBookingData(prev => ({ ...prev, service_id: v, service_type: portalServices.find(s => s.id === v)?.name || '' }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1277,7 +1281,7 @@ function ClientPortalContent() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setBookingOpen(false)}>{t('cancel')}</Button>
-            <Button onClick={handleBooking} disabled={bookingLoading || !bookingData.vehicle_id || !bookingData.date || !bookingData.service_id}>
+            <Button onClick={handleBooking} disabled={bookingLoading || !bookingData.vehicle_id || !bookingData.date || (!bookingData.service_id && !bookingData.service_type.trim())}>
               {bookingLoading && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
               {t('submit')}
             </Button>

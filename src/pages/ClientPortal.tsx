@@ -853,7 +853,7 @@ function ClientPortalContent() {
                     <div key={a.id} className="flex items-start justify-between gap-2 text-xs">
                       <div className="min-w-0">
                         <p className="font-medium">{fmtD(a.date)} {L.at} {String(a.time).slice(0, 5)}</p>
-                        <p className="text-muted-foreground truncate">{(a.auto_kind === 'reception' || a.auto_kind === 'claim_in') ? L.dropoff : (a.auto_kind === 'delivery' || a.auto_kind === 'claim_out') ? L.pickup : a.service_type}{a.vehicle ? ` · ${vLabel(a.vehicle)}` : ''}</p>
+                        <p className="text-muted-foreground truncate">{(a.auto_kind === 'reception' || a.auto_kind === 'claim_in') ? L.dropoff : (a.auto_kind === 'delivery' || a.auto_kind === 'claim_out') ? L.pickup : (({ revision: lang === 'en' ? 'Service' : lang === 'es' ? 'Revisión' : 'Revisão', maintenance: lang === 'en' ? 'Maintenance' : 'Manutenção', inspection: lang === 'en' ? 'Inspection' : 'Inspeção', repair: lang === 'en' ? 'Repair' : 'Reparação' } as Record<string, string>)[a.service_type] || a.service_type)}{a.vehicle ? ` · ${vLabel(a.vehicle)}` : ''}</p>
                       </div>
                       {a.status === 'pending' && <Badge variant="secondary" className="shrink-0 bg-warning/10 text-warning">{L.pendingConf}</Badge>}
                     </div>

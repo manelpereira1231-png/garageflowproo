@@ -31,6 +31,7 @@ export default function PublicBooking() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [services, setServices] = useState<{ id: string; name: string }[]>([]);
 
   const [form, setForm] = useState({
     client_name: "",
@@ -47,6 +48,11 @@ export default function PublicBooking() {
     const load = async () => {
       const { data } = await supabase.rpc("get_public_shop_by_slug", { _slug: slug });
       setShop((data as any) || null);
+      const shopId = (data as any)?.id;
+      if (shopId) {
+        const { data: svc } = await (supabase.rpc as any)("get_public_booking_services", { _shop_id: shopId });
+        setServices((svc as any[]) || []);
+      }
       setLoading(false);
     };
     load();
@@ -54,7 +60,7 @@ export default function PublicBooking() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!shop || !form.client_name || !form.service_type || !form.date || !form.time) {
+    if (!shop || !form.client_name || !form.service_type.trim() || !form.date || !form.time) {
       setError(t('booking.fillRequired'));
       return;
     }
@@ -64,7 +70,8 @@ export default function PublicBooking() {
 
     const { error: insertError } = await supabase.from("appointments").insert({
       shop_id: shop.id,
-      service_type: form.service_type,
+      service_type: services.find(x => x.id === form.service_type)?.name ?? form.service_type.trim(),
+      service_id: services.find(x => x.id === form.service_type) ? form.service_type : null,
       date: form.date,
       time: form.time,
       client_name: form.client_name,
@@ -155,12 +162,16 @@ export default function PublicBooking() {
             </div>
             <div>
               <Label>{t('booking.serviceType')} *</Label>
-              <Select value={form.service_type} onValueChange={v => setForm({ ...form, service_type: v })}>
-                <SelectTrigger><SelectValue placeholder={t('booking.selectService')} /></SelectTrigger>
-                <SelectContent>
-                  {SERVICE_KEYS.map(key => <SelectItem key={key} value={t(key)}>{t(key)}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              {services.length > 0 ? (
+                <Select value={form.service_type} onValueChange={v => setForm({ ...form, service_type: v })}>
+                  <SelectTrigger><SelectValue placeholder={t('booking.selectService')} /></SelectTrigger>
+                  <SelectContent>
+                    {services.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input value={form.service_type} maxLength={200} onChange={e => setForm({ ...form, service_type: e.target.value })} placeholder={t('booking.notesPlaceholder')} />
+              )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>

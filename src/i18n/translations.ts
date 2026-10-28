@@ -1395,7 +1395,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'workshop.checklist.fluidLevels': 'Nível Líquidos',
 
     // Public Booking
-    'booking.title': 'Marcar revisão',
+    'booking.title': 'Marcar serviço',
     'booking.name': 'Nome',
     'booking.namePlaceholder': 'O seu nome',
     'booking.phone': 'Telefone',

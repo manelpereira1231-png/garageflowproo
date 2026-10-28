@@ -1040,22 +1040,32 @@ export default function Agenda() {
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingAppt ? t('agenda.editAppointment') : t('agenda.new')}</DialogTitle></DialogHeader>
           <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
-            {catalog.length > 0 && (
-              <div>
-                <Label>Serviço do catálogo</Label>
-                <Select value={form.service_id} onValueChange={onServiceCatalogPick}>
-                  <SelectTrigger><SelectValue placeholder="Escolher serviço (preenche duração)" /></SelectTrigger>
-                  <SelectContent>
-                    {catalog.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name} · {c.default_time}min</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
             <div>
               <Label>{t('agenda.serviceType')} *</Label>
-              <Input value={form.service_type} onChange={e => setForm({ ...form, service_type: e.target.value, service_id: "" })} placeholder={t('agenda.serviceTypePlaceholder')} />
+              {(() => {
+                const RECEPTION = "Entrega da viatura pelo cliente (receção)";
+                const DELIVERY = "Entrega da viatura ao cliente";
+                const legacy = form.service_type && !form.service_id && ![RECEPTION, DELIVERY].includes(form.service_type) ? form.service_type : "";
+                const value = form.service_id ? form.service_id : form.service_type === RECEPTION ? "__reception" : form.service_type === DELIVERY ? "__delivery" : legacy ? "__legacy" : "";
+                return (
+                  <Select value={value} onValueChange={v => {
+                    if (v === "__reception") setForm({ ...form, service_id: "", service_type: RECEPTION });
+                    else if (v === "__delivery") setForm({ ...form, service_id: "", service_type: DELIVERY });
+                    else if (v !== "__legacy") onServiceCatalogPick(v);
+                  }}>
+                    <SelectTrigger><SelectValue placeholder="Escolher tipo de serviço" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__reception">{RECEPTION}</SelectItem>
+                      <SelectItem value="__delivery">{DELIVERY}</SelectItem>
+                      {legacy && <SelectItem value="__legacy">{legacy}</SelectItem>}
+                      {catalog.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}{c.default_time ? ` · ${c.default_time}min` : ""}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                );
+              })()}
+              {catalog.length === 0 && <p className="text-xs text-muted-foreground mt-1">O catálogo de serviços da oficina está vazio.</p>}
             </div>
             <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
               <div><Label>{t('agenda.date')}</Label><Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>

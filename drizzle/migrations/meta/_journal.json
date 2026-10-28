@@ -274,6 +274,13 @@
       "when": 1793024249324,
       "tag": "0038_reminder_notifications_open_passport",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1793214969504,
+      "tag": "0039_portal_booking_service_catalog",
+      "breakpoints": true
     }
   ]
 }

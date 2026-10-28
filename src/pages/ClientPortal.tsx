@@ -400,6 +400,8 @@ function ClientPortalContent() {
   const [reloadKey, setReloadKey] = useState(0);
   const [quoteDecision, setQuoteDecision] = useState<{ quote: any; action: 'approved' | 'rejected' } | null>(null);
   const [decisionLoading, setDecisionLoading] = useState(false);
+  const [decisionNote, setDecisionNote] = useState("");
+  const [expandedQuotes, setExpandedQuotes] = useState<Record<string, boolean>>({});
   const [payingId, setPayingId] = useState<string | null>(null);
 
   const getInitialLang = (): string => {
@@ -544,7 +546,7 @@ function ClientPortalContent() {
         _portal_token: token,
         _quote_id: quoteDecision.quote.id,
         _action: quoteDecision.action,
-        _client_notes: null,
+        _client_notes: decisionNote.trim() ? decisionNote.trim().slice(0, 1000) : null,
       });
       if (rpcErr) throw rpcErr;
       // Aviso à oficina — igual para aprovação e rejeição (o sino é gravado pelo trigger da BD)
@@ -564,9 +566,10 @@ function ClientPortalContent() {
       }
       toast.success(quoteDecision.action === 'approved' ? t('quoteApproved') : t('quoteRejected'));
       setQuoteDecision(null);
+      setDecisionNote("");
       setReloadKey((k) => k + 1);
     } catch (e: any) {
-      toast.error(e?.message === 'already_processed' ? t('quoteDecisionError') : (e?.message || t('quoteDecisionError')));
+      toast.error(e?.message === 'expired' ? pendingText.expired : e?.message === 'already_processed' ? t('quoteDecisionError') : (e?.message || t('quoteDecisionError')));
     } finally {
       setDecisionLoading(false);
     }
@@ -663,6 +666,16 @@ function ClientPortalContent() {
   const invoiceIds = invoices.map(i => i.id);
   const totalPaid = payments.filter(p => invoiceIds.includes(p.invoice_id)).reduce((sum, p) => sum + (p.amount || 0), 0);
   const totalDue = Math.max(0, totalInvoiced - totalPaid);
+
+  const todayStr = new Date().toLocaleDateString('en-CA');
+  const canDecideQuote = (q: any) =>
+    (q.status === 'sent' || q.status === 'draft') && !(q.validity_date && String(q.validity_date) < todayStr);
+  const pendingQuotes = quotes.filter(canDecideQuote);
+  const pendingText = lang === 'en'
+    ? { banner: (n: number) => n === 1 ? '1 quote awaiting your approval' : `${n} quotes awaiting your approval`, cta: 'Review', valid: 'Valid until', note: 'Comment for the workshop (optional)', all: 'Show all lines', less: 'Show less', expired: 'This quote has expired. Please contact the workshop.' }
+    : lang === 'es'
+    ? { banner: (n: number) => n === 1 ? '1 presupuesto pendiente de su aprobación' : `${n} presupuestos pendientes de su aprobación`, cta: 'Revisar', valid: 'Válido hasta', note: 'Comentario para el taller (opcional)', all: 'Ver todas las líneas', less: 'Ver menos', expired: 'Este presupuesto ha caducado. Contacte con el taller.' }
+    : { banner: (n: number) => n === 1 ? '1 orçamento aguarda a sua aprovação' : `${n} orçamentos aguardam a sua aprovação`, cta: 'Ver e aprovar', valid: 'Válido até', note: 'Comentário para a oficina (opcional)', all: 'Ver todas as linhas', less: 'Ver menos', expired: lang === 'pt-BR' ? 'Este orçamento expirou. Entre em contato com a oficina.' : 'Este orçamento expirou. Contacte a oficina.' };
 
   const tabs: { key: Tab; label: string; icon: any; count: number }[] = [
     { key: 'services', label: t('serviceHistory'), icon: Wrench, count: services.length },
@@ -784,6 +797,15 @@ function ClientPortalContent() {
             <Button size="sm" variant="outline" className="mt-2 min-h-11" onClick={() => setActiveTab('vehicles')}><Car className="h-4 w-4 mr-2" />{t('vehicles')}</Button>
           </div>;
         })}
+        {pendingQuotes.length > 0 && activeTab !== 'quotes' && (
+          <div className="mb-4 rounded-xl border border-primary/40 bg-primary/10 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <FileText className="h-5 w-5 text-primary shrink-0" />
+              <p className="text-sm font-semibold">{pendingText.banner(pendingQuotes.length)}</p>
+            </div>
+            <Button size="sm" className="min-h-11" onClick={() => setActiveTab('quotes')}>{pendingText.cta}</Button>
+          </div>
+        )}
         <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
           {tabs.map(tab => (
             <button
@@ -855,7 +877,7 @@ function ClientPortalContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="font-medium text-sm font-mono">{q.number}</span>
-                    <p className="text-xs text-muted-foreground">{q.date}</p>
+                    <p className="text-xs text-muted-foreground">{q.date}{q.validity_date ? ` · ${pendingText.valid} ${q.validity_date}` : ''}</p>
                   </div>
                   <Badge variant="secondary" className={quoteStatusColors[q.status] || ''}>
                     {t(q.status) || q.status}
@@ -870,16 +892,20 @@ function ClientPortalContent() {
                 {/* Line items preview */}
                 {Array.isArray(q.lines) && q.lines.length > 0 && (
                   <div className="text-xs text-muted-foreground space-y-0.5 pt-1 border-t border-border">
-                    {(q.lines as any[]).slice(0, 3).map((line: any, idx: number) => (
+                    {(expandedQuotes[q.id] ? (q.lines as any[]) : (q.lines as any[]).slice(0, 3)).map((line: any, idx: number) => (
                       <div key={idx} className="flex justify-between">
                         <span className="truncate mr-2">{line.description}</span>
                         <span className="font-mono shrink-0">{cur}{(line.total || 0).toFixed(2)}</span>
                       </div>
                     ))}
-                    {(q.lines as any[]).length > 3 && <p className="text-muted-foreground/50">+{(q.lines as any[]).length - 3} mais...</p>}
+                    {(q.lines as any[]).length > 3 && (
+                      <button type="button" className="text-primary font-medium py-1" onClick={() => setExpandedQuotes(m => ({ ...m, [q.id]: !m[q.id] }))}>
+                        {expandedQuotes[q.id] ? pendingText.less : `${pendingText.all} (${(q.lines as any[]).length})`}
+                      </button>
+                    )}
                   </div>
                 )}
-                {q.status === 'sent' && (
+                {canDecideQuote(q) && (
                   <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
                     <Button
                       size="sm"
@@ -1098,7 +1124,7 @@ function ClientPortalContent() {
         </div>
 
         {/* Confirmação da decisão sobre o orçamento */}
-        <AlertDialog open={!!quoteDecision} onOpenChange={(o) => !o && setQuoteDecision(null)}>
+        <AlertDialog open={!!quoteDecision} onOpenChange={(o) => { if (!o) { setQuoteDecision(null); setDecisionNote(""); } }}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
@@ -1109,6 +1135,13 @@ function ClientPortalContent() {
                 {quoteDecision?.action === 'approved' ? t('confirmApproveBody') : t('confirmRejectBody')}
               </AlertDialogDescription>
             </AlertDialogHeader>
+            {quoteDecision?.quote && (
+              <p className="text-sm font-semibold font-mono">{cur}{Number(quoteDecision.quote.total || 0).toFixed(2)}</p>
+            )}
+            <div className="space-y-1">
+              <Label className="text-xs">{pendingText.note}</Label>
+              <Textarea value={decisionNote} maxLength={1000} rows={2} onChange={(e) => setDecisionNote(e.target.value)} />
+            </div>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={decisionLoading}>{t('cancel')}</AlertDialogCancel>
               <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmQuoteDecision(); }} disabled={decisionLoading}>

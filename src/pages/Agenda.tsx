@@ -498,8 +498,25 @@ export default function Agenda() {
     } as any;
 
     if (editingAppt) {
-      const { error } = await supabase.from("appointments").update(payload).eq("id", editingAppt.id);
+      const oldTime = String(editingAppt.time).slice(0, 5);
+      const newTime = String(form.time).slice(0, 5);
+      const dateTimeChanged = editingAppt.date !== form.date || oldTime !== newTime;
+      // Data/hora alteradas: grava o resto e segue o mesmo fluxo do «Reagendar» (com aviso ao cliente).
+      const savePayload = dateTimeChanged
+        ? { ...payload, date: editingAppt.date, time: editingAppt.time }
+        : payload;
+      const { error } = await supabase.from("appointments").update(savePayload).eq("id", editingAppt.id);
       if (error) { toast({ title: t('common.error'), description: error.message, variant: "destructive" }); return; }
+      if (dateTimeChanged) {
+        const original = { ...editingAppt, ...savePayload } as Appointment;
+        setDialogOpen(false);
+        setEditingAppt(null);
+        resetForm();
+        loadData();
+        await openReschedule(original);
+        setRescheduleData({ date: form.date, time: newTime });
+        return;
+      }
       toast({ title: t('agenda.updated') });
     } else {
       const { error } = await supabase.from("appointments").insert(payload);

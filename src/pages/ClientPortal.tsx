@@ -617,7 +617,7 @@ function ClientPortalContent() {
         vehicle_id: bookingData.vehicle_id,
         date: bookingData.date,
         time: bookingData.time,
-        service_type: bookingData.service_type,
+        service_type: bookingData.service_type.trim(),
         service_id: bookingData.service_id || null,
         notes: bookingData.notes,
         status: 'pending',

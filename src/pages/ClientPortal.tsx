@@ -605,7 +605,7 @@ function ClientPortalContent() {
 
   const handleBooking = async () => {
 
-    if (!bookingData.vehicle_id || !bookingData.date || !bookingData.time || !bookingData.service_id) return;
+    if (!bookingData.vehicle_id || !bookingData.date || !bookingData.time || (!bookingData.service_id && !bookingData.service_type.trim())) return;
     setBookingLoading(true);
     try {
       const { error } = await supabase.from("appointments").insert({
@@ -1281,7 +1281,7 @@ function ClientPortalContent() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setBookingOpen(false)}>{t('cancel')}</Button>
-            <Button onClick={handleBooking} disabled={bookingLoading || !bookingData.vehicle_id || !bookingData.date || !bookingData.service_id}>
+            <Button onClick={handleBooking} disabled={bookingLoading || !bookingData.vehicle_id || !bookingData.date || (!bookingData.service_id && !bookingData.service_type.trim())}>
               {bookingLoading && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
               {t('submit')}
             </Button>

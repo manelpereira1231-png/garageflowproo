@@ -1264,7 +1264,7 @@ function ClientPortalContent() {
               {portalServices === null ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /></div>
               ) : portalServices.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{({ pt: 'A oficina ainda não tem serviços disponíveis para marcação. Contacte a oficina.', en: 'The workshop has no services available for booking yet. Please contact the workshop.', es: 'El taller aún no tiene servicios disponibles para reservar. Contacte con el taller.' } as Record<string, string>)[lang] || 'A oficina ainda não tem serviços disponíveis para agendamento. Entre em contato com a oficina.'}</p>
+                <Input value={bookingData.service_type} onChange={e => setBookingData(prev => ({ ...prev, service_type: e.target.value }))} placeholder={t('describeService')} />
               ) : (
                 <Select value={bookingData.service_id} onValueChange={v => setBookingData(prev => ({ ...prev, service_id: v, service_type: portalServices.find(s => s.id === v)?.name || '' }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>

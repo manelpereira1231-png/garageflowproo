@@ -288,6 +288,13 @@
       "when": 1793215974652,
       "tag": "0040_portal_appointments_and_hide_costs",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793218497338,
+      "tag": "0041_public_booking_services",
+      "breakpoints": true
     }
   ]
 }

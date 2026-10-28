@@ -13491,6 +13491,13 @@ export type Database = {
         }[]
       }
       get_my_supplier_id: { Args: never; Returns: string }
+      get_public_booking_services: {
+        Args: { _shop_id: string }
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
       get_public_inspection: { Args: { _token: string }; Returns: Json }
       get_public_invoice: { Args: { _token: string }; Returns: Json }
       get_public_legal_settings: { Args: never; Returns: Json }
